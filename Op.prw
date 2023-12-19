@@ -1,11 +1,11 @@
-#Include "PROTHEUS.CH"
-#Include "RPTDEF.CH"
-#INCLUDE "TBICONN.CH"
-#INCLUDE "FWPrintSetup.ch"
+#Include "Protheus.ch"
+#Include "TBIConn.ch"
 #Include "Colors.ch"
- 
-/*/{Protheus.doc}	MRPL010
-	Ordem de Produção MR V01
+#Include "RPTDef.ch"
+#Include "FwPrintsetup.ch"
+
+/*/{Protheus.doc}RELAT03
+Ordem de ProduÃ§Ã£o MR V01
 
 @author Carlos ASsis
 @since 04/11/2023
@@ -13,24 +13,24 @@
 /*/
 User Function MRPL010()
 
-	Local cQuery 	:= ""
-	Local cAliasOrd := ""
+	Local cQuery 		:= ""
+	Local cAliasOrd 	:= ""
 
-	Local nLin 		:= 0
-	Local oPrinter	:= nil
+	Local nLin 			:= 0
+	Local oPrinter		:= nil
 
-	Local aPergs	:= {}
-	Local aResps	:= {}
-	Local cOrdemDe	:= 0
-	Local cOrdemAte	:= 0
-	Local lContinua	:= .T.
+	Local aPergs		:= {}
+	Local aResps		:= {}
+	Local cOrdemDe		:= 0
+	Local cOrdemAte		:= 0
+	Local lContinua		:= .T.
 
-	AAdd(aPergs, {1, "Ordem Inicial"	, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
-	AAdd(aPergs, {1, "Ordem Final"    	, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
+	AAdd(aPergs, {1, "Ordem de"		, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
+	AAdd(aPergs, {1, "Ordem até"    , CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
 
 	If ParamBox(aPergs, "Parâmetros do relatório", @aResps,,,,,,,, .T., .T.)
-		cOrdemDe	:= aResps[1]
-		cOrdemAte	:= aResps[2]
+		cOrdemDe		:= aResps[1]
+		cOrdemAte		:= aResps[2]
 	Else
 		lContinua := .F.
 	EndIf
@@ -66,63 +66,78 @@ User Function MRPL010()
 
 return
 
+
 Static Function printCabec(cAliasOrd, oPrinter, nLin)
-	Local oFont10 	:= TFont():New( "Arial",, -10, .T.)
-	Local oFont12 	:= TFont():New( "Arial",, -12, .T.)
-	Local oFont16 	:= TFont():New( "Arial",, -16, .T.)
+	Local oFont10 		:= TFont():New( "Arial",, -10, .T.)
+	Local oFont12 		:= TFont():New( "Arial",, -12, .T.)
+	Local oFont16 		:= TFont():New( "Arial",, -16, .T.)
 
-	Local cFilePrintert		:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + DToS(Date()) + StrTran(Time(),":","") + ".pdf"
-	Local cDir				:= "c:\temp\"	// Local do relatório
+	Local cFilePrintert		:= "OP" + (cAliasOrd)->C2_NUM + DToS(Date()) + StrTran(Time(),":","") + ".pdf"
+	Local nDevice			:= 6 //1-DISCO, 2-SPOOL, 3-EMAIL, 4-EXCEL, 5-HTML, 6-PDF
+	Local lAdjustToLegacy	:= .F.
+	Local lDisableSetup		:= .T.
+	Local cDir				:= "c:\rel_erp\"
+	Local nDir				:= -1
+	Local lRet				:= .T.
 
+	If ! ExistDir(cDir)
+		nDir := MakeDir(cDir)
+		If nDir != 0
+			Help(NIL, NIL, "Falha", NIL, "Não foi possível criar o diretório para gravação do relatório.", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Fale com um técnico da equipe de Sistemas e informe o programa MRPL010."})
+			lRet := .F.
+		EndIf
+	EndIf
 
-	oPrinter := FWMSPrinter():New(cFilePrintert,IMP_PDF,.F.,cDir,.T.,,,,.T.,.F.,,.T.)
-	oFont1 := TFont():New('Courier new',,-18,.T.)
-	oPrinter:SetParm( "-RFS")
-	oPrinter:cPathPDF := cDir 			// Se for usado PDF e fora de rotina agendada
-	
-	oPrinter:SetPortrait()
-	oPrinter:SetPaperSize(DMPAPER_A4)
-	oPrinter:SetMargin(60,60,60,60) // nEsquerda, nSuperior, nDireita, nInferior
+	If lRet
+		oPrinter := FWMsPrinter():New(cFilePrintert,nDevice,lAdjustToLegacy,,lDisableSetup)
+		oPrinter:SetResolution(72)
+		oPrinter:SetPortrait() //oPrinter:SetLandscape()
+		oPrinter:SetPaperSize(9) //1-Letter, 3-Tabloid, 7-Executive, 8-A3, 9-A4
+		oPrinter:SetMargin(60,60,60,60) // nEsquerda, nSuperior, nDireita, nInferior
+		oPrinter:SetParm( "-RFS")
+		oPrinter:cPathPDF := cDir // Se for usado PDF e fora de rotina agendada
+		oPrinter:lServer := .F. //.T. Se for usado em rotina agendada
+		oPrinter:lViewPDF := .T. //.F. Se for usado em rotina agendada
+		oPrinter:StartPage()
 
-	oPrinter:StartPage()
+		oPrinter:Box(40,15,100,550)		    // Box(row, col, bottom, right)
 
-	oPrinter:Box(40,15,100,550)		    // Box(row, col, bottom, right)
+		nLin := 60
+		oPrinter:SayBitmap(nLin-15, 20, "C:\temp\logo.jfif", 150, 50)
+		oPrinter:Say(nLin, 200,"ORDEM DE PRODUCAO",oFont16)
 
-	nLin := 60
-	//oPrinter:SayBitmap(nLin-15, 20, "C:\temp\logo.jfif", 150, 50)
-	oPrinter:Say(nLin, 200,"ORDEM DE PRODUCAO",oFont16)
+		oPrinter:Line(nLin-20, 400, 100, 400)
+		oPrinter:Say(nLin, 410,"Num.",oFont10)
+		oPrinter:Say(nLin, 460,cValToChar((cAliasOrd)->C2_NUM),oFont16)
 
-	oPrinter:Line(nLin-20, 400, 100, 400)
-	oPrinter:Say(nLin, 410,"Num.",oFont10)
-	oPrinter:Say(nLin, 460,cValToChar((cAliasOrd)->C2_NUM),oFont16)
+		nLin +=65
+		oPrinter:Say(nLin, 15, "Cod. Item:" ,oFont10)
+		oPrinter:Say(nLin, 80, (cAliasOrd)->B1_COD, oFont12)
+		oPrinter:Say(nLin, 160, "Descricao:",oFont10)
+		oPrinter:Say(nLin, 220, (cAliasOrd)->B1_DESC, oFont12)
 
-	nLin +=65
-	oPrinter:Say(nLin, 15, "Cod. Item:" ,oFont10)
-	oPrinter:Say(nLin, 80, (cAliasOrd)->B1_COD, oFont12)
-	oPrinter:Say(nLin, 160, "Descricao:",oFont10)
-	oPrinter:Say(nLin, 220, (cAliasOrd)->B1_DESC, oFont12)
+		nLin +=20
+		oPrinter:Say(nLin, 15, "Quantidade:",oFont10)
+		oPrinter:Say(nLin, 80, TRANSFORM((cAliasOrd)->C2_QUANT, "@E 999,999.999"), oFont12)
+		oPrinter:Say(nLin, 160, "Unid. Medida:",oFont10)
+		oPrinter:Say(nLin, 240, (cAliasOrd)->B1_UM, oFont10)
+		oPrinter:Say(nLin, 400, "Qtde. Hora:",oFont10)
 
-	nLin +=20
-	oPrinter:Say(nLin, 15, "Quantidade:",oFont10)
-	oPrinter:Say(nLin, 80, TRANSFORM((cAliasOrd)->C2_QUANT, "@E 999,999.999"), oFont12)
-	oPrinter:Say(nLin, 160, "Unid. Medida:",oFont10)
-	oPrinter:Say(nLin, 240, (cAliasOrd)->B1_UM, oFont10)
-	oPrinter:Say(nLin, 400, "Qtde. Hora:",oFont10)
-
-	nLin +=20
-	oPrinter:Say(nLin, 15, "Data Inicio:",oFont10)
-	oPrinter:Say(nLin, 80, DTOC((cAliasOrd)->C2_DATPRI), oFont12)
-	oPrinter:Say(nLin, 160, "Data Termino:",oFont10)
-	oPrinter:Say(nLin, 240, DTOC((cAliasOrd)->C2_DATPRF), oFont12)
+		nLin +=20
+		oPrinter:Say(nLin, 15, "Data Inicio:",oFont10)
+		oPrinter:Say(nLin, 80, DTOC((cAliasOrd)->C2_DATPRI), oFont12)
+		oPrinter:Say(nLin, 160, "Data Termino:",oFont10)
+		oPrinter:Say(nLin, 240, DTOC((cAliasOrd)->C2_DATPRF), oFont12)
+	EndIf
 
 Return
 
 Static Function printCompon(cAliasOrd, oPrinter, nLin)
-	Local cQuery    := ""
-	Local cAliasCmp	:= ""
-	Local cOp 		:= ""
-	Local oFont10 	:= TFont():New( "Arial",, -10, .T.)
-	Local oFont12 	:= TFont():New( "Arial",, -12, .T.)
+	Local cQuery        	:= ""
+	Local cAliasCmp        	:= ""
+	Local cOp 				:= ""
+	Local oFont10 			:= TFont():New( "Arial",, -10, .T.)
+	Local oFont12 			:= TFont():New( "Arial",, -12, .T.)
 
 	cOp := (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN
 
@@ -168,8 +183,8 @@ Static Function printOper(cAliasOrd, oPrinter, nLin)
 	Local cQuery        := ""
     Local cAliasOper    := ""
 
-	Local oFont10 		:= TFont():New( "Arial",, -10, .T.)
-	Local oFont12 		:= TFont():New( "Arial",, -12, .T.)
+	Local oFont10 			:= TFont():New( "Arial",, -10, .T.)
+	Local oFont12 			:= TFont():New( "Arial",, -12, .T.)
 
 	// LER OPERACOES DA OP
     cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, " 			+ CRLF
@@ -201,9 +216,9 @@ Static Function printOper(cAliasOrd, oPrinter, nLin)
 Return
 
 Static Function printRodape(oPrinter, nLin)
-	Local nLinIni	:= 0
-	Local oFont10 	:= TFont():New( "Arial",, -10, .T.)
-	Local oFont12 	:= TFont():New( "Arial",, -12, .T.)
+	Local nLinIni			:= 0
+	Local oFont10 			:= TFont():New( "Arial",, -10, .T.)
+	Local oFont12 			:= TFont():New( "Arial",, -12, .T.)
 
 	nLin += 10
 	nLinIni = nLin
@@ -252,5 +267,5 @@ Static Function printRodape(oPrinter, nLin)
 	oPrinter:EndPage()
 	oPrinter:Preview() //Gera e abre o arquivo em PDF
 	FreeObj(oPrinter)
-	oPrinter := nil
+	sleep(2000)
 Return

@@ -1,9 +1,9 @@
-#Include "PROTHEUS.CH"
-#Include "RPTDEF.CH"
-#INCLUDE "TBICONN.CH"
-#INCLUDE "FWPrintSetup.ch"
+#Include "Protheus.ch"
+#Include "TBIConn.ch"
 #Include "Colors.ch"
- 
+#Include "RPTDef.ch"
+#Include "FwPrintsetup.ch"
+
 /*/{Protheus.doc}	MRPL010
 	Ordem de Produção MR V01
 
@@ -25,8 +25,8 @@ User Function MRPL010()
 	Local cOrdemAte	:= 0
 	Local lContinua	:= .T.
 
-	AAdd(aPergs, {1, "Ordem Inicial"	, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
-	AAdd(aPergs, {1, "Ordem Final"    	, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
+	AAdd(aPergs, {1, "Ordem de"		, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
+	AAdd(aPergs, {1, "Ordem até"    , CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
 
 	If ParamBox(aPergs, "Parâmetros do relatório", @aResps,,,,,,,, .T., .T.)
 		cOrdemDe	:= aResps[1]
@@ -72,18 +72,24 @@ Static Function printCabec(cAliasOrd, oPrinter, nLin)
 	Local oFont16 	:= TFont():New( "Arial",, -16, .T.)
 
 	Local cFilePrintert		:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + DToS(Date()) + StrTran(Time(),":","") + ".pdf"
-	Local cDir				:= "c:\temp\"	// Local do relatório
+	Local nDevice			:= 6 			//1-DISCO, 2-SPOOL, 3-EMAIL, 4-EXCEL, 5-HTML, 6-PDF
+	Local lAdjustToLegacy	:= .F.
+	Local lDisableSetup		:= .T.
+	Local cDir				:= "\SPOOL\"
 
+	If ! ExistDir(cDir)
+		MakeDir(cDir)
+	EndIf
 
-	oPrinter := FWMSPrinter():New(cFilePrintert,IMP_PDF,.F.,cDir,.T.,,,,.T.,.F.,,.T.)
-	oFont1 := TFont():New('Courier new',,-18,.T.)
+	oPrinter := FWMsPrinter():New(cFilePrintert,nDevice,lAdjustToLegacy,,lDisableSetup)
+	oPrinter:SetResolution(72)
+	oPrinter:SetPortrait() 				//oPrinter:SetLandscape()
+	oPrinter:SetPaperSize(9) 			//1-Letter, 3-Tabloid, 7-Executive, 8-A3, 9-A4
+	oPrinter:SetMargin(60,60,60,60) 	// nEsquerda, nSuperior, nDireita, nInferior
 	oPrinter:SetParm( "-RFS")
 	oPrinter:cPathPDF := cDir 			// Se for usado PDF e fora de rotina agendada
-	
-	oPrinter:SetPortrait()
-	oPrinter:SetPaperSize(DMPAPER_A4)
-	oPrinter:SetMargin(60,60,60,60) // nEsquerda, nSuperior, nDireita, nInferior
-
+	oPrinter:lServer := .F. 			//.T. Se for usado em rotina agendada
+	oPrinter:lViewPDF := .T. 			//.F. Se for usado em rotina agendada
 	oPrinter:StartPage()
 
 	oPrinter:Box(40,15,100,550)		    // Box(row, col, bottom, right)
@@ -252,5 +258,4 @@ Static Function printRodape(oPrinter, nLin)
 	oPrinter:EndPage()
 	oPrinter:Preview() //Gera e abre o arquivo em PDF
 	FreeObj(oPrinter)
-	oPrinter := nil
 Return
