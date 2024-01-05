@@ -45,11 +45,10 @@ Static Function MenuDef()
 	Local aRot := {}
 	
 	//Adicionando opções
-	ADD OPTION aRot TITLE 'Visualizar' ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 //OPERATION 1
-	ADD OPTION aRot TITLE 'Incluir'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT ACCESS 0 //OPERATION 3
-	ADD OPTION aRot TITLE 'Alterar'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 //OPERATION 4
-	ADD OPTION aRot TITLE 'Excluir'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE ACCESS 0 //OPERATION 5
-
+	ADD OPTION aRot TITLE 'Visualizar' ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 
+	ADD OPTION aRot TITLE 'Incluir'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT ACCESS 0 
+	ADD OPTION aRot TITLE 'Alterar'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 
+	ADD OPTION aRot TITLE 'Excluir'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE ACCESS 0 
 
 Return aRot
 
@@ -65,38 +64,39 @@ Static Function ModelDef()
 	Local oModel 	:= Nil
 	Local oStPai 	:= FWFormStruct(1, 'ZA0')
 	Local oStFilho 	:= FWFormStruct(1, 'ZA1')
+
 	Local aZA1Rel	:= {}
 	
 	//Definições dos campos
-	oStPai : SetProperty('ZA0_NUMPED',   	MODEL_FIELD_WHEN,    FwBuildFeature(STRUCT_FEATURE_WHEN,    '.F.'))                                 //Modo de Edição
-	oStPai : SetProperty('ZA0_NUMPED',   	MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'GetSXENum("ZA0", "ZA0_NUMPED")'))      //Ini Padrão
-	oStPai : SetProperty('ZA0_CLIENT',   	MODEL_FIELD_VALID,   FwBuildFeature(STRUCT_FEATURE_VALID,   'ExistCpo("SA1", M->ZA0_CLIENT)'))      //Validação de Campo
+	oStPai:SetProperty('ZA0_NUMPED',   	MODEL_FIELD_WHEN,    FwBuildFeature(STRUCT_FEATURE_WHEN,    '.F.'))                                 //Modo de Edição
+	oStPai:SetProperty('ZA0_NUMPED',   	MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'GetSXENum("ZA0", "ZA0_NUMPED")'))      //Ini Padrão
+	oStPai:SetProperty('ZA0_CLIENT',   	MODEL_FIELD_VALID,   FwBuildFeature(STRUCT_FEATURE_VALID,   'ExistCpo("SA1", M->ZA0_CLIENT)'))      //Validação de Campo
 
-	oStFilho : SetProperty('ZA1_NUMPED', 	MODEL_FIELD_WHEN,    FwBuildFeature(STRUCT_FEATURE_WHEN,    '.F.'))                                 //Modo de Edição
-	oStFilho : SetProperty('ZA1_NUMPED', 	MODEL_FIELD_OBRIGAT, .F. )                                                                          //Campo Obrigatório
-	oStFilho : SetProperty('ZA1_PRODUT', 	MODEL_FIELD_OBRIGAT, .F. )                                                                          //Campo Obrigatório
-	oStfILHO : SetProperty('ZA0_PRODUT', 	MODEL_FIELD_VALID,   FwBuildFeature(STRUCT_FEATURE_VALID,   'ExistCpo("SB1", M->ZA1_PRODUT)'))      //Validação de Campo
-	oStFilho : SetProperty('ZA1_DTENTR', 	MODEL_FIELD_OBRIGAT, .F. )                                                                          //Campo Obrigatório
-	oStFilho : SetProperty('ZA1_QUANTI', 	MODEL_FIELD_OBRIGAT, .F. )                                                                          //Campo Obrigatório
-	oStFilho : SetProperty('ZA1_SEQ', 		MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'u_zSeq()'))                         	//Ini Padrão
+	oStFilho:SetProperty('ZA1_NUMPED', 	MODEL_FIELD_WHEN,    FwBuildFeature(STRUCT_FEATURE_WHEN,    '.F.'))                                 //Modo de Edição
+	oStFilho:SetProperty('ZA1_NUMPED', 	MODEL_FIELD_OBRIGAT, .F. )                                                                          //Campo Obrigatório
+	oStFilho:SetProperty('ZA1_PRODUT', 	MODEL_FIELD_OBRIGAT, .F. )                                                                          //Campo Obrigatório
+	oStfILHO:SetProperty('ZA1_PRODUT', 	MODEL_FIELD_VALID,   FwBuildFeature(STRUCT_FEATURE_VALID,   'ExistCpo("SB1", M->ZA1_PRODUT)'))      //Validação de Campo
+	oStFilho:SetProperty('ZA1_DTENTR', 	MODEL_FIELD_OBRIGAT, .F. )                                                                          //Campo Obrigatório
+	oStFilho:SetProperty('ZA1_QUANTI', 	MODEL_FIELD_OBRIGAT, .F. )                                                                          //Campo Obrigatório
+	oStFilho:SetProperty('ZA1_SEQ', 		MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'u_zSeq()'))                         	//Ini Padrão
 	
 	//Criando o modelo e os relacionamentos
 	oModel := MPFormModel():New('PL020M')
-	oModel : AddFields('ZA0MASTER',, oStPai)
-	oModel : AddGrid('ZA1DETAIL','ZA0MASTER',oStFilho,/*bLinePre*/, /*bLinePost*/,/*bPre - Grid Inteiro*/,/*bPos - Grid Inteiro*/,/*bLoad - Carga do modelo manualmente*/)  //cOwner é para quem pertence
+	oModel:AddFields('ZA0MASTER',, oStPai)
+	oModel:AddGrid('ZA1DETAIL','ZA0MASTER',oStFilho,/*bLinePre*/, /*bLinePost*/,/*bPre - Grid Inteiro*/,/*bPos - Grid Inteiro*/,/*bLoad - Carga do modelo manualmente*/)  //cOwner é para quem pertence
 	
 	//Fazendo o relacionamento entre o Pai e Filho
 	aAdd(aZA1Rel, {'ZA1_FILIAL','ZA0_FILIAL'})
 	aAdd(aZA1Rel, {'ZA1_NUMPED','ZA0_NUMPED'})
 	
-	oModel : SetRelation('ZA1DETAIL', aZA1Rel, ZA1->(IndexKey(1))) //IndexKey -> quero a ordenação e depois filtrado
-	oModel : GetModel('ZA1DETAIL') : SetUniqueLine({"ZA1_DESC"})	//Não repetir informações ou combinações {"CAMPO1","CAMPO2","CAMPOX"}
-	oModel : SetPrimaryKey({})
+	oModel:SetRelation('ZA1DETAIL', aZA1Rel, ZA1->(IndexKey(1))) //IndexKey -> quero a ordenação e depois filtrado
+	oModel:GetModel('ZA1DETAIL'):SetUniqueLine({"ZA1_DESC"})	//Não repetir informações ou combinações {"CAMPO1","CAMPO2","CAMPOX"}
+	oModel:SetPrimaryKey({})
 	
 	//Setando as descrições
-	oModel : SetDescription("Grupo de Produtos - Mod. 3")
-	oModel : GetModel('ZA0MASTER'):SetDescription('Pedido')
-	oModel : GetModel('ZA1DETAIL'):SetDescription('Linhas')
+	oModel:SetDescription("Grupo de Produtos - Mod. 3")
+	oModel:GetModel('ZA0MASTER'):SetDescription('Pedido')
+	oModel:GetModel('ZA1DETAIL'):SetDescription('Linhas')
 	
 Return oModel
 
