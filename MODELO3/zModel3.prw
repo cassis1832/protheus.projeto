@@ -67,7 +67,7 @@ Return aRot
 Static Function ModelDef()
 	Local oModel 		:= Nil
 	Local oStPai 		:= FWFormStruct(1, 'ZZ2')
-	Local oStFilho 	:= FWFormStruct(1, 'ZZ3')
+	Local oStFilho 		:= FWFormStruct(1, 'ZZ3')
 	Local aZZ3Rel		:= {}
 	
 	//Definições dos campos
@@ -108,8 +108,8 @@ Return oModel
 
 Static Function ViewDef()
 	Local oView		:= Nil
-	Local oModel		:= FWLoadModel('zModel3')
-	Local oStPai		:= FWFormStruct(2, 'ZZ2')
+	Local oModel	:= FWLoadModel('zModel3')
+	Local oStPai	:= FWFormStruct(2, 'ZZ2')
 	Local oStFilho	:= FWFormStruct(2, 'ZZ3')
 	
 	//Criando a View
