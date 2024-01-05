@@ -1,4 +1,6 @@
+#Include "Protheus.ch"
 #include "rwmake.ch"
+#Include "TBIConn.ch"
 
 /*
   Exemplo Totvs
@@ -7,11 +9,24 @@
 
 User Function RDMOD3()
   Local _ni
+  
+	//
+	Local lPar01 		:= ""
+	Local cPar02 		:= ""
+	Local dPar03 		:= CTOD(' / / ')
+
+	Prepare Environment Empresa '01' Filial '01'
+    lPar01 := SuperGetMV("MV_PARAM",.F.)
+    cPar02 := cFilAnt
+    dPar03 := dDataBase
+	//
+
   aRotina := {{ "Pesquisa","AxPesqui", 0 , 1},;
-  { "Visual","AxVisual", 0 , 2},;
-  { "Inclui","AxInclui", 0 , 3},;
-  { "Altera","AxAltera", 0 , 4, 20 },;
-  { "Exclui","AxDeleta", 0 , 5, 21 }}
+              { "Visual","AxVisual", 0 , 2},;
+              { "Inclui","AxInclui", 0 , 3},;
+              { "Altera","AxAltera", 0 , 4, 20 },;
+              { "Exclui","AxDeleta", 0 , 5, 21 }}
+
 
   //+--------------------------------------------------------------+
   //| Opcoes de acesso para a Modelo 3 |

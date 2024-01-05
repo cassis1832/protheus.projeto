@@ -1,6 +1,6 @@
 #include "protheus.ch"
 #include "rwmake.ch"    
- 
+
 /*
     Exemplo totvs
     https://tdn.totvs.com/display/public/framework/Modelo3
@@ -11,7 +11,7 @@ Local nOpcE         as numeric
 Local nOpcG         as numeric
 Local nUsado        as numeric
 Local _ni           as numeric
- 
+
 Private aHeader     as array
 Private aRotina     as array
 Private aCols       as array

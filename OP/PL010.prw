@@ -12,7 +12,6 @@
 @version 1.0   
 /*/
 User Function MRPL010()
-
 	Local cQuery 	:= ""
 	Local cAliasOrd := ""
 
@@ -24,6 +23,17 @@ User Function MRPL010()
 	Local cOrdemDe	:= 0
 	Local cOrdemAte	:= 0
 	Local lContinua	:= .T.
+
+	//
+	Local lPar01 		:= ""
+	Local cPar02 		:= ""
+	Local dPar03 		:= CTOD(' / / ')
+
+	Prepare Environment Empresa '01' Filial '01'
+    lPar01 := SuperGetMV("MV_PARAM",.F.)
+    cPar02 := cFilAnt
+    dPar03 := dDataBase
+	//
 
 	AAdd(aPergs, {1, "Ordem Inicial"	, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
 	AAdd(aPergs, {1, "Ordem Final"    	, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
@@ -66,12 +76,16 @@ User Function MRPL010()
 
 return
 
+/*
+	Imprime o cabeçalho da OP
+*/
 Static Function printCabec(cAliasOrd, oPrinter, nLin)
 	Local oFont10 	:= TFont():New( "Arial",, -10, .T.)
 	Local oFont12 	:= TFont():New( "Arial",, -12, .T.)
-	Local oFont16 	:= TFont():New( "Arial",, -16, .T.)
+	Local oFont12b 	:= TFont():New( "Arial",, -12, .T., .T.)
+	Local oFont16b 	:= TFont():New( "Arial",, -16, .T.,.T.)
 
-	Local cFilePrintert		:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + DToS(Date()) + StrTran(Time(),":","") + ".pdf"
+	Local cFilePrintert		:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + cValToChar((cAliasOrd)->C2_ITEM) + cValToChar((cAliasOrd)->C2_SEQUEN) + DToS(Date()) + StrTran(Time(),":","") + ".pdf"
 	Local cDir				:= "c:\temp\"	// Local do relatório
 
 
@@ -82,23 +96,23 @@ Static Function printCabec(cAliasOrd, oPrinter, nLin)
 	
 	oPrinter:SetPortrait()
 	oPrinter:SetPaperSize(DMPAPER_A4)
-	oPrinter:SetMargin(60,60,60,60) // nEsquerda, nSuperior, nDireita, nInferior
+	oPrinter:SetMargin(50,50,50,50) // nEsquerda, nSuperior, nDireita, nInferior
 
 	oPrinter:StartPage()
 
-	oPrinter:Box(40,15,100,550)		    // Box(row, col, bottom, right)
+	oPrinter:Box(40,15,80,550)		    // Box(row, col, bottom, right)
 
 	nLin := 60
 	//oPrinter:SayBitmap(nLin-15, 20, "C:\temp\logo.jfif", 150, 50)
-	oPrinter:Say(nLin, 200,"ORDEM DE PRODUCAO",oFont16)
+	oPrinter:Say(nLin+3, 190,"ORDEM DE PRODUCAO",oFont16b)
 
-	oPrinter:Line(nLin-20, 400, 100, 400)
-	oPrinter:Say(nLin, 410,"Num.",oFont10)
-	oPrinter:Say(nLin, 460,cValToChar((cAliasOrd)->C2_NUM),oFont16)
+	oPrinter:Line(nLin-20, 400, 80, 400)
+	oPrinter:Say(nLin-10, 420,"Num. Ordem",oFont10)
+	oPrinter:Say(nLin-5 + 17, 410, cValToChar((cAliasOrd)->C2_NUM) + "/" + cValToChar((cAliasOrd)->C2_ITEM) + "/" + cValToChar((cAliasOrd)->C2_SEQUEN), oFont16b)
 
-	nLin +=65
+	nLin +=35
 	oPrinter:Say(nLin, 15, "Cod. Item:" ,oFont10)
-	oPrinter:Say(nLin, 80, (cAliasOrd)->B1_COD, oFont12)
+	oPrinter:Say(nLin, 80, (cAliasOrd)->B1_COD, oFont12b)
 	oPrinter:Say(nLin, 160, "Descricao:",oFont10)
 	oPrinter:Say(nLin, 220, (cAliasOrd)->B1_DESC, oFont12)
 
@@ -117,12 +131,15 @@ Static Function printCabec(cAliasOrd, oPrinter, nLin)
 
 Return
 
+/*
+	Imprime os componentes da OP (estrutura)
+*/
 Static Function printCompon(cAliasOrd, oPrinter, nLin)
 	Local cQuery    := ""
 	Local cAliasCmp	:= ""
 	Local cOp 		:= ""
 	Local oFont10 	:= TFont():New( "Arial",, -10, .T.)
-	Local oFont12 	:= TFont():New( "Arial",, -12, .T.)
+	Local oFont12b	:= TFont():New( "Arial",, -12, .T., .T.)
 
 	cOp := (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN
 
@@ -140,36 +157,37 @@ Static Function printCompon(cAliasOrd, oPrinter, nLin)
     cAliasCmp := MPSysOpenQuery(cQuery)
 
 	oPrinter:Line(nLin+10, 15, nLin+10, 550)
-	oPrinter:Say(nLin+25, 225, "Material Necessario",oFont12)
+	oPrinter:Say(nLin+25, 225, "Material Necessario",oFont12b)
 	oPrinter:Line(nLin+30, 15, nLin+30, 550)
 
 	nLin +=45
 	oPrinter:Say(nLin, 15, "Cod. Item",oFont10)
 	oPrinter:Say(nLin, 80, "Descricao",oFont10)
-	oPrinter:Say(nLin, 300, "Quantidade",oFont10)
-	oPrinter:Say(nLin, 360, "UM",oFont10)
-	oPrinter:Say(nLin, 400, "Lote",oFont10)
+	oPrinter:Say(nLin, 310, "Quantidade",oFont10)
+	oPrinter:Say(nLin, 410, "Lote",oFont10)
 	oPrinter:Say(nLin, 500, "Lote Real",oFont10)
 
    	While (cAliasCmp)->(!EOF())
 		nLin +=20
 		oPrinter:Say(nLin, 15, (cAliasCmp)->B1_COD, oFont10)
-		oPrinter:Say(nLin, 80, (cAliasCmp)->B1_DESC,oFont10)
+		oPrinter:Say(nLin, 80, SUBSTR((cAliasCmp)->B1_DESC, 1, 35), oFont10)
 		oPrinter:Say(nLin, 300, TRANSFORM((cAliasCmp)->D4_QUANT, "@E 999,999.999"), oFont10)
-		oPrinter:Say(nLin, 360, (cAliasCmp)->B1_UM,oFont10)
+		oPrinter:Say(nLin, 345, (cAliasCmp)->B1_UM,oFont10)
 		oPrinter:Say(nLin, 400, (cAliasCmp)->D4_LOTECTL,oFont10)
         (cAliasCmp)->(DbSkip())
     EndDo
 
 Return
 
-
+/*
+	Imprime as operações da OP
+*/
 Static Function printOper(cAliasOrd, oPrinter, nLin)
 	Local cQuery        := ""
     Local cAliasOper    := ""
 
 	Local oFont10 		:= TFont():New( "Arial",, -10, .T.)
-	Local oFont12 		:= TFont():New( "Arial",, -12, .T.)
+	Local oFont12b 		:= TFont():New( "Arial",, -12, .T., .T.)
 
 	// LER OPERACOES DA OP
     cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, " 			+ CRLF
@@ -183,7 +201,7 @@ Static Function printOper(cAliasOrd, oPrinter, nLin)
     cAliasOper := MPSysOpenQuery(cQuery)
 
 	oPrinter:Line(nLin+10, 15, nLin+10, 550)
-	oPrinter:Say(nLin+25, 260, "Operacoes",oFont12)
+	oPrinter:Say(nLin+25, 250, "Operacoes",oFont12b)
 	oPrinter:Line(nLin+30, 15, nLin+30, 550)
 
 	nLin +=45
@@ -200,19 +218,22 @@ Static Function printOper(cAliasOrd, oPrinter, nLin)
     EndDo
 Return
 
+/*
+	Imprime o espaço para registro dos apontamentos e o rodapé da ordem
+*/
 Static Function printRodape(oPrinter, nLin)
 	Local nLinIni	:= 0
 	Local oFont10 	:= TFont():New( "Arial",, -10, .T.)
-	Local oFont12 	:= TFont():New( "Arial",, -12, .T.)
+	Local oFont12b 	:= TFont():New( "Arial",, -12, .T., .T.)
 
 	nLin += 10
 	nLinIni = nLin
 
 	oPrinter:Line(nLin, 15, nLin, 550)
-	oPrinter:Say(nLin+15, 235, "Apontamentos",oFont12)
+	oPrinter:Say(nLin+15, 235, "Apontamentos",oFont12b)
 	oPrinter:Line(nLin+20, 15, nLin+20, 550)
 
-	nLin +=45
+	nLin +=32
 	oPrinter:Say(nLin, 30, "Data",oFont10)
 	oPrinter:Say(nLin, 73, "Turno",oFont10)
 	oPrinter:Say(nLin, 110, "Operador",oFont10)
@@ -223,15 +244,15 @@ Static Function printRodape(oPrinter, nLin)
 	oPrinter:Say(nLin, 390, "Motivo",oFont10)
 	oPrinter:Say(nLin, 450, "Observacao",oFont10)
 
-	// Looping de apontamentos
-	//
-	nLin += 5
+	// Looping de linhas em branco para apontamentos
+	nLin += 2
 
 	While nLin <= 710
 		oPrinter:Line(nLin, 15, nLin, 550)
-		nLin += 20
+		nLin += 25
 	EndDo
 
+	// Colunas
 	oPrinter:Line(nLinIni, 15, nLin, 15)
 	oPrinter:Line(nLinIni+20, 70, nLin, 70)
 	oPrinter:Line(nLinIni+20, 105, nLin, 105)
@@ -241,13 +262,37 @@ Static Function printRodape(oPrinter, nLin)
 	oPrinter:Line(nLinIni+20, 325, nLin, 325)
 	oPrinter:Line(nLinIni+20, 380, nLin, 380)
 	oPrinter:Line(nLinIni+20, 435, nLin, 435)
-
 	oPrinter:Line(nLinIni, 550, nLin, 550)
 
+	// Última linha
 	oPrinter:Line(nLin, 15, nLin, 550)
 
 	nLin += 20
 	oPrinter:Box(nLin, 15, nLin+100, 550)		    // Box(row, col, bottom, right)
+
+	nlin += 10
+	oPrinter:Say(nLin, 240, "Sim     Não",oFont10)
+
+	nlin += 20
+	oPrinter:Say(nLin, 30, "Peças Separadas Para Liberação:",oFont10)
+	oPrinter:Box(nLin-10, 240, nLin+5, 260)		    // Box(row, col, bottom, right)
+	oPrinter:Box(nLin-10, 270, nLin+5, 290)		    // Box(row, col, bottom, right)
+	oPrinter:Say(nLin, 330, "Visto Qualidade:",oFont10)
+	oPrinter:Say(nLin, 420, "_____________________",oFont10)
+	
+	nlin += 20
+	oPrinter:Say(nLin, 30, "Ordem Finalizada:",oFont10)
+	oPrinter:Box(nLin-10, 240, nLin+5, 260)		    // Box(row, col, bottom, right)
+	oPrinter:Box(nLin-10, 270, nLin+5, 290)		    // Box(row, col, bottom, right)
+	oPrinter:Say(nLin, 330, "Visto Liderança:",oFont10)
+	oPrinter:Say(nLin, 420, "_____________________",oFont10)
+
+	nlin += 20
+	oPrinter:Say(nLin, 30, "Material Finalizado:",oFont10)
+	oPrinter:Box(nLin-10, 240, nLin+5, 260)		    // Box(row, col, bottom, right)
+	oPrinter:Box(nLin-10, 270, nLin+5, 290)		    // Box(row, col, bottom, right)
+	oPrinter:Say(nLin, 330, "Visto PCP:",oFont10)
+	oPrinter:Say(nLin, 420, "_____________________",oFont10)
 
 	oPrinter:EndPage()
 	oPrinter:Preview() //Gera e abre o arquivo em PDF

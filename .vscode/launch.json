@@ -15,7 +15,13 @@
 	"lastPrograms": [
 		{
 			"label": "sigafat"
+		},
+		{
+			"label": "u_mrpl010"
+		},
+		{
+			"label": "u_rdmod3"
 		}
 	],
-	"lastProgramExecuted": "sigafat"
+	"lastProgramExecuted": "u_rdmod3"
 }
