@@ -65,17 +65,8 @@ Static Function ModelDef()
 	Local oStPai 	:= FWFormStruct(1, 'ZA0')
 	Local oStFilho 	:= FWFormStruct(1, 'ZA1')
 	Local aZA1Rel	:= {}
-	
-	oStPai:SetProperty('ZA0_CODPED',MODEL_FIELD_WHEN,'INCLUI')
-	oStPai:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,'INCLUI')
-	oStPai:SetProperty('ZA0_DTCRIA',MODEL_FIELD_WHEN,'INCLUI')
-	oStPai:SetProperty('ZA0_DTCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD, 'Date()'))
-	
-	oStFilho:SetProperty('ZA1_CODPED',MODEL_FIELD_WHEN,'INCLUI')
-	oStFilho:SetProperty('ZA1_PRODUT',MODEL_FIELD_WHEN,'INCLUI')
-	oStFilho:SetProperty('ZA1_PRODUT',MODEL_FIELD_WHEN,'INCLUI')
 
-	//Criando o modelo
+	//Criando o modelo e os relacionamentos
 	oModel := MPFormModel():New('PL020M')
 	oModel:AddFields('ZA0MASTER',, oStPai)
 	oModel:AddGrid('ZA1DETAIL','ZA0MASTER',oStFilho,/*bLinePre*/, /*bLinePost*/,/*bPre - Grid Inteiro*/,/*bPos - Grid Inteiro*/,/*bLoad - Carga do modelo manualmente*/)  //cOwner é para quem pertence
@@ -87,6 +78,13 @@ Static Function ModelDef()
 	oModel:SetRelation('ZA1DETAIL', aZA1Rel, ZA1->(IndexKey(1))) //IndexKey -> quero a ordenação e depois filtrado
 	oModel:GetModel('ZA1DETAIL'):SetUniqueLine({"ZA1_PRODUT", "ZA1_DTENTR"})	//Não repetir informações ou combinações {"CAMPO1","CAMPO2","CAMPOX"}
 	oModel:SetPrimaryKey({})
+
+/*
+	Local lRet := oModel:Activate()
+	Local oModelZA1 := oModel:GetModel( 'ZA1DETAIL' )
+	oModelZA1:SetValue('ZA1_DESC', GETADVFVAL('SB1',{'B1_DESC'},XFILIAL('SB1')+'ZA1->ZA1_PRODUT',1,{'',''}) )
+	//oView:Refresh("VIEW_ZA1") // ATUALIZAÇÃO A SUBVIEW ONDE O CAMPO ESTÁ CONTIDO
+*/
 
 	//Setando as descrições
 	oModel:SetDescription("Grupo de Produtos - Mod. 3")
@@ -112,8 +110,6 @@ Static Function ViewDef()
 	oView := FWFormView():New()
 	oView:SetModel(oModel)
 	
-	oStFilho:SetProperty('ZA1_DESC',MVC_VIEW_INIBROW,FwBuildFeature(STRUCT_FEATURE_INIPAD, 'GETADVFVAL("SB1",{"B1_DESC"},XFILIAL("SB1")+ZA1->ZA1_PRODUT,1,{"",""}))'))
-
 	//Adicionando os campos do cabeçalho e o grid dos filhos
 	oView:AddField('VIEW_ZA0',oStPai,'ZA0MASTER')
 	oView:AddGrid('VIEW_ZA1',oStFilho,'ZA1DETAIL')

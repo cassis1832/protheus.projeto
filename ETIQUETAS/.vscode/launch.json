@@ -11,20 +11,5 @@
 			"isMultiSession": true,
 			"enableTableSync": true
 		}
-	],
-	"lastPrograms": [
-		{
-			"label": "sigafat"
-		},
-		{
-			"label": "u_mrpl010"
-		},
-		{
-			"label": "u_rdmod3"
-		},
-		{
-			"label": "SIGAMDI"
-		}
-	],
-	"lastProgramExecuted": "SIGAMDI"
+	]
 }

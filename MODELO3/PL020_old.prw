@@ -64,18 +64,26 @@ Static Function ModelDef()
 	Local oModel 	:= Nil
 	Local oStPai 	:= FWFormStruct(1, 'ZA0')
 	Local oStFilho 	:= FWFormStruct(1, 'ZA1')
+
 	Local aZA1Rel	:= {}
 	
-	oStPai:SetProperty('ZA0_CODPED',MODEL_FIELD_WHEN,'INCLUI')
-	oStPai:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,'INCLUI')
-	oStPai:SetProperty('ZA0_DTCRIA',MODEL_FIELD_WHEN,'INCLUI')
-	oStPai:SetProperty('ZA0_DTCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD, 'Date()'))
-	
-	oStFilho:SetProperty('ZA1_CODPED',MODEL_FIELD_WHEN,'INCLUI')
-	oStFilho:SetProperty('ZA1_PRODUT',MODEL_FIELD_WHEN,'INCLUI')
-	oStFilho:SetProperty('ZA1_PRODUT',MODEL_FIELD_WHEN,'INCLUI')
+	//Definições dos campos
+	//oStPai:SetProperty('ZA0_CODPED',   	MODEL_FIELD_WHEN,    FwBuildFeature(STRUCT_FEATURE_WHEN,    '.F.'))                                 //Modo de Edição
+	//oStPai:SetProperty('ZA0_CODPED',   	MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'GetSXENum("ZA0", "ZA0_CODPED")'))      //Ini Padrão
+	//oStPai:SetProperty('ZA0_CLIENT',   	MODEL_FIELD_VALID,   FwBuildFeature(STRUCT_FEATURE_VALID,   'ExistCpo("SA1", M->ZA0_CLIENT)'))      //Validação de Campo
 
-	//Criando o modelo
+	//oStFilho:SetProperty('ZA1_CODPED', 	MODEL_FIELD_WHEN,    FwBuildFeature(STRUCT_FEATURE_WHEN,    '.F.'))                                 //Modo de Edição
+	//oStFilho:SetProperty('ZA1_CODPED', 	MODEL_FIELD_OBRIGAT, .F. )         
+	                                                                 //Campo Obrigatório
+	//oStFilho:SetProperty('ZA1_PRODUT', 	MODEL_FIELD_OBRIGAT, .T. )                                                                          //Campo Obrigatório
+	//oStfILHO:SetProperty('ZA1_PRODUT', 	MODEL_FIELD_VALID,   FwBuildFeature(STRUCT_FEATURE_VALID,   'ExistCpo("SB1", M->ZA1_PRODUT)'))      //Validação de Campo
+	
+	//oStFilho:SetProperty('ZA1_DTENTR', 	MODEL_FIELD_OBRIGAT, .T. )                                                                          //Campo Obrigatório
+	//oStFilho:SetProperty('ZA1_QUANTI', 	MODEL_FIELD_OBRIGAT, .T. )                                                                          //Campo Obrigatório
+
+	//oStFilho:SetProperty('ZA1_SEQ', 	MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'u_zSeq()'))                         		//Ini Padrão
+	
+	//Criando o modelo e os relacionamentos
 	oModel := MPFormModel():New('PL020M')
 	oModel:AddFields('ZA0MASTER',, oStPai)
 	oModel:AddGrid('ZA1DETAIL','ZA0MASTER',oStFilho,/*bLinePre*/, /*bLinePost*/,/*bPre - Grid Inteiro*/,/*bPos - Grid Inteiro*/,/*bLoad - Carga do modelo manualmente*/)  //cOwner é para quem pertence
@@ -87,7 +95,7 @@ Static Function ModelDef()
 	oModel:SetRelation('ZA1DETAIL', aZA1Rel, ZA1->(IndexKey(1))) //IndexKey -> quero a ordenação e depois filtrado
 	oModel:GetModel('ZA1DETAIL'):SetUniqueLine({"ZA1_PRODUT", "ZA1_DTENTR"})	//Não repetir informações ou combinações {"CAMPO1","CAMPO2","CAMPOX"}
 	oModel:SetPrimaryKey({})
-
+	
 	//Setando as descrições
 	oModel:SetDescription("Grupo de Produtos - Mod. 3")
 	oModel:GetModel('ZA0MASTER'):SetDescription('Pedido')
@@ -112,14 +120,10 @@ Static Function ViewDef()
 	oView := FWFormView():New()
 	oView:SetModel(oModel)
 	
-	oStFilho:SetProperty('ZA1_DESC',MVC_VIEW_INIBROW,FwBuildFeature(STRUCT_FEATURE_INIPAD, 'GETADVFVAL("SB1",{"B1_DESC"},XFILIAL("SB1")+ZA1->ZA1_PRODUT,1,{"",""}))'))
-
 	//Adicionando os campos do cabeçalho e o grid dos filhos
 	oView:AddField('VIEW_ZA0',oStPai,'ZA0MASTER')
 	oView:AddGrid('VIEW_ZA1',oStFilho,'ZA1DETAIL')
 	
-	oView:AddIncrementField( 'VIEW_ZA1', 'ZA1_SEQ' )
-
 	//Setando o dimensionamento de tamanho
 	oView:CreateHorizontalBox('CABEC',30)
 	oView:CreateHorizontalBox('GRID',70)
@@ -132,12 +136,12 @@ Static Function ViewDef()
 	oView:EnableTitleView('VIEW_ZA0','Cabeçalho - Pedido')
 	oView:EnableTitleView('VIEW_ZA1','Grid - Linhas')
 	
-	//Remove os campos
-	oStFilho:RemoveField('ZA1_CODPED')
-
 	//Força o fechamento da janela na confirmação
 	oView:SetCloseOnOk({||.T.})
-
+	
+	//Remove os campos de código do pedido e a sequencia
+	oStFilho:RemoveField('ZA1_CODPED')
+	oStFilho:RemoveField('ZA1_SEQ')
 Return oView
 
 /*---------------------------------------------------------------------*
