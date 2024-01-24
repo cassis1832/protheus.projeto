@@ -66,15 +66,15 @@ Static Function ModelDef()
 	Local oStFilho 	:= FWFormStruct(1, 'ZA1')
 	Local aZA1Rel	:= {}
 	
-	oStPai:SetProperty('ZA0_CODPED',MODEL_FIELD_WHEN,'INCLUI')
-	oStPai:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,'INCLUI')
-	oStPai:SetProperty('ZA0_DTCRIA',MODEL_FIELD_WHEN,'INCLUI')
+	oStPai:SetProperty('ZA0_CODPED',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
+	oStPai:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
+	oStPai:SetProperty('ZA0_DTCRIA',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
+	
+	oStFilho:SetProperty('ZA1_CODPED',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
+	//oStFilho:SetProperty('ZA1_PRODUT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
+
 	oStPai:SetProperty('ZA0_DTCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD, 'Date()'))
 	
-	oStFilho:SetProperty('ZA1_CODPED',MODEL_FIELD_WHEN,'INCLUI')
-	oStFilho:SetProperty('ZA1_PRODUT',MODEL_FIELD_WHEN,'INCLUI')
-	oStFilho:SetProperty('ZA1_PRODUT',MODEL_FIELD_WHEN,'INCLUI')
-
 	//Criando o modelo
 	oModel := MPFormModel():New('PL020M')
 	oModel:AddFields('ZA0MASTER',, oStPai)
@@ -112,7 +112,7 @@ Static Function ViewDef()
 	oView := FWFormView():New()
 	oView:SetModel(oModel)
 	
-	oStFilho:SetProperty('ZA1_DESC',MVC_VIEW_INIBROW,FwBuildFeature(STRUCT_FEATURE_INIPAD, 'GETADVFVAL("SB1",{"B1_DESC"},XFILIAL("SB1")+ZA1->ZA1_PRODUT,1,{"",""}))'))
+	//oStFilho:SetProperty('ZA1_DESC',MVC_VIEW_INIBROW,FwBuildFeature(STRUCT_FEATURE_INIPAD, 'GETADVFVAL("SB1",{"B1_DESC"},XFILIAL("SB1")+ZA1->ZA1_PRODUT,1,{"",""}))'))
 
 	//Adicionando os campos do cabeçalho e o grid dos filhos
 	oView:AddField('VIEW_ZA0',oStPai,'ZA0MASTER')
