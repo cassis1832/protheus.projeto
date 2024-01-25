@@ -129,12 +129,12 @@ User Function PL010()
 return
 
 //-----------------------------------------------------------------------------
-//	Ler a estrutura e as operações do item
+//	Ler os empenhos da OP (SD4) e as operações do item (SG2)
 //-----------------------------------------------------------------------------
 Static Function obterDados()
 	Local cOp := (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN
 
-	// LER COMPONENTES DA OP
+	// Ler os empenhos da OP
 	cQuery := "SELECT D4_COD, D4_OP, D4_DATA, D4_QTDEORI, " 		+ CRLF
 	cQuery += "	 D4_QUANT, D4_LOTECTL, "							+ CRLF
 	cQuery += "	 B1_COD, B1_DESC, B1_UM " 							+ CRLF
@@ -147,7 +147,7 @@ Static Function obterDados()
 	cQuery += "  AND D4_OP = '" + cOp + "' " 						+ CRLF
 	cAliasCmp := MPSysOpenQuery(cQuery)
 
-	// LER OPERACOES DA OP
+	// Ler as operações do item
 	cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, " 			+ CRLF
 	cQuery += "	G2_DESCRI, G2_MAOOBRA, G2_SETUP, "					+ CRLF
 	cQuery += "	G2_LOTEPAD, G2_TEMPAD, G2_CTRAB, "					+ CRLF
