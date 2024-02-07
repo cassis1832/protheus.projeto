@@ -27,7 +27,10 @@
 		},
 		{
 			"label": "u_pl010"
+		},
+		{
+			"label": "sigapcp"
 		}
 	],
-	"lastProgramExecuted": "u_pl010"
+	"lastProgramExecuted": "sigapcp"
 }
