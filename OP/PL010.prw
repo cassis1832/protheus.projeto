@@ -22,23 +22,24 @@ Static oFont12b 	:= TFont():New( "Arial",, -12, .T.,.T.)
 Static oFont16b 	:= TFont():New( "Arial",, -16, .T.,.T.)
 
 User Function PL010()
-	Local aPergs	:= {}
-	Local aResps	:= {}
-	Local cOrdemDe	:= 0
-	Local cOrdemAte	:= 0
-	Local lContinua	:= .T.
-	Local cOp		:= ""
+	Local aPergs		:= {}
+	Local aResps		:= {}
+	Local cOrdemDe		:= 0
+	Local cOrdemAte		:= 0
+	Local lContinua		:= .T.
+	Local cOp			:= ""
 
 	Private oPrinter	:= nil
 	Private cQuery 		:= ""
 	Private lOper 		:= .T.  		// Todas as operações juntas
-	Private lComp		:= .F.
-	Private cAliasOrd 	:= ""
-	Private cAliasCmp	:= ""
-	Private cAliasOper  := ""
 	Private nLin 		:= 0
 	PRivate cDir		:= "c:\temp\"	// Local do relatório
-	Private cFilePrintert := ""
+	Private cFilePrint 	:= ""
+	Private lComp		:= .F.
+
+	Private cAliasOrd 	:= ""			// Dados da OP
+	Private cAliasCmp	:= ""			// Componentes da OP
+	Private cAliasOper  := ""			// Operações da OP
 
 	AAdd(aPergs, {1, "Ordem Inicial"	, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
 	AAdd(aPergs, {1, "Ordem Final"    	, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
@@ -107,8 +108,8 @@ User Function PL010()
 		cAliasOper := MPSysOpenQuery(cQuery)
 
 		if lOper	// Imprime todas as operações da ordem na mesma página
-			cFilePrintert	:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + cValToChar((cAliasOrd)->C2_ITEM) + cValToChar((cAliasOrd)->C2_SEQUEN)
-			cFilePrintert	+= DToS(Date()) + StrTran(Time(),":","") + ".pdf"
+			cFilePrint		:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + cValToChar((cAliasOrd)->C2_ITEM) + cValToChar((cAliasOrd)->C2_SEQUEN)
+			cFilePrint		+= DToS(Date()) + StrTran(Time(),":","") + ".pdf"
 
 			printCabec	()
 			printCompon	()
@@ -118,8 +119,8 @@ User Function PL010()
 
 		else // Imprime uma pagina por operação
 			While (cAliasOper)->(!EOF())
-				cFilePrintert	:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + cValToChar((cAliasOrd)->C2_ITEM) + cValToChar((cAliasOrd)->C2_SEQUEN) + cValToChar((cAliasOper)->G2_OPERAC)
-				cFilePrintert	+= DToS(Date()) + StrTran(Time(),":","") + ".pdf"
+				cFilePrint		:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + cValToChar((cAliasOrd)->C2_ITEM) + cValToChar((cAliasOrd)->C2_SEQUEN) + cValToChar((cAliasOper)->G2_OPERAC)
+				cFilePrint		+= DToS(Date()) + StrTran(Time(),":","") + ".pdf"
 
 				printCabec	()
 				printCompon	()
@@ -142,15 +143,13 @@ return
 //-----------------------------------------------------------------------------
 Static Function printCabec()
 
-	oPrinter := FWMSPrinter():New(cFilePrintert,IMP_PDF,.F.,cDir,.T.,,,,.T.,.F.,,.T.)
+	oPrinter := FWMSPrinter():New(cFilePrint,	IMP_PDF,.F.,cDir,.T.,,,,.T.,.F.,,.T.)
 	oFont1 := TFont():New('Courier new',,-18,.T.)
 	oPrinter:SetParm( "-RFS")
 	oPrinter:cPathPDF := cDir 			// Se for usado PDF e fora de rotina agendada
-
 	oPrinter:SetPortrait()
 	oPrinter:SetPaperSize(DMPAPER_A4)
-	oPrinter:SetMargin(40,40,40,40) // nEsquerda, nSuperior, nDireita, nInferior
-
+	oPrinter:SetMargin(40,40,40,40) 	// nEsquerda, nSuperior, nDireita, nInferior
 	oPrinter:StartPage()
 
 	oPrinter:Box(20,15,60,550)		    // Box(row, col, bottom, right)
