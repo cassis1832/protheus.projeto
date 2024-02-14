@@ -74,8 +74,6 @@ User Function PL010()
 
 	cAliasOrd := MPSysOpenQuery(cQuery)
 
-	lComp = .F.
-
 	While (cAliasOrd)->(!EOF())
 
 		cOp := (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN
@@ -107,9 +105,11 @@ User Function PL010()
 		cQuery += " ORDER BY G2_OPERAC" 			 					+ CRLF
 		cAliasOper := MPSysOpenQuery(cQuery)
 
+		lComp = .F.
+
 		if lOper	// Imprime todas as operações da ordem na mesma página
-			cFilePrint		:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + cValToChar((cAliasOrd)->C2_ITEM) + cValToChar((cAliasOrd)->C2_SEQUEN)
-			cFilePrint		+= DToS(Date()) + StrTran(Time(),":","") + ".pdf"
+			cFilePrint	:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + cValToChar((cAliasOrd)->C2_ITEM) + cValToChar((cAliasOrd)->C2_SEQUEN)
+			cFilePrint	+= DToS(Date()) + StrTran(Time(),":","") + ".pdf"
 
 			printCabec	()
 			printCompon	()
@@ -119,8 +119,8 @@ User Function PL010()
 
 		else // Imprime uma pagina por operação
 			While (cAliasOper)->(!EOF())
-				cFilePrint		:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + cValToChar((cAliasOrd)->C2_ITEM) + cValToChar((cAliasOrd)->C2_SEQUEN) + cValToChar((cAliasOper)->G2_OPERAC)
-				cFilePrint		+= DToS(Date()) + StrTran(Time(),":","") + ".pdf"
+				cFilePrint	:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + cValToChar((cAliasOrd)->C2_ITEM) + cValToChar((cAliasOrd)->C2_SEQUEN) + cValToChar((cAliasOper)->G2_OPERAC)
+				cFilePrint	+= DToS(Date()) + StrTran(Time(),":","") + ".pdf"
 
 				printCabec	()
 				printCompon	()
