@@ -94,7 +94,6 @@ User Function PL010()
 		cAliasCmp := MPSysOpenQuery(cQuery)
 
 		nRecs = 0
-		(cAliasCmp)->(dbGoTop())
 		While (cAliasCmp)->(!EOF())
 			nRecs += 1
 			(cAliasCmp)->(DbSkip())
@@ -105,6 +104,8 @@ User Function PL010()
 			Alert(cMensagem)
 			return
 		endif
+
+		(cAliasCmp)->(dbGoTop())
 
 		// Ler as operações do item
 		cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, " 			+ CRLF
@@ -120,7 +121,6 @@ User Function PL010()
 		cAliasOper := MPSysOpenQuery(cQuery)
 
 		nRecs = 0
-		(cAliasOper)->(dbGoTop())
 		While (cAliasOper)->(!EOF())
 			nRecs += 1
 			(cAliasOper)->(DbSkip())
@@ -133,6 +133,7 @@ User Function PL010()
 		endif
 
 		(cAliasOper)->(dbGoTop())
+
 		lComp = .F.
 
 		if lOper	// Imprime todas as operações da ordem na mesma página
@@ -222,8 +223,6 @@ Return
 //-----------------------------------------------------------------------------
 Static Function printCompon()
 
-	(cAliasCmp)->(dbGoTop())
-
 	if lOper = .F. 						// Uma operação por pagina
 		if lComp = .T.					// Já imprimiu a primeira operação, não imprime os componentes de novo
 			return
@@ -259,8 +258,6 @@ Return
 //	Imprime as operações da OP
 //-----------------------------------------------------------------------------
 Static Function printOper()
-
-	(cAliasOper)->(dbGoTop())
 
 	oPrinter:Line(nLin+10, 15, nLin+10, 550)
 	oPrinter:Say(nLin+25, 250, "Operacoes",oFont12b)
