@@ -1,9 +1,6 @@
 #Include 'Protheus.ch'
 #Include 'FWMVCDef.ch'
 
-//Variáveis Estáticas
-Static cTitulo := "EDI - Pedidos de Clientes"
-
 /*/{Protheus.doc} PL020
 Função Manutenção de pedido EDI do cliente
 @author Assis
@@ -13,31 +10,42 @@ Função Manutenção de pedido EDI do cliente
 	@example
 	u_PL020()
 /*/
- 
-User Function PL020()
-	
+
+//Variáveis Estáticas
+Static cTitulo := "EDI - Pedidos de Clientes"
+
+User Function PL020_modelo3()
+
 	Local aArea := GetArea()
 	Local oBrowse
-	
+
+	Private cCod
+
 	oBrowse:=FWMBrowse():New()
 	oBrowse:SetAlias("ZA0")
 	oBrowse:SetMenuDef("PL020")
 	oBrowse:SetDescription(cTitulo)
-	
+
 	oBrowse:AddLegend("ZA0->ZA0_Status == '1'", "GREEN", "Ativo")
-   	oBrowse:AddLegend("ZA0->ZA0_Status == '2'", "RED", "Inativo")
-	
+	oBrowse:AddLegend("ZA0->ZA0_Status == '2'", "RED", 	 "Inativo")
+
+	// oBrowse:AddLegend("ZA1->ZA1_Status == '1'", "GREEN", 	"Ativo")
+	// oBrowse:AddLegend("ZA1->ZA1_Status == '2'", "BLUE", 	"Demanda gerada")
+	// oBrowse:AddLegend("ZA1->ZA1_Status == '3'", "YELLOW", 	"Pedido gerado")
+	// oBrowse:AddLegend("ZA1->ZA1_Status == '4'", "RED", 		"Faturado")
+	// oBrowse:AddLegend("ZA1->ZA1_Status == '5'", "BLACK", 	"Cancelado")
+
 	oBrowse:Activate()
-	
+
 	RestArea(aArea)
 
 Return Nil
 
 /*---------------------------------------------------------------------*
- | Func:  MenuDef                                                      |
- | Autor: Carlos Assis                                                 |
- | Data:  05/01/2024                                                   |
- | Desc:  Criação do menu MVC                                          |
+  Func:  MenuDef
+  Autor: Carlos Assis
+  Data:  05/01/2024
+  Desc:  Criação do menu MVC
  *---------------------------------------------------------------------*/
 
 Static Function MenuDef()
@@ -53,10 +61,10 @@ Static Function MenuDef()
 Return aRot
 
 /*---------------------------------------------------------------------*
- | Func:  ModelDef                                                     |
- | Autor: Carlos Assis                                                 |
- | Data:  05/01/2024                                                   |
- | Desc:  Criação do modelo de dados MVC                               |
+  Func:  ModelDef
+  Autor: Carlos Assis
+  Data:  05/01/2024
+  Desc:  Criação do modelo de dados MVC
  *---------------------------------------------------------------------*/
 
 Static Function ModelDef()
@@ -69,11 +77,11 @@ Static Function ModelDef()
 	oStPai:SetProperty('ZA0_CODPED',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
 	oStPai:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
 	oStPai:SetProperty('ZA0_DTCRIA',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
+	oStPai:SetProperty('ZA0_DTCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD, 'Date()'))
 	
 	oStFilho:SetProperty('ZA1_CODPED',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
-	//oStFilho:SetProperty('ZA1_PRODUT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
+	oStFilho:SetProperty('ZA1_PRODUT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
 
-	oStPai:SetProperty('ZA0_DTCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD, 'Date()'))
 	
 	//Criando o modelo
 	oModel := MPFormModel():New('PL020M')
@@ -89,17 +97,17 @@ Static Function ModelDef()
 	oModel:SetPrimaryKey({})
 
 	//Setando as descrições
-	oModel:SetDescription("Grupo de Produtos - Mod. 3")
-	oModel:GetModel('ZA0MASTER'):SetDescription('Pedido')
-	oModel:GetModel('ZA1DETAIL'):SetDescription('Linhas')
+	oModel:SetDescription("Pedidos EDI de Clientes")
+	oModel:GetModel('ZA0MASTER'):SetDescription('Pedido EDI')
+	oModel:GetModel('ZA1DETAIL'):SetDescription('Linhas do Pedido')
 	
 Return oModel
 
 /*---------------------------------------------------------------------*
- | Func:  ViewDef                                                      |
- | Autor: Carlos Assis                                                 |
- | Data:  05/01/2024                                                   |
- | Desc:  Criação da visão MVC                                         |
+  Func:  ViewDef
+  Autor: Carlos Assis
+  Data:  05/01/2024
+  Desc:  Criação da visão MVC
  *---------------------------------------------------------------------*/
 
 Static Function ViewDef()
@@ -121,17 +129,19 @@ Static Function ViewDef()
 	oView:AddIncrementField( 'VIEW_ZA1', 'ZA1_SEQ' )
 
 	//Setando o dimensionamento de tamanho
-	oView:CreateHorizontalBox('CABEC',30)
-	oView:CreateHorizontalBox('GRID',70)
+	oView:CreateHorizontalBox('CABEC',20)
+	oView:CreateHorizontalBox('GRID',80)
 	
 	//Amarrando a view com as box
 	oView:SetOwnerView('VIEW_ZA0','CABEC')
 	oView:SetOwnerView('VIEW_ZA1','GRID')
 	
 	//Habilitando título
-	oView:EnableTitleView('VIEW_ZA0','Cabeçalho - Pedido')
-	oView:EnableTitleView('VIEW_ZA1','Grid - Linhas')
+	oView:EnableTitleView('VIEW_ZA0','Dados do Pedido')
+	oView:EnableTitleView('VIEW_ZA1','Itens do Pedido')
 	
+	oView:AddIncrementField('VIEW_ZA1', 'ZA1_SEQ')
+
 	//Remove os campos
 	oStFilho:RemoveField('ZA1_CODPED')
 
@@ -141,48 +151,21 @@ Static Function ViewDef()
 Return oView
 
 /*---------------------------------------------------------------------*
- | Func:  zSeq                                                         |
- | Autor: Carlos Assis                                                 |
- | Data:  05/01/2024                                                   |
- | Desc:  Sequencia das linhas do pedido                               |
- *---------------------------------------------------------------------*/
-
-User Function zSeq()
-	Local aArea 		:= GetArea()
-	Local cCod  		:= StrTran(Space(TamSX3('ZA1_SEQ')[1]), ' ', '0')
-	Local oModelPad  	:= FWModelActive()
-	Local oModelGrid 	:= oModelPad:GetModel('ZA1DETAIL')
-	Local nOperacao  	:= oModelPad:nOperation
-	Local nLinAtu    	:= oModelGrid:nLine
-	Local nPosCod    	:= aScan(oModelGrid:aHeader, {|x| AllTrim(x[2]) == AllTrim("ZA1_SEQ")})
-	
-	//Se for a primeira linha
-	If nLinAtu < 1
-		cCod := Soma1(cCod)
-	
-	//Senão, pega o valor da última linha
-	Else
-		cCod := oModelGrid:aCols[nLinAtu][nPosCod]
-		cCod := Soma1(cCod)
-	EndIf
-	
-	RestArea(aArea)
-Return cCod
-
-
-/*---------------------------------------------------------------------*
- | Func:  ProLeg                                                       |
- | Autor: Carlos Assis                                                 |
- | Data:  05/01/2024                                                   |
- | Desc:  Legendas  						                           |
+  Func:  ProLeg
+  Autor: Carlos Assis
+  Data:  05/01/2024
+  Desc:  Legendas
  *---------------------------------------------------------------------*/
 
 User Function ProLeg()
 
     Local aLegenda := {}
 
-    AAdd(aLegenda,{"BR_VERDE", "Ativo"})
-    AAdd(aLegenda,{"BR_VERMELHO", "Inativo"})
+    AAdd(aLegenda,{"BR_VERDE", 		"Ativo"})
+	AAdd(aLegenda,{"BR_AZUL", 		"Demanda gerada"})
+	AAdd(aLegenda,{"BR_AMARELO", 	"Pedido gerado"})
+	AAdd(aLegenda,{"BR_VERMELHO", 	"Faturado"})
+	AAdd(aLegenda,{"BR_PRETO", 		"Cancelado"})
 
     BrwLegenda("Registros", "Ativos/Inativos", aLegenda)
 return

@@ -28,6 +28,7 @@ User Function PL010()
 	Local cOrdemAte		:= 0
 	Local lContinua		:= .T.
 	Local cOp			:= ""
+	Local nRecs			:= 0
 
 	Private oPrinter	:= nil
 	Private cQuery 		:= ""
@@ -92,6 +93,19 @@ User Function PL010()
 		cQuery += " ORDER BY D4_COD" 				 					+ CRLF
 		cAliasCmp := MPSysOpenQuery(cQuery)
 
+		nRecs = 0
+		(cAliasCmp)->(dbGoTop())
+		While (cAliasCmp)->(!EOF())
+			nRecs += 1
+			(cAliasCmp)->(DbSkip())
+		EndDo
+
+		if nRecs = 0
+			cMensagem := "Item não possui estrutura"
+			Alert(cMensagem)
+			return
+		endif
+
 		// Ler as operações do item
 		cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, " 			+ CRLF
 		cQuery += "	G2_DESCRI, G2_MAOOBRA, G2_SETUP, "					+ CRLF
@@ -105,6 +119,20 @@ User Function PL010()
 		cQuery += " ORDER BY G2_OPERAC" 			 					+ CRLF
 		cAliasOper := MPSysOpenQuery(cQuery)
 
+		nRecs = 0
+		(cAliasOper)->(dbGoTop())
+		While (cAliasOper)->(!EOF())
+			nRecs += 1
+			(cAliasOper)->(DbSkip())
+		EndDo
+
+		if nRecs = 0
+			cMensagem := "Item não possui operações"
+			Alert(cMensagem)
+			return
+		endif
+
+		(cAliasOper)->(dbGoTop())
 		lComp = .F.
 
 		if lOper	// Imprime todas as operações da ordem na mesma página
@@ -194,6 +222,8 @@ Return
 //-----------------------------------------------------------------------------
 Static Function printCompon()
 
+	(cAliasCmp)->(dbGoTop())
+
 	if lOper = .F. 						// Uma operação por pagina
 		if lComp = .T.					// Já imprimiu a primeira operação, não imprime os componentes de novo
 			return
@@ -229,6 +259,8 @@ Return
 //	Imprime as operações da OP
 //-----------------------------------------------------------------------------
 Static Function printOper()
+
+	(cAliasOper)->(dbGoTop())
 
 	oPrinter:Line(nLin+10, 15, nLin+10, 550)
 	oPrinter:Say(nLin+25, 250, "Operacoes",oFont12b)
