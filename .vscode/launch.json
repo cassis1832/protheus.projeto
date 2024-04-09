@@ -33,7 +33,16 @@
 		},
 		{
 			"label": "u_teste"
+		},
+		{
+			"label": "u_UpdSB1a"
+		},
+		{
+			"label": "u_pl020"
+		},
+		{
+			"label": "u_pl030"
 		}
 	],
-	"lastProgramExecuted": "sigapcp"
+	"lastProgramExecuted": "u_pl030"
 }
