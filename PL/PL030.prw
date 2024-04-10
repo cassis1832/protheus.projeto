@@ -60,7 +60,8 @@ User Function PL030()
 			oFile:Close()
 		EndIf
 	EndIf
-	MessageBox("ACABOU","",0)
+
+	MessageBox("IMPORTAÇÃO EFETUADA","",0)
 
 	SetFunName(cFunBkp)
 	RestArea(aArea)

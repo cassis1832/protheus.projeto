@@ -51,6 +51,7 @@ Static Function MenuDef()
 	ADD OPTION aRot TITLE 'Incluir'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT ACCESS 0 
 	ADD OPTION aRot TITLE 'Alterar'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 
 	ADD OPTION aRot TITLE 'Excluir'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE ACCESS 0 
+	ADD OPTION aRot TITLE 'Importar'   ACTION 'U_PL030()'     OPERATION 5 					   ACCESS 0 
 	ADD OPTION aRot TITLE 'Legenda'    ACTION 'u_ProLeg' 	  OPERATION 6     				   Access 0       
 
 Return aRot
@@ -65,7 +66,8 @@ Static Function ModelDef()
 
 	Local oModel := Nil
 	Local oStZA0 := FWFormStruct(1, "ZA0")
-	
+	Local bCommit := {|| FazCommit()}
+
 	oStZA0:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
 	oStZA0:SetProperty('ZA0_LOJA'  ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
 	oStZA0:SetProperty('ZA0_CODPED',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
@@ -78,7 +80,7 @@ Static Function ModelDef()
 	oStZA0:SetProperty('ZA0_HRCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Time()'))
 	oStZA0:SetProperty('ZA0_STATUS',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_INIPAD,'0'))
 
-	oModel := MPFormModel():New("PL020M",/*bPre*/, /*bPos*/,/*bCommit*/,/*bCancel*/) 
+	oModel := MPFormModel():New("PL020M",/*bPre*/, /*bPos*/,bCommit,/*bCancel*/) 
 	oModel:AddFields("FORMZA0",/*cOwner*/,oStZA0)
 	oModel:SetPrimaryKey({'ZA0_FILIAL','ZA0_CODPED'})
 	oModel:SetDescription(cTitulo)
@@ -118,6 +120,28 @@ Static Function ViewDef()
 	oView:SetOwnerView("VIEW_ZA0","TELA")
 
 Return oView
+
+Static Function FazCommit()
+    Local aArea  := FWGetArea()
+    Local oModel := FWModelActive()
+    Local lRet   := .T.
+ 
+    //Aqui você pode fazer as operações antes de gravar
+	MessageBox("Vai fazer o Commit","",0) 
+	
+    //Aciona o commit dos dados preenchidos no formulário
+    FWFormCommit(oModel)
+ 
+    //Aqui você pode fazer as operações após gravar
+ 
+    //Exibe uma mensagem, caso não esteja sendo executado via job ou ws
+    If ! IsBlind()
+        ShowLog("Passei pelo Commit de forma manual (antiga)")
+    EndIf
+ 
+    FWRestArea(aArea)
+Return lRet
+
 
 /*---------------------------------------------------------------------*
   Func:  ProLeg

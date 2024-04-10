@@ -5,5 +5,5 @@ Rotina para validação de TI
 
 /*/
 User Function tstAssis()
-	u_PL030()
+	u_PL020()
 Return
