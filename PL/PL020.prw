@@ -28,9 +28,6 @@ User Function PL020()
 	oBrowse:AddLegend("ZA0->ZA0_Status == '1'", "YELLOW", "Com erro")
 	oBrowse:AddLegend("ZA0->ZA0_Status == '9'", "RED", "Inativo")
 
-	//Filtrando
-	//oBrowse:SetFilterDefault("ZA0->ZA0_COD >= '000000' .And. ZA0->ZA0_COD <= 'ZZZZZZ'")
-
 	oBrowse:Activate()
 
 	SetFunName(cFunBkp)
@@ -95,8 +92,6 @@ Return oModel
  *---------------------------------------------------------------------*/
 Static Function ViewDef()
 	Local oView := Nil
-	Local aStruZA0	:= ZA0->(DbStruct())
-	
 	Local oModel := FWLoadModel("PL020")
 	Local oStZA0 := FWFormStruct(2, "ZA0")  //pode se usar um terceiro parâmetro para filtrar os campos exibidos { |cCampo| cCampo $ 'SZA0_NOME|SZA0_DTAFAL|'}
 	
@@ -127,19 +122,14 @@ Static Function FazCommit()
     Local lRet   := .T.
  
     //Aqui você pode fazer as operações antes de gravar
-	MessageBox("Vai fazer o Commit","",0) 
-	
-    //Aciona o commit dos dados preenchidos no formulário
-    FWFormCommit(oModel)
- 
-    //Aqui você pode fazer as operações após gravar
- 
-    //Exibe uma mensagem, caso não esteja sendo executado via job ou ws
-    If ! IsBlind()
-        ShowLog("Passei pelo Commit de forma manual (antiga)")
-    EndIf
- 
-    FWRestArea(aArea)
+	lOK:= oModel:LoadValue("FORMZA0","ZA0_STATUS","0")
+
+	//Aciona o commit dos dados preenchidos no formulário
+	FWFormCommit(oModel)
+
+	//Aqui você pode fazer as operações após gravar
+
+	FWRestArea(aArea)
 Return lRet
 
 
