@@ -24,8 +24,9 @@ User Function PL020()
 	oBrowse:SetAlias("ZA0")
 	oBrowse:SetDescription(cTitulo)
 
-	oBrowse:AddLegend("ZA0->ZA0_Status == '1'", "GREEN", "Ativo")
-	oBrowse:AddLegend("ZA0->ZA0_Status == '9'", "RED", 	 "Inativo")
+	oBrowse:AddLegend("ZA0->ZA0_Status == '0'", "GREEN", "Ativo")
+	oBrowse:AddLegend("ZA0->ZA0_Status == '1'", "YELLOW", "Com erro")
+	oBrowse:AddLegend("ZA0->ZA0_Status == '9'", "RED", "Inativo")
 
 	//Filtrando
 	//oBrowse:SetFilterDefault("ZA0->ZA0_COD >= '000000' .And. ZA0->ZA0_COD <= 'ZZZZZZ'")
@@ -50,6 +51,8 @@ Static Function MenuDef()
 	ADD OPTION aRot TITLE 'Incluir'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT ACCESS 0 
 	ADD OPTION aRot TITLE 'Alterar'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 
 	ADD OPTION aRot TITLE 'Excluir'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE ACCESS 0 
+	ADD OPTION aRot TITLE 'Legenda'    ACTION 'u_ProLeg' 	  OPERATION 6     				   Access 0       
+
 Return aRot
 
 /*---------------------------------------------------------------------*
@@ -65,17 +68,15 @@ Static Function ModelDef()
 	
 	oStZA0:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
 	oStZA0:SetProperty('ZA0_LOJA'  ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
-	oStZA0:SetProperty('ZA0_PRODUT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
 	oStZA0:SetProperty('ZA0_CODPED',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA0:SetProperty('ZA0_DTCRIA',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA0:SetProperty('ZA0_HRCRIA',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA0:SetProperty('ZA0_ARQUIV',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA0:SetProperty('ZA0_ORIGEM',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStZA0:SetProperty('ZA0_STATUS',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	
+
 	oStZA0:SetProperty('ZA0_DTCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Date()'))
 	oStZA0:SetProperty('ZA0_HRCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Time()'))
-	oStZA0:SetProperty('ZA0_STATUS',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_INIPAD,'1'))
+	oStZA0:SetProperty('ZA0_STATUS',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_INIPAD,'0'))
 
 	oModel := MPFormModel():New("PL020M",/*bPre*/, /*bPos*/,/*bCommit*/,/*bCancel*/) 
 	oModel:AddFields("FORMZA0",/*cOwner*/,oStZA0)
@@ -115,18 +116,7 @@ Static Function ViewDef()
 	
 	//O formulário da interface será colocado dentro do container
 	oView:SetOwnerView("VIEW_ZA0","TELA")
-	
-	/*
-	//Tratativa para remover campos da visualização
-	For nAtual := 1 To Len(aStruZA0)
-		cCampoAux := Alltrim(aStruZA0[nAtual][01])
-		
-		//Se o campo atual não estiver nos que forem considerados
-		If Alltrim(cCampoAux) $ "ZA0_COD;"
-			oStZA0:RemoveField(cCampoAux)
-		EndIf
-	Next
-	*/
+
 Return oView
 
 /*---------------------------------------------------------------------*
@@ -140,8 +130,9 @@ User Function ProLeg()
 
     Local aLegenda := {}
 
-    AAdd(aLegenda,{"BR_VERDE", 		"Ativo"})
-	AAdd(aLegenda,{"BR_VERMELHO", 	"Pedido Gerado"})
+    AAdd(aLegenda,{"BR_VERDE","Ativo"})
+	AAdd(aLegenda,{"BR_AMARELO","Com Erro"})
+	AAdd(aLegenda,{"BR_VERMELHO","Inativo"})
 
     BrwLegenda("Registros", "Status", aLegenda)
 return
