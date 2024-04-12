@@ -40,15 +40,14 @@ User Function PL030()
 	RestArea(aArea)
 Return
 
+
 /*---------------------------------------------------------------------*
 	Elimina todas as demandas do código "AUTO"
  *---------------------------------------------------------------------*/
 Static Function LimpaDemandas()
 
 	dbSelectArea("SVR")
-
 	SVR->(DBSetOrder(1))  // 
-
 	DBGoTop()
 
    	While SVR->( !Eof() )
@@ -62,6 +61,21 @@ Static Function LimpaDemandas()
 		SVR->( dbSkip() )
   	End While
 
+	dbSelectArea("T4J")
+	T4J->(DBSetOrder(1))  // 
+	DBGoTop()
+
+   	While T4J->( !Eof() )
+
+		if T4J_CODE = 'AUTO'
+      		RecLock("T4J", .F.)
+      		DbDelete()
+      		SVR->(MsUnlock())
+		EndIf
+
+		T4J->( dbSkip() )
+  	End While
+
 return
 
 
@@ -71,36 +85,58 @@ return
 Static Function CriaDemandas()
 	
 	Local nSequencia := 0
+	Local cLocal	 := ''
 
 	dbSelectArea("ZA0")
-	
 	ZA0->(DBSetOrder(2))  // Filial, cliente, loja
-	
 	DBGoTop()
 
    	While ZA0->( !Eof() )
-
+		cLocal := ''
 		nSequencia := nSequencia + 1
+
+		DbSelectArea("SB1")
+		SB1->(DBSetOrder(1))  
+
+	 	DBSeek(xFilial("SB1")+ZA0->ZA0_PRODUT)
+
+		if ! Eof()
+			IF B1_FILIAL == xFilial("SB1") .And. B1_PRODUTO == ZA0_PRODUT 
+				cLocal := SB1->B1_LOCAL
+			EndIf
+		EndIf
 
 		// Inclusão
 		DbSelectArea("SVR")
-	
 		RecLock("SVR", .T.)	
-	
 		SVR->VR_FILIAL		:= xFilial("SVR")
-		SVR->VR_SEQUEN   	:= nSequencia
 		SVR->VR_CODIGO   	:= "AUTO"
-		SVR->VR_DATA 	  	:= ZA0->ZA0_DTENTR
-		SVR->VR_TIPO   	:= "9"
+		SVR->VR_SEQUEN   	:= nSequencia
 		SVR->VR_PROD 		:= ZA0->ZA0_PRODUT
-		SVR->VR_QUANT 	   := ZA0->ZA0_QTDE
 		SVR->VR_LOCAL   	:= '02'
+		SVR->VR_DATA 	  	:= ZA0->ZA0_DTENTR
+		SVR->VR_QUANT 	   	:= ZA0->ZA0_QTDE
+		SVR->VR_TIPO   		:= "9"
 		SVR->VR_DOC 		:= ZA0->ZA0_NUMPED
 		SVR->VR_REGORI   	:= 0
 		SVR->VR_ORIGEM   	:= 'SVR'
+		SVR->(MsUnlock())
+
+		DbSelectArea("T4J")
+		RecLock("T4J", .T.)	
+		T4J->T4J_FILIAL		:= SVR->VR_FILIAL
+		T4J->T4J_DATA 	  	:= SVR->VR_DATA
+		T4J->T4J_PROD 		:= SVR->VR_PROD
+		T4J->T4J_ORIGEM   	:= SVR->VR_TIPO
+		T4J->T4J_DOC 		:= SVR->VR_DOC
+		T4J->T4J_QUANT 	   	:= SVR->VR_QUANT
+		T4J->T4J_LOCAL   	:= SVR->VR_LOCAL
+		T4J->T4J_PROC		:= 2
+		T4J->T4J_IDREG   	:= SVR->VR_FILIAL + SVR->VR_CODIGO + SVR->VR_SEQUEN
+		T4J->T4J_CODE   	:= SVR->VR_CODIGO
+		T4J->(MsUnlock())
 
 		ZA0->( dbSkip() )
   	End While
 
-	MsUnLock() 
 Return
