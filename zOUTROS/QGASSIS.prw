@@ -4,6 +4,6 @@
 Rotina para validação de TI
 
 /*/
-User Function tCarlos()
+User Function QGASSIS()
 	u_updsb1()
 Return
