@@ -5,5 +5,5 @@ Rotina para validação de TI
 
 /*/
 User Function tCarlos()
-	u_updsb1()
+	u_PL040()
 Return

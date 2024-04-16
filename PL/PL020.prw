@@ -35,10 +35,7 @@ User Function PL020()
 Return Nil
 
 /*---------------------------------------------------------------------*
-  Func:  MenuDef
-  Autor: Carlos Assis
-  Data:  05/01/2024
-  Desc:  Criação do menu MVC
+	Criação do menu MVC
  *---------------------------------------------------------------------*/
 Static Function MenuDef()
 	Local aRot := {}
@@ -54,10 +51,7 @@ Static Function MenuDef()
 Return aRot
 
 /*---------------------------------------------------------------------*
-  Func:  ModelDef
-  Autor: Carlos Assis
-  Data:  05/01/2024
-  Desc:  Criação do modelo de dados MVC
+	Criação do modelo de dados MVC
  *---------------------------------------------------------------------*/
 Static Function ModelDef()
 
@@ -85,10 +79,7 @@ Static Function ModelDef()
 Return oModel
 
 /*---------------------------------------------------------------------*
-  Func:  ViewDef
-  Autor: Carlos Assis
-  Data:  05/01/2024
-  Desc:  Criação da visão MVC
+	Criação da visão MVC
  *---------------------------------------------------------------------*/
 Static Function ViewDef()
 	Local oView := Nil
@@ -116,14 +107,38 @@ Static Function ViewDef()
 
 Return oView
 
+/*---------------------------------------------------------------------
+	Verificação antes da gravação
+ *---------------------------------------------------------------------*/
 Static Function FazCommit()
     Local aArea  := FWGetArea()
     Local oModel := FWModelActive()
     Local lRet   := .T.
+	Local lOk	 := .T.
  
-    //Aqui você pode fazer as operações antes de gravar
-	lOK:= oModel:LoadValue("FORMZA0","ZA0_STATUS","0")
+ 	SA1->(dbSetOrder(1))
+	DA1->(dbSetOrder(2)) // produto + tabela + item
 
+	cFilSA1 := xFilial("SA1")
+	cFilDA1 := xFilial("DA1")
+
+    // Verificar a tabela de preços do cliente
+	If SA1->(! MsSeek(cFilSA1 + ZA0->ZA0_CLIENT + ZA0->ZA0_LOJA))
+		lOk     := .F.
+		ConOut("Cliente não cadastrado")
+	EndIf
+
+	If DA1->(! MsSeek(cFilDA1 + ZA0->ZA0_PRODUT + SA1->A1_TABELA))
+		MessageBox("Tabela de preços não encontrada para o item","",0)
+		lOk     := .F.
+	EndIf
+
+	if lOk == .T.
+		lOk:= oModel:LoadValue("FORMZA0","ZA0_STATUS","0")
+	else
+		lOk:= oModel:LoadValue("FORMZA0","ZA0_STATUS","1")
+	Endif
+		
 	//Aciona o commit dos dados preenchidos no formulário
 	FWFormCommit(oModel)
 
@@ -134,12 +149,8 @@ Return lRet
 
 
 /*---------------------------------------------------------------------*
-  Func:  ProLeg
-  Autor: Carlos Assis
-  Data:  05/01/2024
-  Desc:  Legendas
+  Legendas
  *---------------------------------------------------------------------*/
-
 User Function ProLeg()
 
     Local aLegenda := {}
@@ -147,6 +158,5 @@ User Function ProLeg()
     AAdd(aLegenda,{"BR_VERDE","Ativo"})
 	AAdd(aLegenda,{"BR_AMARELO","Com Erro"})
 	AAdd(aLegenda,{"BR_VERMELHO","Inativo"})
-
     BrwLegenda("Registros", "Status", aLegenda)
 return
