@@ -6,7 +6,7 @@
 // MATA410 - EXECAUTO
 //---------------------------------------------------------------------------------
 
-User Function PL030()
+User Function PL020D()
 
 	Private nOpcX      := 3            // Tipo da operacao (3-Inclusao / 4-Alteracao / 5-Exclusao)
 	Private cDoc       := ""           //Numero do Pedido de Vendas (alteracao ou exclusao)
