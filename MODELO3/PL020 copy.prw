@@ -13,7 +13,7 @@ Função Manutenção de pedido EDI do cliente - Modelo 2
 
 Static cTitulo := "EDI - Pedidos de Clientes"
 
-User Function PL020()
+User Function PL020old()
 	Local aArea   := GetArea()
 	Local cFunBkp := FunName()
 	Local oBrowse
@@ -56,12 +56,8 @@ Return aRot
 Static Function ModelDef()
 
 	Local oModel := Nil
-	Local bPre := Nil
-    Local bPos := Nil
-    Local bCommit := Nil
-    Local bCancel := Nil
-
 	Local oStZA0 := FWFormStruct(1, "ZA0")
+	Local bCommit := {|| FazCommit()}
 
 	oStZA0:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
 	oStZA0:SetProperty('ZA0_LOJA'  ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
@@ -75,15 +71,11 @@ Static Function ModelDef()
 	oStZA0:SetProperty('ZA0_HRCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Time()'))
 	oStZA0:SetProperty('ZA0_STATUS',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_INIPAD,'0'))
 
-	oModel := MPFormModel():New("PL020M",bPre, bPos,bCommit,bCancel) 
-
+	oModel := MPFormModel():New("PL020M",/*bPre*/, /*bPos*/,bCommit,/*bCancel*/) 
 	oModel:AddFields("FORMZA0",/*cOwner*/,oStZA0)
 	oModel:SetPrimaryKey({'ZA0_FILIAL','ZA0_CODPED'})
 	oModel:SetDescription(cTitulo)
 	oModel:GetModel("FORMZA0"):SetDescription("Formulário do Cadastro "+cTitulo)
-
-	//Instala um evento no modelo de dados que irá ficar "observando" as alterações do formulário
-    oModel:InstallEvent("VLD_EDI", , PL020B():New(oModel))
 Return oModel
 
 /*---------------------------------------------------------------------*
@@ -115,12 +107,54 @@ Static Function ViewDef()
 
 Return oView
 
+/*---------------------------------------------------------------------
+	Verificação antes da gravação
+ *---------------------------------------------------------------------*/
+Static Function FazCommit()
+    Local aArea  := FWGetArea()
+    Local oModel := FWModelActive()
+    Local lRet   := .T.
+	Local lOk	 := .T.
+ 
+ 	SA1->(dbSetOrder(1))
+	DA1->(dbSetOrder(2)) // produto + tabela + item
+
+	cFilSA1 := xFilial("SA1")
+	cFilDA1 := xFilial("DA1")
+
+    // Verificar a tabela de preços do cliente
+	If SA1->(! MsSeek(cFilSA1 + ZA0->ZA0_CLIENT + ZA0->ZA0_LOJA))
+		lOk     := .F.
+		MessageBox("Cliente não cadastrado!","",0)
+	else
+		If DA1->(! MsSeek(cFilDA1 + ZA0->ZA0_PRODUT + SA1->A1_TABELA, .T.))
+			MessageBox("Tabela de preços não encontrada para o item","",0)
+			lOk     := .F.
+		EndIf
+	EndIf
+
+	if lOk == .T.
+		lOk:= oModel:LoadValue("FORMZA0","ZA0_STATUS","0")
+	else
+		lOk:= oModel:LoadValue("FORMZA0","ZA0_STATUS","1")
+	Endif
+		
+	//Aciona o commit dos dados preenchidos no formulário
+	FWFormCommit(oModel)
+
+	//Aqui você pode fazer as operações após gravar
+
+	FWRestArea(aArea)
+Return lRet
+
 
 /*---------------------------------------------------------------------*
   Legendas
  *---------------------------------------------------------------------*/
 User Function ProLeg()
+
     Local aLegenda := {}
+
     AAdd(aLegenda,{"BR_VERDE","Ativo"})
 	AAdd(aLegenda,{"BR_AMARELO","Com Erro"})
 	AAdd(aLegenda,{"BR_VERMELHO","Inativo"})

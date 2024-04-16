@@ -2,7 +2,7 @@
 #Include 'FWMVCDef.ch'
 #Include "tbiconn.ch"
 
-/*/{Protheus.doc} PL030
+/*/{Protheus.doc} PL020A
 Função Leitura do arquivo texto contendo pedidos EDI
    Gravar tabela ZA0 - movimentos EDI importados 
    Esse programa é chamado a partir do PL020 (manutenção do ZA0)
@@ -24,7 +24,7 @@ Função Leitura do arquivo texto contendo pedidos EDI
 	u_PL030()
 /*/
 
-User Function PL020a()
+User Function PL020A()
 	Local aArea   		:= GetArea()
 	Local cFunBkp 		:= FunName()
 

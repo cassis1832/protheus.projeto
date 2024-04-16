@@ -1,142 +1,163 @@
-#Include 'Protheus.ch'
-#Include 'FWMVCDef.ch'
-#Include "tbiconn.ch"
+#INCLUDE "PROTHEUS.CH"
+#INCLUDE "TBICONN.CH"
 
-/*/{Protheus.doc} PL030
-	Atualização das demandas do MRP com base no EDI (SVR)
-   	Atualizar tabelas SVB e SVR - demandas do MRP (cliente/loja)
-@author Assis
-@since 11/04/2024
-@version 1.0
-	@return Nil, Função não tem retorno
-	@example
-	u_PL030()
-/*/
+//---------------------------------------------------------------------------------
+// PL030 - GERAÇÃO DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
+// MATA410 - EXECAUTO
+//---------------------------------------------------------------------------------
 
 User Function PL030()
-	Local aArea   		:= GetArea()
-	Local cFunBkp 		:= FunName()
 
-	//----------------------------------------------
-	Local lPar01 		:= ""
-	Local cPar02 		:= ""
-	Local dPar03 		:= CTOD(' / / ')
+	Private nOpcX      := 3            // Tipo da operacao (3-Inclusao / 4-Alteracao / 5-Exclusao)
+	Private cDoc       := ""           //Numero do Pedido de Vendas (alteracao ou exclusao)
+	Private cFilSA1    := ""
+	Private cFilSB1    := ""
+	Private cFilSE4    := ""
+	Private cFilSF4    := ""
+	Private cFilDA0    := ""
+	Private cFilDA1    := ""
+	Private nX         := 0
+	Private nY         := 0
+	Private aCabec     := {}
+	Private aItens     := {}
+	Private aLinha     := {}
+	Private lOk        := .T.
+	Private lTemLinha  := .T.
+	Private nPed       := 0
 
-	Prepare Environment Empresa '01' Filial '01'
-	lPar01 := SuperGetMV("MV_PARAM",.F.)
-	cPar02 := cFilAnt
-	dPar03 := dDataBase
-	//----------------------------------------------
+	Private lMsErroAuto    := .F.
+	Private lAutoErrNoFile := .F.
 
-	SetFunName("PL030")
+	Private cCliente  	:= ''
+	Private cLoja 		:= ''
+	Private cData 		:= ''
 
-	// Limpar as demandas existentes - manuais - cliente/loja
-	// Recriar salvando o ID na demanda para ter referencia
+	//----------------------------------------------------------------
+	//* ABERTURA DO AMBIENTE
+	//----------------------------------------------------------------
 
-	LimpaDemandas()
-	CriaDemandas()
+	ZA0->(dbSetOrder(3))
+	SA1->(dbSetOrder(1))
+	SB1->(dbSetOrder(1))
+	SE4->(dbSetOrder(1))
+	SF4->(dbSetOrder(1))
+	DA0->(dbSetOrder(1))
+	DA1->(dbSetOrder(2)) // produto + tabela + item
 
-	SetFunName(cFunBkp)
-	RestArea(aArea)
-Return
+	cFilZA0 := xFilial("ZA0")
+	cFilAGG := xFilial("AGG")
+	cFilSA1 := xFilial("SA1")
+	cFilSB1 := xFilial("SB1")
+	cFilSE4 := xFilial("SE4")
+	cFilSF4 := xFilial("SF4")
+	cFilDAO := xFilial("DA0")
+	cFilDA1 := xFilial("DA1")
 
+	ZA0->(DBGoTop())
 
-/*---------------------------------------------------------------------*
-	Elimina todas as demandas do código "AUTO"
- *---------------------------------------------------------------------*/
-Static Function LimpaDemandas()
+	While ZA0->( !Eof() )
 
-	dbSelectArea("SVR")
-	SVR->(DBSetOrder(1))  // 
-	DBGoTop()
+		if ZA0->ZA0_CLIENT != cCliente .or. ZA0->ZA0_LOJA != cLoja .or. ZA0->ZA0_DTENTR != cData
 
-   	While SVR->( !Eof() )
+			GravaPedido()
 
-		if VR_CODIGO = 'AUTO'
-      		RecLock("SVR", .F.)
-      		DbDelete()
-      		SVR->(MsUnlock())
+			cCliente 	:= ZA0->ZA0_CLIENT
+			cLoja		:= ZA0->ZA0_LOJA
+			cData		:= ZA0->ZA0_DTENTR
+
+			// Verificar o cliente
+			If SA1->(! MsSeek(cFilSA1 + cCliente + cLoja))
+				lOk     := .F.
+				ConOut("Cliente não cadastrado: " + cCliente + " - " + cLoja)
+			EndIf
+
+			// Verificar condição de pagamento do cliente
+			If SE4->(! MsSeek(cFilSE4 + SA1->A1_COND))
+				lOk     := .F.
+				ConOut("Cliente sem condição de pagamento cadastrada: " + cCliente)
+			EndIf
+
+			// Verificar tabela de preço do cliente
+			If DA0->(! MsSeek(cFilDAO + SA1->A1_TABELA))
+				lOk     := .F.
+				ConOut("Cliente sem tabela de preço cadastrada: " + cCliente)
+			EndIf
+
+			cDoc := GetSxeNum("SC5", "C5_NUM")
+
+			RollBAckSx8()
+			aCabec   	:= {}
+			aItens   	:= {}
+			aLinha   	:= {}
+			lTemLinha 	:= .F.
+
+			// aadd(aCabec, {"C5_NUM"    , ZA0->ZA0_DOC	, Nil})
+			aadd(aCabec, {"C5_TIPO"   , "N"				, Nil})
+			aadd(aCabec, {"C5_CLIENTE", ZA0->ZA0_CLIENT	, Nil})
+			aadd(aCabec, {"C5_LOJACLI", ZA0->ZA0_LOJA	, Nil})
+			aadd(aCabec, {"C5_LOJAENT", ZA0->ZA0_LOJA	, Nil})
+			aadd(aCabec, {"C5_CONDPAG", SA1->A1_COND	, Nil})
 		EndIf
-
-		SVR->( dbSkip() )
-  	End While
-
-	dbSelectArea("T4J")
-	T4J->(DBSetOrder(1))  // 
-	DBGoTop()
-
-   	While T4J->( !Eof() )
-
-		if T4J_CODE = 'AUTO'
-      		RecLock("T4J", .F.)
-      		DbDelete()
-      		SVR->(MsUnlock())
-		EndIf
-
-		T4J->( dbSkip() )
-  	End While
-
-return
-
-
-/*---------------------------------------------------------------------*
-	Cria as demandas no código "AUTO"
- *---------------------------------------------------------------------*/
-Static Function CriaDemandas()
-	
-	Local nSequencia := 0
-	Local cLocal	 := ''
-
-	dbSelectArea("ZA0")
-	ZA0->(DBSetOrder(2))  // Filial, cliente, loja
-	DBGoTop()
-
-   	While ZA0->( !Eof() )
-		cLocal := ''
-		nSequencia := nSequencia + 1
 
 		DbSelectArea("SB1")
-		SB1->(DBSetOrder(1))  
-
-	 	DBSeek(xFilial("SB1")+ZA0->ZA0_PRODUT)
+		DBSeek(cFilSB1 + ZA0->ZA0_PRODUT)
 
 		if ! Eof()
-			IF B1_FILIAL == xFilial("SB1") .And. B1_PRODUTO == ZA0_PRODUT 
-				cLocal := SB1->B1_LOCAL
+			IF SB1->B1_FILIAL != xFilial("SB1") .Or. SB1->B1_COD != ZA0->ZA0_PRODUT
+				ConOut("Item não cadastrado: " + ZA0->ZA0_PRODUT)
 			EndIf
 		EndIf
 
-		// Inclusão
-		DbSelectArea("SVR")
-		RecLock("SVR", .T.)	
-		SVR->VR_FILIAL		:= xFilial("SVR")
-		SVR->VR_CODIGO   	:= "AUTO"
-		SVR->VR_SEQUEN   	:= nSequencia
-		SVR->VR_PROD 		:= ZA0->ZA0_PRODUT
-		SVR->VR_LOCAL   	:= '02'
-		SVR->VR_DATA 	  	:= ZA0->ZA0_DTENTR
-		SVR->VR_QUANT 	   	:= ZA0->ZA0_QTDE
-		SVR->VR_TIPO   		:= "9"
-		SVR->VR_DOC 		:= ZA0->ZA0_NUMPED
-		SVR->VR_REGORI   	:= 0
-		SVR->VR_ORIGEM   	:= 'SVR'
-		SVR->(MsUnlock())
+		If SF4->(! MsSeek(cFilSF4 + SB1->B1_TS))
+			lOk     := .F.
+			ConOut("Item sem a TES de saída cadastrada: " + SB1->B1_TS)
+		EndIf
 
-		DbSelectArea("T4J")
-		RecLock("T4J", .T.)	
-		T4J->T4J_FILIAL		:= SVR->VR_FILIAL
-		T4J->T4J_DATA 	  	:= SVR->VR_DATA
-		T4J->T4J_PROD 		:= SVR->VR_PROD
-		T4J->T4J_ORIGEM   	:= SVR->VR_TIPO
-		T4J->T4J_DOC 		:= SVR->VR_DOC
-		T4J->T4J_QUANT 	   	:= SVR->VR_QUANT
-		T4J->T4J_LOCAL   	:= SVR->VR_LOCAL
-		T4J->T4J_PROC		:= 2
-		T4J->T4J_IDREG   	:= SVR->VR_FILIAL + SVR->VR_CODIGO + SVR->VR_SEQUEN
-		T4J->T4J_CODE   	:= SVR->VR_CODIGO
-		T4J->(MsUnlock())
+		If DA1->(! MsSeek(cFilDA1 + SB1->B1_COD + SA1->A1_TABELA))
+			MessageBox("Tabela de preços não encontrada para o item","",0)
+			lOk     := .F.
+		EndIf
+
+		aLinha := {}
+		aadd(aLinha,{"C6_ITEM"   	, StrZero(nX,2)		, Nil})
+		aadd(aLinha,{"C6_PRODUTO"	, ZA0->ZA0_PRODUT	, Nil})
+		aadd(aLinha,{"C6_TES"    	, SB1->B1_TS  		, Nil})
+		aadd(aLinha,{"C6_ENTREG" 	, ZA0->ZA0_DTENTR 	, Nil})
+		aadd(aLinha,{"C6_QTDVEN" 	, ZA0->ZA0_QTDE    	, Nil})
+		aadd(aLinha,{"C6_PRCVEN" 	, DA1->DA1_PRCVEN 	, Nil})
+		aadd(aLinha,{"C6_PRUNIT" 	, DA1->DA1_PRCVEN 	, Nil})
+		aadd(aLinha,{"C6_PEDCLI" 	, ZA0->ZA0_NUMPED 	, Nil})
+		aadd(aLinha,{"C6_VALOR"  	, ZA0->ZA0_QTDE * DA1->DA1_PRCVEN, Nil})
+		// aadd(aLinha,{"C6_NUMPCOM" 	, ZA0->ZA0_NUMPED 	, Nil})
+		// aadd(aLinha,{"C6_ITEMPC" 	, ZA0->ZA0_NUMPED 	, Nil})
+
+		aadd(aItens, aLinha)
+		lTemLinha := .T.
 
 		ZA0->( dbSkip() )
-  	End While
+	end while
 
-Return
+	ConOut("Fim: " + Time())
+	ConOut(Repl("-",80))
+
+	RESET ENVIRONMENT
+
+Return(.T.)
+
+Static Function GravaPedido()
+
+	// Primeira vez não grava - está vazio
+	if cCliente != '' .and. lOk == .T. .and. lTemLinha == .T.
+
+		MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabec, aItens, nOpcX, .F.)
+
+		If !lMsErroAuto
+			nPed := nPed + 1
+			ConOut("Incluido com sucesso! Pedido " + AllTrim(str(nPed)) + ": " + cDoc)
+		Else
+			ConOut("Erro na inclusao!")
+			MOSTRAERRO()
+		EndIf
+	Endif
+
+return
