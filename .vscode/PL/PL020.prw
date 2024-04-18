@@ -41,12 +41,14 @@ Static Function MenuDef()
 	Local aRot := {}
 	
 	//Adicionando opções
-	ADD OPTION aRot TITLE 'Visualizar' ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 
-	ADD OPTION aRot TITLE 'Incluir'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT ACCESS 0 
-	ADD OPTION aRot TITLE 'Alterar'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 
-	ADD OPTION aRot TITLE 'Excluir'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE ACCESS 0 
-	ADD OPTION aRot TITLE 'Importar'   ACTION 'U_PL030()'     OPERATION 5 					   ACCESS 0 
-	ADD OPTION aRot TITLE 'Legenda'    ACTION 'u_ProLeg' 	  OPERATION 6     				   Access 0       
+	ADD OPTION aRot TITLE 'Visualizar' 		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 
+	ADD OPTION aRot TITLE 'Incluir'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT ACCESS 0 
+	ADD OPTION aRot TITLE 'Alterar'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 
+	ADD OPTION aRot TITLE 'Excluir'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE ACCESS 0 
+	ADD OPTION aRot TITLE 'Importar EDI' 	ACTION 'U_PL020A()'    OPERATION 5 					   	ACCESS 0 
+	ADD OPTION aRot TITLE 'Gerar Demanda'	ACTION 'U_PL020C()'    OPERATION 6 					   	ACCESS 0 
+	ADD OPTION aRot TITLE 'Gerar Pedidos'	ACTION 'U_PL020D()'    OPERATION 7 					   	ACCESS 0 
+	ADD OPTION aRot TITLE 'Legenda'    		ACTION 'u_ProLeg' 	   OPERATION 8     				   	Access 0       
 
 Return aRot
 
@@ -114,6 +116,61 @@ Static Function ViewDef()
 	oView:SetOwnerView("VIEW_ZA0","TELA")
 
 Return oView
+
+Static Function Consistencia()
+	Local lOk	 	:= .T.
+
+	Local cFilSA1 	:= xFilial("SA1")
+	Local cFilSA7 	:= xFilial("SA7")
+	Local cFilDA1 	:= xFilial("DA1")
+
+	Local cCliente	:= ''
+	Local cLoja		:= ''
+	Local cProduto  := ''
+
+	if oModel:getOperation() = 3	// inclusão
+		cCliente 	:= oModel:GetValue("FORMZA0","ZA0_CLIENT")
+		cLoja 		:= oModel:GetValue("FORMZA0","ZA0_LOJA")
+		cProduto 	:= oModel:GetValue("FORMZA0","ZA0_PRODUT")
+	Else
+		cCliente	:= ZA0->ZA0_CLIENT
+		cLoja		:= ZA0->ZA0_LOJA
+		cProduto	:= ZA0_PRODUT
+	EndIf
+
+	if oModel:getOperation() <> 5	// exclusão
+		SA1->(dbSetOrder(1))
+		SA7->(dbSetOrder(1))
+		DA1->(dbSetOrder(2)) // produto + tabela + item
+
+		// Verificar a relação Item X Cliente
+		If SA7->(! MsSeek(cFilSA7 + cCliente + cLoja + cProduto))
+			lOk     := .F.
+			MessageBox("Relação Item X Cliente não cadastrado!","",0)
+		else
+			lOk:= oModel:LoadValue("FORMZA0","ZA0_TES"  , SA7->A7_XTES)
+			lOk:= oModel:LoadValue("FORMZA0","ZA0_GRTES", SA7->A7_XGRTES)
+		EndIf
+
+		// Verificar a tabela de preços do cliente
+		If SA1->(! MsSeek(cFilSA1 + cCliente + cLoja))
+			lOk     := .F.
+			MessageBox("Cliente não cadastrado!","",0)
+		else
+			If DA1->(! MsSeek(cFilDA1 + cProduto + SA1->A1_TABELA, .T.))
+				MessageBox("Tabela de preços não encontrada para o item","",0)
+				lOk     := .F.
+			EndIf
+		EndIf
+
+		if lOk == .T.
+			lOk:= oModel:LoadValue("FORMZA0","ZA0_STATUS","0")
+		else
+			lOk:= oModel:LoadValue("FORMZA0","ZA0_STATUS","1")
+		Endif
+	EndIf
+
+Return
 
 
 /*---------------------------------------------------------------------*

@@ -3,7 +3,8 @@
 #Include "tbiconn.ch"
 
 /*/{Protheus.doc} PL020A
-Função Leitura do arquivo texto contendo pedidos EDI
+Função 
+   Importação do arquivo texto contendo pedidos EDI
    Gravar tabela ZA0 - movimentos EDI importados 
    Esse programa é chamado a partir do PL020 (manutenção do ZA0)
 	cCliente	:= aLinha[1]
@@ -29,14 +30,14 @@ User Function PL020A()
 	Local cFunBkp 		:= FunName()
 
 	//----------------------------------------------
-	Local lPar01 		:= ""
-	Local cPar02 		:= ""
-	Local dPar03 		:= CTOD(' / / ')
+	// Local lPar01 		:= ""
+	// Local cPar02 		:= ""
+	// Local dPar03 		:= CTOD(' / / ')
 
-	Prepare Environment Empresa '01' Filial '01'
-	lPar01 := SuperGetMV("MV_PARAM",.F.)
-	cPar02 := cFilAnt
-	dPar03 := dDataBase
+	// Prepare Environment Empresa '01' Filial '01'
+	// lPar01 := SuperGetMV("MV_PARAM",.F.)
+	// cPar02 := cFilAnt
+	// dPar03 := dDataBase
 	//----------------------------------------------
 
 	Private cArquivo	:= ''
@@ -45,7 +46,7 @@ User Function PL020A()
 	Private aLinhas
 	Private aLinha
 
-	SetFunName("PL030")
+	SetFunName("PL020A")
 	cArquivo := selArquivo()
 
 	if cArquivo != ''
@@ -71,12 +72,12 @@ Return
 	Trata todas as linhas que estão na variavel aLinhas
  *---------------------------------------------------------------------*/
 Static Function TrataLinhas()
-   Local lErro 
+   	Local lErro 
 	Local nLin 	   		
 	Local nTotLinhas := Len(aLinhas)
 
 	// Salva o cliente/loja da primeira linha (que deve ser o mesmo das demais linhas)
-   aLinha   := strTokArr(aLinhas [1], ';')
+   	aLinha   := strTokArr(aLinhas [1], ';')
 	cCliente := aLinha[1]
 	cLoja		:= aLinha[2]
 

@@ -21,29 +21,56 @@ Method New(oModel) CLASS PL020B
 Return
 
 /*/{Protheus.doc} BeforeTTS
-Método acionado antes de fazer as gravações da transação
-@param oModel, Objeto, Objeto instanciado do Modelo de Dados
+	Método acionado antes de fazer as gravações da transação
+	Consistencia do registro EDI
+	
+	@param oModel, Objeto, Objeto instanciado do Modelo de Dados
 /*/
 
 Method BeforeTTS(oModel) Class PL020B
 
-	Local aArea  := FWGetArea()
-	Local oModel := FWModelActive()
-	Local lOk	 := .T.
+	Local aArea  	:= FWGetArea()
+	Local oModel 	:= FWModelActive()
+	Local lOk	 	:= .T.
 
-	if oModel:getOperation() <> 5
+	Local cFilSA1 	:= xFilial("SA1")
+	Local cFilSA7 	:= xFilial("SA7")
+	Local cFilDA1 	:= xFilial("DA1")
+
+	Local cCliente	:= ''
+	Local cLoja		:= ''
+	Local cProduto  := ''
+
+	if oModel:getOperation() = 3	// inclusão
+		cCliente 	:= oModel:GetValue("FORMZA0","ZA0_CLIENT")
+		cLoja 		:= oModel:GetValue("FORMZA0","ZA0_LOJA")
+		cProduto 	:= oModel:GetValue("FORMZA0","ZA0_PRODUT")
+	Else
+		cCliente	:= ZA0->ZA0_CLIENT
+		cLoja		:= ZA0->ZA0_LOJA
+		cProduto	:= ZA0_PRODUT
+	EndIf
+
+	if oModel:getOperation() <> 5	// exclusão
 		SA1->(dbSetOrder(1))
+		SA7->(dbSetOrder(1))
 		DA1->(dbSetOrder(2)) // produto + tabela + item
 
-		cFilSA1 := xFilial("SA1")
-		cFilDA1 := xFilial("DA1")
+		// Verificar a relação Item X Cliente
+		If SA7->(! MsSeek(cFilSA7 + cCliente + cLoja + cProduto))
+			lOk     := .F.
+			MessageBox("Relação Item X Cliente não cadastrado!","",0)
+		else
+			lOk:= oModel:LoadValue("FORMZA0","ZA0_TES"  , SA7->A7_XTES)
+			lOk:= oModel:LoadValue("FORMZA0","ZA0_GRTES", SA7->A7_XGRTES)
+		EndIf
 
 		// Verificar a tabela de preços do cliente
-		If SA1->(! MsSeek(cFilSA1 + ZA0->ZA0_CLIENT + ZA0->ZA0_LOJA))
+		If SA1->(! MsSeek(cFilSA1 + cCliente + cLoja))
 			lOk     := .F.
 			MessageBox("Cliente não cadastrado!","",0)
 		else
-			If DA1->(! MsSeek(cFilDA1 + ZA0->ZA0_PRODUT + SA1->A1_TABELA, .T.))
+			If DA1->(! MsSeek(cFilDA1 + cProduto + SA1->A1_TABELA, .T.))
 				MessageBox("Tabela de preços não encontrada para o item","",0)
 				lOk     := .F.
 			EndIf
