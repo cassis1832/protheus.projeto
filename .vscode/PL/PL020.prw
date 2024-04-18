@@ -2,11 +2,11 @@
 #Include 'FWMVCDef.ch'
 
 /*/{Protheus.doc} PL020
-Função Manutenção de pedido EDI do cliente - Modelo 2
+FunÃ§Ã£o ManutenÃ§Ã£o de pedido EDI do cliente - Modelo 2
 @author Assis
 @since 05/01/2024
 @version 1.0
-	@return Nil, Função não tem retorno
+	@return Nil, FunÃ§Ã£o nÃ£o tem retorno
 	@example
 	u_PL020()
 /*/
@@ -35,35 +35,35 @@ User Function PL020()
 Return Nil
 
 /*---------------------------------------------------------------------*
-	Criação do menu MVC
+	CriaÃ§Ã£o do menu MVC
  *---------------------------------------------------------------------*/
 Static Function MenuDef()
+
 	Local aRot := {}
 	
-	//Adicionando opções
-	ADD OPTION aRot TITLE 'Visualizar' 		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 
-	ADD OPTION aRot TITLE 'Incluir'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT ACCESS 0 
-	ADD OPTION aRot TITLE 'Alterar'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 
-	ADD OPTION aRot TITLE 'Excluir'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE ACCESS 0 
-	ADD OPTION aRot TITLE 'Importar EDI' 	ACTION 'U_PL020A()'    OPERATION 5 					   	ACCESS 0 
-	ADD OPTION aRot TITLE 'Gerar Demanda'	ACTION 'U_PL020C()'    OPERATION 6 					   	ACCESS 0 
-	ADD OPTION aRot TITLE 'Gerar Pedidos'	ACTION 'U_PL020D()'    OPERATION 7 					   	ACCESS 0 
-	ADD OPTION aRot TITLE 'Legenda'    		ACTION 'u_ProLeg' 	   OPERATION 8     				   	Access 0       
+	//Adicionando opÃ§Ãµes
+	ADD OPTION aRot TITLE 'Visualizar' 		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_VIEW    ACCESS 0 
+	ADD OPTION aRot TITLE 'Incluir'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT  ACCESS 0 
+	ADD OPTION aRot TITLE 'Alterar'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE  ACCESS 0 
+	ADD OPTION aRot TITLE 'Excluir'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE  ACCESS 0 
+	ADD OPTION aRot TITLE 'Importar EDI' 	ACTION 'U_PL020A()'    OPERATION 5 					   	   ACCESS 0 
+	ADD OPTION aRot TITLE 'Gerar Demanda'	ACTION 'U_PL020C()'    OPERATION 6 					   	   ACCESS 0 
+	ADD OPTION aRot TITLE 'Gerar Pedidos'	ACTION 'U_PL020D()'    OPERATION 7 					      	ACCESS 0 
+	ADD OPTION aRot TITLE 'Legenda'    		ACTION 'u_ProLeg' 	  OPERATION 8     				   	Access 0       
 
 Return aRot
 
 /*---------------------------------------------------------------------*
-	Criação do modelo de dados MVC
+	CriaÃ§Ã£o do modelo de dados MVC
  *---------------------------------------------------------------------*/
 Static Function ModelDef()
 
-	Local oModel := Nil
-	Local bPre := Nil
-    Local bPos := Nil
-    Local bCommit := Nil
-    Local bCancel := Nil
-
-	Local oStZA0 := FWFormStruct(1, "ZA0")
+	Local oModel   := Nil
+	Local bPre     := Nil
+   Local bPos     := Nil
+   Local bCommit  := Nil
+   Local bCancel  := Nil
+	Local oStZA0   := FWFormStruct(1, "ZA0")
 
 	oStZA0:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
 	oStZA0:SetProperty('ZA0_LOJA'  ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
@@ -77,42 +77,39 @@ Static Function ModelDef()
 	oStZA0:SetProperty('ZA0_HRCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Time()'))
 	oStZA0:SetProperty('ZA0_STATUS',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_INIPAD,'0'))
 
-	oModel := MPFormModel():New("PL020M",bPre, bPos,bCommit,bCancel) 
-
+	oModel:=MPFormModel():New("PL020M",bPre, bPos,bCommit,bCancel) 
 	oModel:AddFields("FORMZA0",/*cOwner*/,oStZA0)
 	oModel:SetPrimaryKey({'ZA0_FILIAL','ZA0_CODPED'})
 	oModel:SetDescription(cTitulo)
-	oModel:GetModel("FORMZA0"):SetDescription("Formulário do Cadastro "+cTitulo)
+	oModel:GetModel("FORMZA0"):SetDescription("Formulï¿½rio do Cadastro "+cTitulo)
 
-	//Instala um evento no modelo de dados que irá ficar "observando" as alterações do formulário
-    oModel:InstallEvent("VLD_EDI", , PL020B():New(oModel))
 Return oModel
 
 /*---------------------------------------------------------------------*
-	Criação da visão MVC
+	CriaÃ§Ã£o da visÃ£o MVC
  *---------------------------------------------------------------------*/
 Static Function ViewDef()
 	Local oView := Nil
 	Local oModel := FWLoadModel("PL020")
-	Local oStZA0 := FWFormStruct(2, "ZA0")  //pode se usar um terceiro parâmetro para filtrar os campos exibidos { |cCampo| cCampo $ 'SZA0_NOME|SZA0_DTAFAL|'}
+	Local oStZA0 := FWFormStruct(2, "ZA0")  //pode se usar um terceiro parametro para filtrar os campos exibidos { |cCampo| cCampo $ 'SZA0_NOME|SZA0_DTAFAL|'}
 	
-	//Criando a view que será o retorno da função e setando o modelo da rotina
+	//Criando a view que serÃ¡ o retorno da funÃ§Ã£o e setando o modelo da rotina
 	oView := FWFormView():New()
 	oView:SetModel(oModel)
 	
-	//Atribuindo formulários para interface
+	//Atribuindo formularios para interface
 	oView:AddField("VIEW_ZA0", oStZA0, "FORMZA0")
 	
 	//Criando um container com nome tela com 100%
 	oView:CreateHorizontalBox("TELA",100)
 	
-	//Colocando título do formulário
+	//Colocando titulo do formulario
 	oView:EnableTitleView('VIEW_ZA0', 'Dados - '+cTitulo )  
 	
-	//Força o fechamento da janela na confirmação
+	//ForÃ§a o fechamento da janela na confirmaÃ§Ã£o
 	oView:SetCloseOnOk({||.T.})
 	
-	//O formulário da interface será colocado dentro do container
+	//O formulï¿½rio da interface serï¿½ colocado dentro do container
 	oView:SetOwnerView("VIEW_ZA0","TELA")
 
 Return oView
@@ -128,7 +125,7 @@ Static Function Consistencia()
 	Local cLoja		:= ''
 	Local cProduto  := ''
 
-	if oModel:getOperation() = 3	// inclusão
+	if oModel:getOperation() = 3	// inclusao
 		cCliente 	:= oModel:GetValue("FORMZA0","ZA0_CLIENT")
 		cLoja 		:= oModel:GetValue("FORMZA0","ZA0_LOJA")
 		cProduto 	:= oModel:GetValue("FORMZA0","ZA0_PRODUT")
@@ -138,27 +135,27 @@ Static Function Consistencia()
 		cProduto	:= ZA0_PRODUT
 	EndIf
 
-	if oModel:getOperation() <> 5	// exclusão
+	if oModel:getOperation() <> 5	// exclusao
 		SA1->(dbSetOrder(1))
 		SA7->(dbSetOrder(1))
 		DA1->(dbSetOrder(2)) // produto + tabela + item
 
-		// Verificar a relação Item X Cliente
+		// Verificar a relacao Item X Cliente
 		If SA7->(! MsSeek(cFilSA7 + cCliente + cLoja + cProduto))
 			lOk     := .F.
-			MessageBox("Relação Item X Cliente não cadastrado!","",0)
+			MessageBox("RelaÃ§Ã£o Item X Cliente nÃ£o cadastrada!","",0)
 		else
 			lOk:= oModel:LoadValue("FORMZA0","ZA0_TES"  , SA7->A7_XTES)
 			lOk:= oModel:LoadValue("FORMZA0","ZA0_GRTES", SA7->A7_XGRTES)
 		EndIf
 
-		// Verificar a tabela de preços do cliente
+		// Verificar a tabela de precos do cliente
 		If SA1->(! MsSeek(cFilSA1 + cCliente + cLoja))
 			lOk     := .F.
-			MessageBox("Cliente não cadastrado!","",0)
+			MessageBox("Cliente nÃ£o cadastrado!","",0)
 		else
 			If DA1->(! MsSeek(cFilDA1 + cProduto + SA1->A1_TABELA, .T.))
-				MessageBox("Tabela de preços não encontrada para o item","",0)
+				MessageBox("Tabela de preÃ§os nÃ£o encontrada para o item","",0)
 				lOk     := .F.
 			EndIf
 		EndIf
@@ -177,9 +174,13 @@ Return
   Legendas
  *---------------------------------------------------------------------*/
 User Function ProLeg()
-    Local aLegenda := {}
-    AAdd(aLegenda,{"BR_VERDE","Ativo"})
+   
+   Local aLegenda := {}
+   
+   AAdd(aLegenda,{"BR_VERDE","Ativo"})
 	AAdd(aLegenda,{"BR_AMARELO","Com Erro"})
 	AAdd(aLegenda,{"BR_VERMELHO","Inativo"})
-    BrwLegenda("Registros", "Status", aLegenda)
+   
+   BrwLegenda("Registros", "Status", aLegenda)
+
 return

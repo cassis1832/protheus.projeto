@@ -3,12 +3,12 @@
 #Include "tbiconn.ch"
 
 /*/{Protheus.doc} PL020C
-	Atualização das demandas do MRP com base no EDI (SVR)
+	AtualizaÃ§Ã£o das demandas do MRP com base no EDI (SVR)
    	Atualizar tabelas SVB e SVR - demandas do MRP (cliente/loja)
 @author Assis
 @since 11/04/2024
 @version 1.0
-	@return Nil, Função não tem retorno
+	@return Nil, FunÃ§Ã£o nÃ£o tem retorno
 	@example
 	u_PL020C()
 /*/
@@ -42,7 +42,7 @@ Return
 
 
 /*---------------------------------------------------------------------*
-	Elimina todas as demandas do código "AUTO"
+	Elimina todas as demandas do codigo "AUTO"
  *---------------------------------------------------------------------*/
 Static Function LimpaDemandas()
 
@@ -50,22 +50,23 @@ Static Function LimpaDemandas()
 	SVR->(DBSetOrder(1))  // 
 	DBGoTop()
 
-   	While SVR->( !Eof() )
+   While SVR->( !Eof() )
 
-		if VR_CODIGO = 'AUTO'
-      		RecLock("SVR", .F.)
-      		DbDelete()
-      		SVR->(MsUnlock())
-		EndIf
+      if VR_CODIGO = 'AUTO'
+         RecLock("SVR", .F.)
+         DbDelete()
+         SVR->(MsUnlock())
+      EndIf
 
-		SVR->( dbSkip() )
+      SVR->( dbSkip() )
+
   	End While
 
 	dbSelectArea("T4J")
 	T4J->(DBSetOrder(1))  // 
 	DBGoTop()
 
-   	While T4J->( !Eof() )
+   While T4J->( !Eof() )
 
 		if T4J_CODE = 'AUTO'
       		RecLock("T4J", .F.)
@@ -74,13 +75,14 @@ Static Function LimpaDemandas()
 		EndIf
 
 		T4J->( dbSkip() )
+
   	End While
 
 return
 
 
 /*---------------------------------------------------------------------*
-	Cria as demandas no código "AUTO"
+	Cria as demandas no cï¿½digo "AUTO"
  *---------------------------------------------------------------------*/
 Static Function CriaDemandas()
 	
@@ -90,7 +92,7 @@ Static Function CriaDemandas()
 	ZA0->(DBSetOrder(2))  // Filial, cliente, loja
 	DBGoTop()
 
-   	While ZA0->( !Eof() )
+  	While ZA0->( !Eof() )
 		nSequencia := nSequencia + 1
 
 		if (ZA0->ZA0_STATUS == '0')
@@ -99,7 +101,7 @@ Static Function CriaDemandas()
 
 			if ! Eof()
 
-				// Inclusão
+				// Inclusï¿½o
 				DbSelectArea("SVR")
 				RecLock("SVR", .T.)	
 				SVR->VR_FILIAL		:= xFilial("SVR")
@@ -132,6 +134,7 @@ Static Function CriaDemandas()
 		EndIf
 		
 		ZA0->( dbSkip() )
+      
   	End While
 
 Return

@@ -2,22 +2,22 @@
 #INCLUDE "TBICONN.CH"
 
 //---------------------------------------------------------------------------------
-// PL030 - GERA«√O DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
+// PL030 - GERA√á√ÇO DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
 // MATA410 - EXECAUTO
 // Ler ZA0 por cliente/data/grupo de tes/item para quebrar por data/grupamento de tes
 //---------------------------------------------------------------------------------
 
 User Function PL020D()
 
-	Private nOpcX      := 3            	// Tipo da operacao (3-Inclusao / 4-Alteracao / 5-Exclusao)
-	Private cDoc       := ""           	// Numero do Pedido de Vendas (alteracao ou exclusao)
+	Private nOpcX      := 3          // Tipo da ope√ßacao (3-Inclusao / 4-Alteracao / 5-Exclusao)
+	Private cDoc       := ""         // Numero do Pedido de Vendas (alteracao ou exclusao)
 
 	Private cFilSA1    := ""			// cliente
 	Private cFilSA7    := ""			// Item x cliente
 	Private cFilSB1    := ""			// item
-	Private cFilSE4    := ""			// condiÁ„o de pagamento
-	Private cFilDA0    := ""			// tabela de preÁos
-	Private cFilDA1    := ""			// itens da tabela de preÁos
+	Private cFilSE4    := ""			// condi√ß√£o de pagamento
+	Private cFilDA0    := ""			// tabela de preÔøΩos
+	Private cFilDA1    := ""			// itens da tabela de preÔøΩos
 
 	Private nX         := 0
 	Private nY         := 0
@@ -59,7 +59,7 @@ User Function PL020D()
 
 	ZA0->(DBGoTop())
 
-	While ZA0->( !Eof() )
+	Do While ZA0->( !Eof() )
 
 		if (ZA0->ZA0_STATUS == '0')
 
@@ -67,27 +67,27 @@ User Function PL020D()
 
 				GravaPedido()
 
-				cCliente 	:= ZA0->ZA0_CLIENT
+				cCliente := ZA0->ZA0_CLIENT
 				cLoja		:= ZA0->ZA0_LOJA
 				cData		:= ZA0->ZA0_DTENTR
-				cGrTes 		:= ZA0->ZA0_GRTES
+				cGrTes 	:= ZA0->ZA0_GRTES
 
 				// Verificar o cliente
-				If SA1->(! MsSeek(cFilSA1 + cCliente + cLoja))
+				if SA1->(! MsSeek(cFilSA1 + cCliente + cLoja))
 					lOk     := .F.
-					MessageBox("Cliente n„o cadastrado: " + cCliente + " - " + cLoja, "",0)
+					MessageBox("Cliente n√£o cadastrado: " + cCliente + " - " + cLoja, "",0)
 				EndIf
 
-				// Verificar condiÁ„o de pagamento do cliente
+				// Verificar condi√ß√£o de pagamento do cliente
 				If SE4->(! MsSeek(cFilSE4 + SA1->A1_COND))
 					lOk     := .F.
-					MessageBox("Cliente sem condiÁ„o de pagamento cadastrada: " + cCliente,"",0)
+					MessageBox("Cliente sem condi√ß√£o de pagamento cadastrada: " + cCliente,"",0)
 				EndIf
 
-				// Verificar tabela de preÁo do cliente
+				// Verificar tabela de preÔøΩo do cliente
 				If DA0->(! MsSeek(cFilDAO + SA1->A1_TABELA))
 					lOk     := .F.
-					MessageBox("Cliente sem tabela de preÁo cadastrada: " + cCliente,"",0)
+					MessageBox("Cliente sem tabela de pre√ßo cadastrada: " + cCliente,"",0)
 				EndIf
 
 				cDoc := GetSxeNum("SC5", "C5_NUM")
@@ -107,32 +107,30 @@ User Function PL020D()
 			EndIf
 
 			If SB1->(! MsSeek(cFilSB1 + ZA0->ZA0_PRODUT))
-				MessageBox("Item n„o cadastrado: " + ZA0->ZA0_PRODUT, "",0)
+				MessageBox("Item n√£o cadastrado: " + ZA0->ZA0_PRODUT, "",0)
 				lOk     := .F.
 			EndIf
 
 			If DA1->(! MsSeek(cFilDA1 + SB1->B1_COD + SA1->A1_TABELA))
-				MessageBox("Tabela de preÁos n„o encontrada para o item: " + ZA0->ZA0_PRODUT,"",0)
+				MessageBox("Tabela de pre√ßos n√£o encontrada para o item: " + ZA0->ZA0_PRODUT,"",0)
 				lOk     := .F.
 			EndIf
 
 			// Obter a TES da tabela item x cliente
 			If SA7->(! MsSeek(cFilSA7 + ZA0->ZA0_CLIENT + ZA0->ZA0_LOJA + ZA0_PRODUT))
-				MessageBox("RelaÁ„o Item X Cliente n„o cadastrado: " + ZA0->ZA0_PRODUT,"",0)
+				MessageBox("Rela√ß√£o Item X Cliente n√£o cadastrado: " + ZA0->ZA0_PRODUT,"",0)
 				lOk     := .F.
-			else
-
 			EndIf
 
 			aLinha := {}
-			aadd(aLinha,{"C6_ITEM"   	, StrZero(nX,2)		, Nil})
+			aadd(aLinha,{"C6_ITEM"   	, StrZero(nX,2)	, Nil})
 			aadd(aLinha,{"C6_PRODUTO"	, ZA0->ZA0_PRODUT	, Nil})
 			aadd(aLinha,{"C6_TES"    	, SA7->A7_XTES		, Nil})
-			aadd(aLinha,{"C6_ENTREG" 	, ZA0->ZA0_DTENTR 	, Nil})
-			aadd(aLinha,{"C6_QTDVEN" 	, ZA0->ZA0_QTDE    	, Nil})
-			aadd(aLinha,{"C6_PRCVEN" 	, DA1->DA1_PRCVEN 	, Nil})
-			aadd(aLinha,{"C6_PRUNIT" 	, DA1->DA1_PRCVEN 	, Nil})
-			aadd(aLinha,{"C6_PEDCLI" 	, ZA0->ZA0_NUMPED 	, Nil})
+			aadd(aLinha,{"C6_ENTREG" 	, ZA0->ZA0_DTENTR , Nil})
+			aadd(aLinha,{"C6_QTDVEN" 	, ZA0->ZA0_QTDE   , Nil})
+			aadd(aLinha,{"C6_PRCVEN" 	, DA1->DA1_PRCVEN , Nil})
+			aadd(aLinha,{"C6_PRUNIT" 	, DA1->DA1_PRCVEN , Nil})
+			aadd(aLinha,{"C6_PEDCLI" 	, ZA0->ZA0_NUMPED , Nil})
 			aadd(aLinha,{"C6_VALOR"  	, ZA0->ZA0_QTDE * DA1->DA1_PRCVEN, Nil})
 			// aadd(aLinha,{"C6_NUMPCOM" 	, ZA0->ZA0_NUMPED 	, Nil})
 			// aadd(aLinha,{"C6_ITEMPC" 	, ZA0->ZA0_NUMPED 	, Nil})
@@ -140,10 +138,11 @@ User Function PL020D()
 			aadd(aItens, aLinha)
 			lTemLinha := .T.
 
-		endif
+		Endif
 
 		ZA0->( dbSkip() )
-	end while
+
+	EndDo
 
 	ConOut("Fim: " + Time())
 	ConOut(Repl("-",80))
@@ -154,7 +153,7 @@ Return(.T.)
 
 Static Function GravaPedido()
 
-	// Primeira vez n„o grava - est· vazio
+	// Primeira vez n√£o grava porque est√° vazio
 	if cCliente != '' .and. lOk == .T. .and. lTemLinha == .T.
 
 		MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabec, aItens, nOpcX, .F.)

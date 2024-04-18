@@ -3,10 +3,10 @@
 #Include "tbiconn.ch"
 
 /*/{Protheus.doc} PL020A
-Função 
-   Importação do arquivo texto contendo pedidos EDI
+FunÃ§Ã£o 
+   ImportaÃ§Ã£o do arquivo texto contendo pedidos EDI
    Gravar tabela ZA0 - movimentos EDI importados 
-   Esse programa é chamado a partir do PL020 (manutenção do ZA0)
+   Esse programa chamado a partir do PL020 (manutenÃ§Ã£o do ZA0)
 	cCliente	:= aLinha[1]
 	cLoja 	:= aLinha[2]
 	cNumPed 	:= aLinha[3]
@@ -20,7 +20,7 @@ Função
 @author Assis
 @since 08/04/2024
 @version 1.0
-	@return Nil, Função não tem retorno
+	@return Nil, FunÃ§Ã£o nÃ£o tem retorno
 	@example
 	u_PL030()
 /*/
@@ -62,26 +62,27 @@ User Function PL020A()
 		EndIf
 	EndIf
 
-	MessageBox("IMPORTAÇÃO EFETUADA COM SUCESSO!","",0)
+	MessageBox("IMPORTAÃ‡ÃƒO EFETUADA COM SUCESSO!","",0)
 
 	SetFunName(cFunBkp)
 	RestArea(aArea)
 Return
 
 /*---------------------------------------------------------------------*
-	Trata todas as linhas que estão na variavel aLinhas
+	Trata todas as linhas que estÃ£o na variavel aLinhas
  *---------------------------------------------------------------------*/
 Static Function TrataLinhas()
-   	Local lErro 
+
+  	Local lErro 
 	Local nLin 	   		
 	Local nTotLinhas := Len(aLinhas)
 
 	// Salva o cliente/loja da primeira linha (que deve ser o mesmo das demais linhas)
-   	aLinha   := strTokArr(aLinhas [1], ';')
+  	aLinha   := strTokArr(aLinhas [1], ';')
 	cCliente := aLinha[1]
 	cLoja		:= aLinha[2]
 
-   // Ver se o cliente está cadastrado
+   // Ver se o cliente estï¿½ cadastrado
 	dbSelectArea("SA1")
 	SA1->(DBSetOrder(1))  // Filial/codigo/loja
 
@@ -91,7 +92,7 @@ Static Function TrataLinhas()
 		IF A1_FILIAL == xFilial("SA1") .And. A1_COD == cCliente .And. A1_LOJA == cLoja 
 			lErro := .F.
 		Else
-			MsgInfo("O cliente não foi localizado!", "Função DBSeek")
+			MsgInfo("O cliente nÃ£o foi localizado!", "FunÃ§Ã£o DBSeek")
 		   lErro := .T.
 		EndIf
 	EndIf
@@ -145,7 +146,7 @@ Static Function GravaDados()
 	cEmbal 	:= aLinha[8]
 	cQtEmb	:= aLinha[9]
 
-	// Consistir o código do cliente e item do cliente
+	// Consistir o codigo do cliente e item do cliente
 	dbSelectArea("SA7")
 	SA7->(DBSetOrder(3))  // Filial/cliente/loja/codcli
 
@@ -160,7 +161,7 @@ Static Function GravaDados()
       EndIf
    EndIf
 
-	// Inclusão
+	// Inclusï¿½o
 	DbSelectArea("ZA0")
 	RecLock("ZA0", .T.)	
 	ZA0->ZA0_FILIAL   := xFilial("ZA0")	
@@ -186,29 +187,31 @@ Static Function GravaDados()
 	EndIf
 
 	MsUnLock() 
+
 Return
 
 /*---------------------------------------------------------------------*
-	Abre box para o usuário selecionar o arquivo que deseja importar
+	Abre box para o usuario selecionar o arquivo que deseja importar
  *---------------------------------------------------------------------*/
 Static Function selArquivo()
+
 	Local cDirIni := GetTempPath()
 	Local cTipArq := "Arquivos texto (*.txt)"
-	Local cTitulo := "Seleção de arquivo para processamento"
+	Local cTitulo := "SeleÃ§Ã£o de arquivo para processamento"
 	Local lSalvar := .F.
 	Local cArqSel := ""
 
 	cArqSel := tFileDialog(;
-		cTipArq,;  // Filtragem de tipos de arquivos que serão selecionados
-	cTitulo,;  // Título da Janela para seleção dos arquivos
-	,;         // Compatibilidade
-	cDirIni,;  // Diretório inicial da busca de arquivos
-	lSalvar,;  // Se for .T., será uma Save Dialog, senão será Open Dialog
-	;          // Se não passar parâmetro, irá pegar apenas 1 arquivo; Se for informado GETF_MULTISELECT será possível pegar mais de 1 arquivo; Se for informado GETF_RETDIRECTORY será possível selecionar o diretório
+	   cTipArq,;  // Filtragem de tipos de arquivos que serï¿½o selecionados
+	   cTitulo,;  // Titulo da Janela para seleÃ§Ã£o dos arquivos
+	   ,;         // Compatibilidade
+	   cDirIni,;  // Diretorio inicial da busca de arquivos
+	   lSalvar,;  // Se for .T., serA uma Save Dialog, senÃ£o serï¿½ Open Dialog
+	   ;          // Se nÃ£o passar parAmetro, irï¿½ pegar apenas 1 arquivo; Se for informado GETF_MULTISELECT serA possIvel pegar mais de 1 arquivo; Se for informado GETF_RETDIRECTORY serï¿½ possï¿½vel selecionar o diretï¿½rio
 	)
 
 	If ! Empty(cArqSel)
-		MsgInfo("O arquivo selecionado foi: " + cArqSel, "Atenção")
+	   MsgInfo("O arquivo selecionado foi: " + cArqSel, "AtenÃ§Ã£o")
 		Return cArqSel
 	EndIf
 return
