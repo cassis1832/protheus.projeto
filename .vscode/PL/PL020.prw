@@ -14,12 +14,9 @@ Função Manutenção de pedido EDI do cliente - Modelo 2
 Static cTitulo := "EDI - Pedidos de Clientes"
 
 User Function PL020()
-	Local aArea   := GetArea()
-	Local cFunBkp := FunName()
 	Local oBrowse
 
-	SetFunName("PL020")
-
+	chkFile("ZA0")
 	oBrowse := FWMBrowse():New()
 	oBrowse:SetAlias("ZA0")
 	oBrowse:SetDescription(cTitulo)
@@ -30,8 +27,6 @@ User Function PL020()
 
 	oBrowse:Activate()
 
-	SetFunName(cFunBkp)
-	RestArea(aArea)
 Return Nil
 
 /*---------------------------------------------------------------------*
@@ -123,7 +118,7 @@ Static Function Consistencia()
 
 	Local cCliente	:= ''
 	Local cLoja		:= ''
-	Local cProduto  := ''
+	Local cProduto := ''
 
 	if oModel:getOperation() = 3	// inclusao
 		cCliente 	:= oModel:GetValue("FORMZA0","ZA0_CLIENT")
@@ -132,16 +127,16 @@ Static Function Consistencia()
 	Else
 		cCliente	:= ZA0->ZA0_CLIENT
 		cLoja		:= ZA0->ZA0_LOJA
-		cProduto	:= ZA0_PRODUT
+		cProduto	:= ZA0->ZA0_PRODUT
 	EndIf
 
 	if oModel:getOperation() <> 5	// exclusao
 		SA1->(dbSetOrder(1))
 		SA7->(dbSetOrder(1))
 		DA1->(dbSetOrder(2)) // produto + tabela + item
-
+ 
 		// Verificar a relacao Item X Cliente
-		If SA7->(! MsSeek(cFilSA7 + cCliente + cLoja + cProduto))
+	   If SA7->(! MsSeek(cFilSA7 + cCliente + cLoja + cProduto))
 			lOk     := .F.
 			MessageBox("Relação Item X Cliente não cadastrada!","",0)
 		else

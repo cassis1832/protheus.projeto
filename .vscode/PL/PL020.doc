@@ -5,23 +5,26 @@
 Função Manutenção de pedidos EDI do cliente.
 
 1- Tela de manutenção dos registros.
-    O PL020B é a classe que intercepta a manutenção da tabela ZA0 para que sejam feitas consistencias.
-    Quando encontrada alguma inconsistencia o programa seta o status = 1 (com erro)
-    Se tudo estiver ok, o status é alterado para 0
-    Não permite manutenção de pedido com status = 9
+   O PL020B é a classe que intercepta a manutenção da tabela ZA0 para que sejam feitas consistencias.
+   Quando encontrada alguma inconsistencia o programa seta o status = 1 (com erro)
+   Se tudo estiver ok, o status é alterado para 0
+   Não permite manutenção de pedido com status = 9
 
 2- Importação de pedidos EDI (PL020A)
-    Importa arquivos texto delimitado por ";"
-    Esses arquivos são gravados pela planilha que centraliza a leitura das planilhas dos clientes (cada cliente tem seu layout)
-    O programa deleta todos os registros existentes do Cliente/Loja, e importa os novos registros.
-    Registros com erros são importados também, mas ficam com status = 1 (com erro)
+   Importa arquivos texto delimitado por ";"
+   Esses arquivos são gravados pela planilha que centraliza a leitura das planilhas dos clientes (cada cliente tem seu layout)
+   O programa deleta todos os registros existentes do Cliente/Loja, e importa os novos registros.
+   Registros com erros são importados também, mas ficam com status = 1 (com erro)
 
 3- Geração de demandas para o MRP (PL020C)
-    Leitura dos pedidos EDI (ZA0) e gravação da tabela de demandas
-    Só trata os registros com status = 0
-    O programa deleta todas as linhas de demandas do código = "AUTO", e gera novos.
+   Leitura dos pedidos EDI (ZA0) e gravação da tabela de demandas
+   Só trata os registros com status = 0
+   O programa deleta todas as linhas de demandas do código = "AUTO", e gera novos.
 
 4- Geração de pedidos de vendas (PL020D)
-    Via Execauto do MATA410
-    Só trata os registros com status = 0
-    Uma vez gerado o pedido, o programa altera o status = 9 (registro inativo)
+   Via Execauto do MATA410
+   Só trata os registros com status = 0
+   Uma vez gerado o pedido, o programa altera o status = 9 (registro inativo)
+   O campos C5_NATUREZ depende do grupo de TES que está no item X cliente
+   O SA7 - item X cliente - foram criados 2 campos (TES e natureza)
+   
