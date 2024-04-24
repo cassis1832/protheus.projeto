@@ -67,16 +67,20 @@ Static Function ModelDef()
 	oStZA0:SetProperty('ZA0_HRCRIA',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA0:SetProperty('ZA0_ARQUIV',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA0:SetProperty('ZA0_ORIGEM',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_ITCLI' ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_TES'   ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_NATUR' ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 
 	oStZA0:SetProperty('ZA0_DTCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Date()'))
 	oStZA0:SetProperty('ZA0_HRCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Time()'))
 	oStZA0:SetProperty('ZA0_STATUS',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_INIPAD,'0'))
 
 	oModel:=MPFormModel():New("PL020M",bPre, bPos,bCommit,bCancel) 
+
 	oModel:AddFields("FORMZA0",/*cOwner*/,oStZA0)
 	oModel:SetPrimaryKey({'ZA0_FILIAL','ZA0_CODPED'})
 	oModel:SetDescription(cTitulo)
-	oModel:GetModel("FORMZA0"):SetDescription("Formul�rio do Cadastro "+cTitulo)
+	oModel:GetModel("FORMZA0"):SetDescription("Formulario do Cadastro "+cTitulo)
 
 Return oModel
 
@@ -85,11 +89,12 @@ Return oModel
  *---------------------------------------------------------------------*/
 Static Function ViewDef()
 	Local oView := Nil
-	Local oModel := FWLoadModel("PL020")
-	Local oStZA0 := FWFormStruct(2, "ZA0")  //pode se usar um terceiro parametro para filtrar os campos exibidos { |cCampo| cCampo $ 'SZA0_NOME|SZA0_DTAFAL|'}
+	Local oModel := FWLoadModel("PL020")      // Busca o Model do ZA0
+	oView := FWFormView():New()               // Instancia o objeto
+	   
+   Local oStZA0 := FWFormStruct(2, "ZA0")    // Faz a carga dos campos do ZA0 do dicionário - pode se usar um terceiro parametro para filtrar os campos exibidos { |cCampo| cCampo $ 'SZA0_NOME|SZA0_DTAFAL|'}
 	
 	//Criando a view que será o retorno da função e setando o modelo da rotina
-	oView := FWFormView():New()
 	oView:SetModel(oModel)
 	
 	//Atribuindo formularios para interface
@@ -109,60 +114,6 @@ Static Function ViewDef()
 
 Return oView
 
-Static Function Consistencia()
-	Local lOk	 	:= .T.
-
-	Local cFilSA1 	:= xFilial("SA1")
-	Local cFilSA7 	:= xFilial("SA7")
-	Local cFilDA1 	:= xFilial("DA1")
-
-	Local cCliente	:= ''
-	Local cLoja		:= ''
-	Local cProduto := ''
-
-	if oModel:getOperation() = 3	// inclusao
-		cCliente 	:= oModel:GetValue("FORMZA0","ZA0_CLIENT")
-		cLoja 		:= oModel:GetValue("FORMZA0","ZA0_LOJA")
-		cProduto 	:= oModel:GetValue("FORMZA0","ZA0_PRODUT")
-	Else
-		cCliente	:= ZA0->ZA0_CLIENT
-		cLoja		:= ZA0->ZA0_LOJA
-		cProduto	:= ZA0->ZA0_PRODUT
-	EndIf
-
-	if oModel:getOperation() <> 5	// exclusao
-		SA1->(dbSetOrder(1))
-		SA7->(dbSetOrder(1))
-		DA1->(dbSetOrder(2)) // produto + tabela + item
- 
-		// Verificar a relacao Item X Cliente
-	   If SA7->(! MsSeek(cFilSA7 + cCliente + cLoja + cProduto))
-			lOk     := .F.
-			MessageBox("Relação Item X Cliente não cadastrada!","",0)
-		else
-			lOk:= oModel:LoadValue("FORMZA0","ZA0_TES"  , SA7->A7_XTES)
-			lOk:= oModel:LoadValue("FORMZA0","ZA0_GRTES", SA7->A7_XGRTES)
-		EndIf
-
-		// Verificar a tabela de precos do cliente
-		If SA1->(! MsSeek(cFilSA1 + cCliente + cLoja))
-			lOk     := .F.
-			MessageBox("Cliente não cadastrado!","",0)
-		else
-			If DA1->(! MsSeek(cFilDA1 + cProduto + SA1->A1_TABELA, .T.))
-				MessageBox("Tabela de preços não encontrada para o item","",0)
-				lOk     := .F.
-			EndIf
-		EndIf
-
-		if lOk == .T.
-			lOk:= oModel:LoadValue("FORMZA0","ZA0_STATUS","0")
-		else
-			lOk:= oModel:LoadValue("FORMZA0","ZA0_STATUS","1")
-		Endif
-	EndIf
-
-Return
 
 
 /*---------------------------------------------------------------------*
@@ -179,3 +130,60 @@ User Function ProLeg()
    BrwLegenda("Registros", "Status", aLegenda)
 
 return
+
+//-------------------------------------------------------------
+// Ponto de entrada
+//-------------------------------------------------------------
+User Function PL020M()
+
+   Local aParam     := PARAMIXB
+   Local xRet       := .T.
+   Local oObj       := ''
+   Local cIdPonto   := ''
+   Local cIdModel   := ''
+   Local lIsGrid    := .F.
+
+   If aParam <> NIL
+      
+      oObj       := aParam[1]
+      cIdPonto   := aParam[2]
+      cIdModel   := aParam[3]
+      lIsGrid    := ( Len( aParam ) > 3 )
+      
+      // Validação ao clicar no Botão Confirmar
+      If cIdPonto == 'FORMPOS' //'MODELPOS'
+         xRet = Consistencia()
+      EndIf
+   EndIf
+
+Return xRet
+
+Static Function Consistencia()
+	Local lOk	 	:= .T.
+
+   SA1->(dbSetOrder(1))
+   SA7->(dbSetOrder(1))
+   DA1->(dbSetOrder(2)) // produto + tabela + item
+
+   // Verificar a relacao Item X Cliente
+   If SA7->(! MsSeek(xFilial("SA7") + M->ZA0_CLIENT + M->ZA0_LOJA + M->ZA0_PRODUT))
+      lOk     := .F.
+      MessageBox("Relação Item X Cliente não cadastrada!","",0)
+   else
+      M->ZA0_ITCLI   := SA7->A7_CODCLI
+      M->ZA0_TES     := SA7->A7_XTES
+      M->ZA0_NATUR   := SA7->A7_XNATUR
+   EndIf
+
+   // Verificar a tabela de precos do cliente
+   If SA1->(! MsSeek(xFilial("SA1") + M->ZA0_CLIENT + M->ZA0_LOJA))
+      lOk     := .F.
+      MessageBox("Cliente não cadastrado!","",0)
+   else
+      If DA1->(! MsSeek(xFilial("DA1") + M->ZA0_PRODUT + SA1->A1_TABELA, .T.))
+         MessageBox("Tabela de preços não encontrada para o item","",0)
+         lOk     := .F.
+      EndIf
+   EndIf
+
+Return lOk
