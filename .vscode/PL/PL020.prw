@@ -2,7 +2,7 @@
 #Include 'FWMVCDef.ch'
 
 /*/{Protheus.doc} PL020
-Função Manutenção de pedido EDI do cliente - Modelo 2
+Função Manutenção de pedido EDI do cliente
 @author Assis
 @since 05/01/2024
 @version 1.0
@@ -41,7 +41,7 @@ Static Function MenuDef()
 	ADD OPTION aRot TITLE 'Incluir'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT  ACCESS 0 
 	ADD OPTION aRot TITLE 'Alterar'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE  ACCESS 0 
 	ADD OPTION aRot TITLE 'Excluir'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE  ACCESS 0 
-	ADD OPTION aRot TITLE 'Importar EDI' 	ACTION 'U_PL020A()'    OPERATION 5 					   	   ACCESS 0 
+	ADD OPTION aRot TITLE 'Importar EDI' 	ACTION 'U_PL020B()'    OPERATION 5 					   	   ACCESS 0 
 	ADD OPTION aRot TITLE 'Gerar Demanda'	ACTION 'U_PL020C()'    OPERATION 6 					   	   ACCESS 0 
 	ADD OPTION aRot TITLE 'Gerar Pedidos'	ACTION 'U_PL020D()'    OPERATION 7 					      	ACCESS 0 
 	ADD OPTION aRot TITLE 'Legenda'    		ACTION 'u_ProLeg' 	  OPERATION 8     				   	Access 0       
@@ -75,7 +75,7 @@ Static Function ModelDef()
 	oStZA0:SetProperty('ZA0_HRCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Time()'))
 	oStZA0:SetProperty('ZA0_STATUS',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_INIPAD,'0'))
 
-	oModel:=MPFormModel():New("PL020M",bPre, bPos,bCommit,bCancel) 
+	oModel:=MPFormModel():New("PL020PE",bPre, bPos,bCommit,bCancel) 
 
 	oModel:AddFields("FORMZA0",/*cOwner*/,oStZA0)
 	oModel:SetPrimaryKey({'ZA0_FILIAL','ZA0_CODPED'})

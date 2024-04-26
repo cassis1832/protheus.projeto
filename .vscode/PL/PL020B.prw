@@ -1,110 +1,217 @@
-#Include "TOTVS.ch"
+#Include 'Protheus.ch'
+#Include 'FWMVCDef.ch'
+#Include "tbiconn.ch"
 
 /*/{Protheus.doc} PL020B
-Declara a Classe vinda da FWModelEvent e os métodos que serão utilizados
-@see https://tdn.totvs.com/pages/releaseview.action?pageId=269552294
+FunÃ§Ã£o 
+   ImportaÃ§Ã£o do arquivo texto contendo pedidos EDI
+   Gravar tabela ZA0 - movimentos EDI importados 
+   Esse programa chamado a partir do PL020 (manutenÃ§Ã£o do ZA0)
+	cCliente	:= aLinha[1]
+	cLoja 	:= aLinha[2]
+	cNumPed 	:= aLinha[3]
+	cCodCli 	:= aLinha[4]
+	cDtEntr 	:= aLinha[6]
+	cQtde 	:= aLinha[7]
+	cTipo		:= aLinha[8]
+	cEmbal 	:= aLinha[9]
+	cQtEmb	:= aLinha[10]
+
+@author Assis
+@since 08/04/2024
+@version 1.0
+	@return Nil, FunÃ§Ã£o nÃ£o tem retorno
+	@example
+	u_PL030()
 /*/
 
-Class PL020B From FWModelEvent
-	Method New() CONSTRUCTOR
-	Method BeforeTTS()
-	Method InTTS()
-	Method AfterTTS()
-EndClass
+User Function PL020B()
+	Local aArea   		:= GetArea()
+	Local cFunBkp 		:= FunName()
 
-/*/{Protheus.doc} New
-Método para "instanciar" um observador
-@param oModel, Objeto, Objeto instanciado do Modelo de Dados
-/*/
+	//----------------------------------------------
+	// Local lPar01 		:= ""
+	// Local cPar02 		:= ""
+	// Local dPar03 		:= CTOD(' / / ')
 
-Method New(oModel) CLASS PL020B
-Return
+	// Prepare Environment Empresa '01' Filial '01'
+	// lPar01 := SuperGetMV("MV_PARAM",.F.)
+	// cPar02 := cFilAnt
+	// dPar03 := dDataBase
+	//----------------------------------------------
 
-/*/{Protheus.doc} BeforeTTS
-	Método acionado antes de fazer as gravações da transação
-	Consistencia do registro EDI
-	
-	@param oModel, Objeto, Objeto instanciado do Modelo de Dados
-/*/
+	Private cArquivo	:= ''
+	Private cCliente	:= ''
+	Private cLoja		:= ''
+	Private aLinhas
+	Private aLinha
 
-Method BeforeTTS(oModel) Class PL020B
+	SetFunName("PL020A")
+	cArquivo := selArquivo()
 
-	Local aArea  	:= FWGetArea()
-	Local oModel 	:= FWModelActive()
-	Local lOk	 	:= .T.
+	if cArquivo != ''
+		oFile := FWFileReader():New(cArquivo)
 
-	Local cFilSA1 	:= xFilial("SA1")
-	Local cFilSA7 	:= xFilial("SA7")
-	Local cFilDA1 	:= xFilial("DA1")
-
-	Local cCliente	:= ''
-	Local cLoja		:= ''
-	Local cProduto  := ''
-
-	if oModel:getOperation() = 3	// inclusão
-		cCliente 	:= oModel:GetValue("FORMZA0","ZA0_CLIENT")
-		cLoja 		:= oModel:GetValue("FORMZA0","ZA0_LOJA")
-		cProduto 	:= oModel:GetValue("FORMZA0","ZA0_PRODUT")
-	Else
-		cCliente	:= ZA0->ZA0_CLIENT
-		cLoja		:= ZA0->ZA0_LOJA
-		cProduto	:= ZA0_PRODUT
-	EndIf
-
-	if oModel:getOperation() <> 5	// exclusão
-		SA1->(dbSetOrder(1))
-		SA7->(dbSetOrder(1))
-		DA1->(dbSetOrder(2)) // produto + tabela + item
-
-		// Verificar a relação Item X Cliente
-		If SA7->(! MsSeek(cFilSA7 + cCliente + cLoja + cProduto))
-			lOk     := .F.
-			MessageBox("Relação Item X Cliente não cadastrado!","",0)
-		else
-			lOk:= oModel:LoadValue("FORMZA0","ZA0_TES"  , SA7->A7_XTES)
-			lOk:= oModel:LoadValue("FORMZA0","ZA0_GRTES", SA7->A7_XGRTES)
-		EndIf
-
-		// Verificar a tabela de preços do cliente
-		If SA1->(! MsSeek(cFilSA1 + cCliente + cLoja))
-			lOk     := .F.
-			MessageBox("Cliente não cadastrado!","",0)
-		else
-			If DA1->(! MsSeek(cFilDA1 + cProduto + SA1->A1_TABELA, .T.))
-				MessageBox("Tabela de preços não encontrada para o item","",0)
-				lOk     := .F.
+		If (oFile:Open())
+			If ! (oFile:EoF())
+				aLinhas := oFile:GetAllLines()
+				TrataLinhas()
 			EndIf
-		EndIf
 
-		if lOk == .T.
-			lOk:= oModel:LoadValue("FORMZA0","ZA0_STATUS","0")
-		else
-			lOk:= oModel:LoadValue("FORMZA0","ZA0_STATUS","1")
-		Endif
+			oFile:Close()
+		EndIf
 	EndIf
 
-	FWRestArea(aArea)
+	MessageBox("IMPORTAÃ‡ÃƒO EFETUADA COM SUCESSO!","",0)
+
+	SetFunName(cFunBkp)
+	RestArea(aArea)
 Return
 
-/*/{Protheus.doc} InTTS
-Método acionado durante as gravações da transação
-@param oModel, Objeto, Objeto instanciado do Modelo de Dados
-/*/
+/*---------------------------------------------------------------------*
+	Trata todas as linhas que estÃ£o na variavel aLinhas
+ *---------------------------------------------------------------------*/
+Static Function TrataLinhas()
 
-Method InTTS(oModel) Class PL020B
-	//Aqui você pode fazer as durante a gravação (como alterar campos)
+  	Local lErro 
+	Local nLin 	   		
+	Local nTotLinhas := Len(aLinhas)
+
+	// Salva o cliente/loja da primeira linha (que deve ser o mesmo das demais linhas)
+  	aLinha   := strTokArr(aLinhas [1], ';')
+	cCliente := aLinha[1]
+	cLoja		:= aLinha[2]
+
+   // Ver se o cliente estï¿½ cadastrado
+	dbSelectArea("SA1")
+	SA1->(DBSetOrder(1))  // Filial/codigo/loja
+
+ 	DBSeek(xFilial("SA1")+cCliente+cLoja)
+
+	if ! Eof()
+		IF A1_FILIAL == xFilial("SA1") .And. A1_COD == cCliente .And. A1_LOJA == cLoja 
+			lErro := .F.
+		Else
+			MsgInfo("O cliente nÃ£o foi localizado!", "FunÃ§Ã£o DBSeek")
+		   lErro := .T.
+		EndIf
+	EndIf
+
+   if ! lErro
+      LimpaDados()
+
+      For nlin := 1 To nTotLinhas
+         aLinha := strTokArr(aLinhas [nLin], ';')
+         GravaDados()
+      next	
+   EndIf
+
+return
+
+/*---------------------------------------------------------------------*
+  Deleta da tabela ZA0 todos os registros do cliente/loja
+ *---------------------------------------------------------------------*/
+Static Function LimpaDados()
+
+   dbSelectArea("ZA0")
+   ZA0->(DBSetOrder(2))  // Filial/cliente/loja
+   
+   DBSeek(xFilial("ZA0")+cCliente+cLoja)
+
+   Do While ! Eof() .And. ZA0_FILIAL == xFilial("ZA0") .And. ZA0_CLIENT == cCliente .And. ZA0_LOJA == cLoja
+
+      RecLock("ZA0", .F.)
+      DbDelete()
+      ZA0->(MsUnlock())
+
+      DbSkip()
+   EndDo
+
+return
+
+/*---------------------------------------------------------------------*
+	Grava tabela ZA0
+ *---------------------------------------------------------------------*/
+Static Function GravaDados()
+	Local lErro := .T.
+   Local cProduto
+
+	cCliente	:= aLinha[1]
+	cLoja 	:= aLinha[2]
+	cNumPed 	:= aLinha[3]
+	cCodCli 	:= aLinha[4]
+	cDtEntr 	:= aLinha[5]
+	cQtde 	:= aLinha[6]
+	cTipo		:= aLinha[7]
+	cEmbal 	:= aLinha[8]
+	cQtEmb	:= aLinha[9]
+
+	// Consistir o codigo do cliente e item do cliente
+	dbSelectArea("SA7")
+	SA7->(DBSetOrder(3))  // Filial/cliente/loja/codcli
+
+ 	DBSeek(xFilial("SA7")+cCliente+cLoja+cCodCli)
+
+   if ! Eof()
+      IF A7_FILIAL == xFilial("SA7") .And. A7_CLIENTE == cCliente .And. A7_LOJA == cLoja .And. A7_CODCLI == cCodCli
+         cProduto := A7_PRODUTO
+		   lErro = .F.
+      Else
+         cProduto := ''
+      EndIf
+   EndIf
+
+	// Inclusï¿½o
+	DbSelectArea("ZA0")
+	RecLock("ZA0", .T.)	
+	ZA0->ZA0_FILIAL   := xFilial("ZA0")	
+	ZA0->ZA0_CODPED   := GETSXENUM("ZA0", "ZA0_CODPED")                                                                                                  
+	ZA0->ZA0_CLIENT   := cCliente
+	ZA0->ZA0_LOJA 	   := cLoja
+	ZA0->ZA0_NUMPED   := cNumped
+	ZA0->ZA0_PRODUT   := cProduto
+	ZA0->ZA0_ITCLI 	:= cCodCli
+	ZA0->ZA0_TIPOPE   := cTipo
+	ZA0->ZA0_QTDE 	   := Val(StrTran(cQtde,",","."))
+	ZA0->ZA0_DTENTR   := CTOD(cDtEntr)
+	ZA0->ZA0_EMBAL 	:= cEmbal
+	ZA0->ZA0_QTEMB 	:= Val(StrTran(cQtEmb,",","."))
+	ZA0->ZA0_ARQUIV   := cArquivo
+	ZA0->ZA0_ORIGEM   := "PL030"
+	ZA0->ZA0_DTCRIA   := Date()
+	ZA0->ZA0_HRCRIA   := Time()
+	if (lErro)
+		ZA0->ZA0_STATUS := "1"
+	else
+		ZA0->ZA0_STATUS := "0"
+	EndIf
+
+	MsUnLock() 
+
 Return
 
-/*/{Protheus.doc} AfterTTS
-Método acionado após as gravações da transação
-@param oModel, Objeto, Objeto instanciado do Modelo de Dados
-/*/
+/*---------------------------------------------------------------------*
+	Abre box para o usuario selecionar o arquivo que deseja importar
+ *---------------------------------------------------------------------*/
+Static Function selArquivo()
 
-Method AfterTTS(oModel) Class PL020B
-	//Aqui você pode fazer as operações após gravar
+	Local cDirIni := GetTempPath()
+	Local cTipArq := "Arquivos texto (*.txt)"
+	Local cTitulo := "SeleÃ§Ã£o de arquivo para processamento"
+	Local lSalvar := .F.
+	Local cArqSel := ""
 
-	//Exibe uma mensagem, caso não esteja sendo executado via job ou ws
-	// If ! IsBlind()
-	// 	ShowLog("Passei pelo Commit de forma nova (FWModelEvent)")
-	// EndIf
-Return
+	cArqSel := tFileDialog(;
+	   cTipArq,;  // Filtragem de tipos de arquivos que serï¿½o selecionados
+	   cTitulo,;  // Titulo da Janela para seleÃ§Ã£o dos arquivos
+	   ,;         // Compatibilidade
+	   cDirIni,;  // Diretorio inicial da busca de arquivos
+	   lSalvar,;  // Se for .T., serA uma Save Dialog, senÃ£o serï¿½ Open Dialog
+	   ;          // Se nÃ£o passar parAmetro, irï¿½ pegar apenas 1 arquivo; Se for informado GETF_MULTISELECT serA possIvel pegar mais de 1 arquivo; Se for informado GETF_RETDIRECTORY serï¿½ possï¿½vel selecionar o diretï¿½rio
+	)
+
+	If ! Empty(cArqSel)
+	   MsgInfo("O arquivo selecionado foi: " + cArqSel, "AtenÃ§Ã£o")
+		Return cArqSel
+	EndIf
+return
