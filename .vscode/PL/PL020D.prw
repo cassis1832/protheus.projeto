@@ -7,6 +7,7 @@
 // Ler ZA0 por cliente/data/natureza/item
 //---------------------------------------------------------------------------------
 
+
 User Function PL020D()
 
 	Private nOpcX     := 3          	// Tipo da opeçacao (3-Inclusao / 4-Alteracao / 5-Exclusao)
@@ -49,7 +50,7 @@ User Function PL020D()
 	cFilDAO := xFilial("DA0")
 	cFilDA1 := xFilial("DA1")
 
-	strSql := "SELECT ZA0010.*, SA7010.*, B1_TES "
+	strSql := "SELECT ZA0010.*, SA7010.*, B1_TS "
 	strSql += "  FROM ZA0010, SB1010, SA7010 "            + CRLF
 	strSql += " WHERE ZA0_STATUS        =  '0' "          + CRLF
 	strSql += "   AND ZA0_FILIAL        =  B1_FILIAL "    + CRLF
@@ -73,14 +74,14 @@ User Function PL020D()
 		if (cAlias)->ZA0_CLIENT != cCliente    .or. ;
 				(cAlias)->ZA0_LOJA   != cLoja    .or. ;
 				(cAlias)->ZA0_DTENTR != cData    .or. ;
-				(cAlias)->ZA0_NATUR  != cNatureza
+				(cAlias)->A7_XNATUR  != cNatureza
 
 			GravaPedido()
 
 			cCliente	   := (cAlias)->ZA0_CLIENT
 			cLoja		   := (cAlias)->ZA0_LOJA
 			cData		   := (cAlias)->ZA0_DTENTR
-			cNatureza 	:= (cAlias)->ZA0_NATUR
+			cNatureza 	:= (cAlias)->A7_XNATUR
 
 			// Verificar o cliente
 			if SA1->(! MsSeek(cFilSA1 + cCliente + cLoja))
@@ -128,7 +129,7 @@ User Function PL020D()
 		aLinha := {}
 		aadd(aLinha,{"C6_ITEM"   	, StrZero(nX,2)	      , Nil})
 		aadd(aLinha,{"C6_PRODUTO"	, (cAlias)->ZA0_PRODUT	, Nil})
-		aadd(aLinha,{"C6_TES"    	, (cAlias)->B1_TES		, Nil})
+		aadd(aLinha,{"C6_TES"    	, (cAlias)->B1_TS		   , Nil})
 		aadd(aLinha,{"C6_ENTREG" 	, (cAlias)->ZA0_DTENTR  , Nil})
 		aadd(aLinha,{"C6_QTDVEN" 	, (cAlias)->ZA0_QTDE    , Nil})
 		aadd(aLinha,{"C6_PEDCLI" 	, (cAlias)->ZA0_NUMPED  , Nil})
@@ -144,7 +145,7 @@ User Function PL020D()
 
 		lTemLinha := .T.
 
-		aadd(aGravados,(cAlias)->RECNO)
+		aadd(aGravados,(cAlias)->R_E_C_N_O_)
 
 		(cAlias)->(DbSkip())
 
@@ -240,9 +241,9 @@ Static Function Consistencia()
          RecLock("ZA0", .F.)
 
          if lOk == .T.
-            ZA0->ZA0_Status  := 0
+            ZA0->ZA0_Status  := '0'
          else
-            ZA0->ZA0_Status  := 1
+            ZA0->ZA0_Status  := '1'
          EndIf
          
          ZA0->(MsUnlock())
