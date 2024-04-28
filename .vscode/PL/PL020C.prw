@@ -109,7 +109,7 @@ Static Function CriaEDI()
       SVR->VR_REGORI   	:= 0
       SVR->VR_ORIGEM   	:= 'SVR'
       SVR->(MsUnlock())
-
+ 
       DbSelectArea("T4J")
       RecLock("T4J", .T.)	
       T4J->T4J_FILIAL	:= SVR->VR_FILIAL

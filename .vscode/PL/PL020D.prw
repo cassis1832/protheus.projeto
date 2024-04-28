@@ -2,15 +2,13 @@
 #INCLUDE "TBICONN.CH"
 
 //---------------------------------------------------------------------------------
-// PL030 - GERAÇÂO DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
+// PL030 - GERAÇÃO DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
 // MATA410 - EXECAUTO
 // Ler ZA0 por cliente/data/natureza/item
 //---------------------------------------------------------------------------------
-
-
 User Function PL020D()
 
-	Private nOpcX     := 3          	// Tipo da opeçacao (3-Inclusao / 4-Alteracao / 5-Exclusao)
+	Private nOpcX     := 3          	// Tipo da operação (3-Inclusão / 4-Alteração / 5-Exclusão)
 	Private cDoc      := ""         	// Numero do Pedido de Vendas (alteracao ou exclusao)
 
 	Private cFilSA1   := ""			   // cliente
@@ -86,19 +84,19 @@ User Function PL020D()
 			// Verificar o cliente
 			if SA1->(! MsSeek(cFilSA1 + cCliente + cLoja))
 				lOk   := .F.
-				MessageBox("Cliente não cadastrado: " + cCliente + " - " + cLoja, "",0)
+				FWAlertError("Cliente não cadastrado: " + cCliente,"Cadastro de Clientes")
 			EndIf
 
 			// Verificar condição de pagamento do cliente
 			If SE4->(! MsSeek(cFilSE4 + SA1->A1_COND))
 				lOk     := .F.
-				MessageBox("Cliente sem condição de pagamento cadastrada: " + cCliente,"",0)
+				FWAlertError("Cliente sem condição de pagamento cadastrada: " + cCliente,"Condição de Pagamento")
 			EndIf
 
 			// Verificar tabela de preço do cliente
 			If DA0->(! MsSeek(cFilDAO + SA1->A1_TABELA))
 				lOk   := .F.
-				MessageBox("Cliente sem tabela de preço cadastrada: " + cCliente,"",0)
+				FWAlertError("Cliente sem tabela de preço cadastrada: " + cCliente,"Tabela de preços")
 			EndIf
 
 			cDoc := GetSxeNum("SC5", "C5_NUM")
@@ -122,7 +120,7 @@ User Function PL020D()
 		DA1->(dbSetOrder(2)) // DA1_FILIAL+DA1_CODPRO+DA1_CODTAB+DA1_ITEM
 
 		If ! DA1->(DbSeek(cFilDA1 + (cAlias)->ZA0_PRODUT + SA1->A1_TABELA))
-			MessageBox("Tabela de preços não encontrada para o item: " + (cAlias)->ZA0_PRODUT,"",0)
+			FWAlertError("Tabela de preços não encontrada para o item: " + (cAlias)->ZA0_PRODUT,"Tabela de preços")
 			lOk     := .F.
 		EndIf
 
@@ -130,7 +128,7 @@ User Function PL020D()
 		aadd(aLinha,{"C6_ITEM"   	, StrZero(nX,2)	      , Nil})
 		aadd(aLinha,{"C6_PRODUTO"	, (cAlias)->ZA0_PRODUT	, Nil})
 		aadd(aLinha,{"C6_TES"    	, (cAlias)->B1_TS		   , Nil})
-		aadd(aLinha,{"C6_ENTREG" 	, (cAlias)->ZA0_DTENTR  , Nil})
+		aadd(aLinha,{"C6_ENTREG" 	, Stod((cAlias)->ZA0_DTENTR) , Nil})
 		aadd(aLinha,{"C6_QTDVEN" 	, (cAlias)->ZA0_QTDE    , Nil})
 		aadd(aLinha,{"C6_PEDCLI" 	, (cAlias)->ZA0_NUMPED  , Nil})
 		aadd(aLinha,{"C6_XCODPED" 	, (cAlias)->ZA0_CODPED  , Nil})
@@ -151,6 +149,8 @@ User Function PL020D()
 
 	End While
 
+	FWAlertSuccess("Pedidos gerados com sucesso!", "Geração de Pedidos de Vendas")
+
 	ConOut("Fim: " + Time())
 	ConOut(Repl("-",80))
 Return(.T.)
@@ -160,7 +160,7 @@ Return(.T.)
 /*-------------------------------------------------------------------------*/
 Static Function GravaPedido()
 
-	// Primeira vez não grava porque está vazio
+	// Primeira vez não grava porque estÃ¡ vazio
 	if cCliente != '' .and. lOk == .T. .and. lTemLinha == .T.
 
 		MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabec, aItens, nOpcX, .F.)
@@ -219,7 +219,7 @@ Static Function Consistencia()
          // Verificar a relacao Item X Cliente
          If SA7->(! MsSeek(xFilial("SA7") + ZA0->ZA0_CLIENT + ZA0->ZA0_LOJA + ZA0->ZA0_PRODUT))
             lOk     := .F.
-            FWAlertError("Relação Item X Cliente não cadastrada (" + ZA0->ZA0_PRODUT + "/" + ZA0->ZA0_CLIENT + ")!", "Cadastro Produto/Cliente")
+            FWAlertError("Item X Cliente não cadastrada (" + ZA0->ZA0_PRODUT + "/" + ZA0->ZA0_CLIENT + ")!", "Cadastro Produto/Cliente")
 
             if SA7->A7_XNATUR == ''
                lOk     := .F.

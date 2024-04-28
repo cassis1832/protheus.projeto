@@ -105,7 +105,7 @@ Static Function TrataLinhas()
          GravaDados()
       next	
    EndIf
-
+ 
 return
 
 /*---------------------------------------------------------------------*
