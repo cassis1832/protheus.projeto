@@ -4,7 +4,7 @@
 
 /*/{Protheus.doc} PL020C
 	Atualização das demandas do MRP com base no EDI e nos pedidos de vendas
-   Atualizar tabelas SVB e SVR - demandas do MRP (cliente/loja)
+    Atualizar tabelas SVB e SVR - demandas do MRP (cliente/loja)
 @author Assis
 @since 11/04/2024
 @version 1.0
@@ -81,14 +81,12 @@ Static Function CriaEDI()
 
 	strSql := "SELECT ZA0010.* "
 	strSql += " FROM ZA0010, SB1010 "                     
-	strSql += " WHERE ZA0_STATUS        =  '0' "          
-	strSql += " AND ZA0_FILIAL          =  B1_FILIAL "    
-	strSql += " AND ZA0_PRODUT          =  B1_COD "       
-	strSql += " AND ZA0010.D_E_L_E_T_   <> '*' "          
-	strSql += " AND SB1010.D_E_L_E_T_   <> '*' "          
-
+	strSql += " WHERE ZA0_STATUS = '0' "          
+	strSql += " AND ZA0_FILIAL   = B1_FILIAL "    
+	strSql += " AND ZA0_PRODUT   = B1_COD "       
+	strSql += " AND ZA0010.D_E_L_E_T_ <> '*' "          
+	strSql += " AND SB1010.D_E_L_E_T_ <> '*' "          
 	strSql += " ORDER BY ZA0_CLIENT, ZA0_LOJA, ZA0_PRODUT " 
-
 	cAlias := MPSysOpenQuery(strSql)
 
 	While (cAlias)->(!EOF())
@@ -150,24 +148,19 @@ Static Function CriaPV()
     strSql += " FROM SC5010, SC6010, SB1010, SF4010 "  
     strSql += " WHERE C5_NOTA      = '' "         
     strSql += " AND C5_LIBEROK    <> 'E' "       
-
     strSql += " AND C5_FILIAL      = C6_FILIAL " 
     strSql += " AND C5_NUM         = C6_NUM "    
     strSql += " AND C6_QTDENT     <= C6_QTDVEN " 
     strSql += " AND SC6010.C6_BLQ <> 'R' "       
-
     strSql += " AND C6_FILIAL      = B1_FILIAL "  
     strSql += " AND C6_PRODUTO     = B1_COD "     
-
     strSql += " AND C5_FILIAL      = F4_FILIAL "  
     strSql += " AND F4_CODIGO      = C6_TES "     
     strSql += " AND F4_QTDZERO    <> '1' "       
-
     strSql += " AND SC5010.D_E_L_E_T_   <> '*' "       
     strSql += " AND SC6010.D_E_L_E_T_   <> '*' "       
     strSql += " AND SF4010.D_E_L_E_T_   <> '*' "       
     strSql += " AND SB1010.D_E_L_E_T_   <> '*' "       
-
     cAlias := MPSysOpenQuery(strSql)
 
 	While (cAlias)->(!EOF())

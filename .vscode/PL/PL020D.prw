@@ -26,6 +26,8 @@ User Function PL020D()
 	Private lOk := .T.
 	Private lTemLinha := .T.
 	Private nPed := 0
+	Private nQtde := 0
+	Private dData := DaySum(Date(),3)
 
 	Private cCliente := ''
 	Private cLoja := ''
@@ -50,18 +52,18 @@ User Function PL020D()
 
 	strSql := "SELECT ZA0010.*, SA7010.*, B1_TS "
 	strSql += "  FROM ZA0010, SB1010, SA7010 "
-	strSql += " WHERE ZA0_STATUS = '0' "
-	strSql += "   AND ZA0_FILIAL = B1_FILIAL "
-	strSql += "   AND ZA0_PRODUT = B1_COD "
-	strSql += "   AND ZA0_FILIAL = A7_FILIAL "
-	strSql += "   AND ZA0_CLIENT = A7_CLIENTE "
-	strSql += "   AND ZA0_LOJA   = A7_LOJA "
-	strSql += "   AND ZA0_PRODUT = A7_PRODUTO "
-
+	strSql += " WHERE ZA0_TIPOPE  = 'F' "
+	strSql += "   AND ZA0_DTENTR <= '" + Dtos(dData) + "' "
+	strSql += "   AND ZA0_QTDE    > ZA0_QTCONF "
+	strSql += "   AND ZA0_FILIAL  = B1_FILIAL "
+	strSql += "   AND ZA0_PRODUT  = B1_COD "
+	strSql += "   AND ZA0_FILIAL  = A7_FILIAL "
+	strSql += "   AND ZA0_CLIENT  = A7_CLIENTE "
+	strSql += "   AND ZA0_LOJA    = A7_LOJA "
+	strSql += "   AND ZA0_PRODUT  = A7_PRODUTO "
 	strSql += "   AND ZA0010.D_E_L_E_T_ <> '*' "
 	strSql += "   AND SB1010.D_E_L_E_T_ <> '*' "
 	strSql += "   AND SA7010.D_E_L_E_T_ <> '*' "
-
 	strSql += " ORDER BY ZA0_CLIENT, ZA0_LOJA, ZA0_DTENTR, "
 	strSql += " A7_XNATUR, ZA0_PRODUT "
 
@@ -124,12 +126,14 @@ User Function PL020D()
 			lOk:= .F.
 		EndIf
 
+		nQtde := (cAlias)->ZA0_QTDE - (cAlias)->ZA0_QTCONF
+
 		aLinha := {}
 		aadd(aLinha,{"C6_ITEM", StrZero(nX,2), Nil})
 		aadd(aLinha,{"C6_PRODUTO", (cAlias)->ZA0_PRODUT, Nil})
 		aadd(aLinha,{"C6_TES", (cAlias)->B1_TS, Nil})
 		aadd(aLinha,{"C6_ENTREG", Stod((cAlias)->ZA0_DTENTR), Nil})
-		aadd(aLinha,{"C6_QTDVEN", (cAlias)->ZA0_QTDE, Nil})
+		aadd(aLinha,{"C6_QTDVEN", nQtde, Nil})
 		aadd(aLinha,{"C6_PEDCLI", (cAlias)->ZA0_NUMPED, Nil})
 		aadd(aLinha,{"C6_XCODPED", (cAlias)->ZA0_CODPED, Nil})
 		aadd(aLinha,{"C6_VALOR", (cAlias)->ZA0_QTDE * DA1->DA1_PRCVEN, Nil})
@@ -183,7 +187,8 @@ Static Function AtualizaGravados()
 
         ZA0->(DbGoTo(aGravados[nInd]))
 		RecLock("ZA0", .F.)
-		ZA0->ZA0_Status  := '9'
+        ZA0->ZA0_QTCONF  := ZA0->ZA0_QTDE
+		ZA0->ZA0_STATUS  := '9'
 		ZA0->(MsUnlock())
 	Next
 

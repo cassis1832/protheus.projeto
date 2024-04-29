@@ -34,15 +34,14 @@ Return Nil
 Static Function MenuDef()
 
 	Local aRot := {}
-	
-	ADD OPTION aRot TITLE 'Visualizar' 		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_VIEW    ACCESS 0 
-	ADD OPTION aRot TITLE 'Incluir'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT  ACCESS 0 
-	ADD OPTION aRot TITLE 'Alterar'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE  ACCESS 0 
-	ADD OPTION aRot TITLE 'Excluir'    		ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE  ACCESS 0 
-	ADD OPTION aRot TITLE 'Importar EDI' 	ACTION 'U_PL020B()'    OPERATION 5 					   	   ACCESS 0 
-	ADD OPTION aRot TITLE 'Gerar Demanda'	ACTION 'U_PL020C()'    OPERATION 6 					   	   ACCESS 0 
-	ADD OPTION aRot TITLE 'Gerar Pedidos'	ACTION 'U_PL020D()'    OPERATION 7 					      	ACCESS 0 
-	ADD OPTION aRot TITLE 'Legenda'    		ACTION 'u_ProLeg' 	  OPERATION 8     				   	Access 0       
+	ADD OPTION aRot TITLE 'Visualizar' 	  ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 
+	ADD OPTION aRot TITLE 'Incluir'    	  ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT ACCESS 0 
+	ADD OPTION aRot TITLE 'Alterar'    	  ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 
+	ADD OPTION aRot TITLE 'Excluir'    	  ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE ACCESS 0 
+	ADD OPTION aRot TITLE 'Importar EDI'  ACTION 'U_PL020B()'    OPERATION 5 					  ACCESS 0 
+	ADD OPTION aRot TITLE 'Gerar Demanda' ACTION 'U_PL020C()'    OPERATION 6 					  ACCESS 0 
+	ADD OPTION aRot TITLE 'Gerar Pedidos' ACTION 'U_PL020D()'    OPERATION 7 					  ACCESS 0 
+	ADD OPTION aRot TITLE 'Legenda'    	  ACTION 'u_ProLeg' 	 OPERATION 8     				  Access 0       
 
 Return aRot
 
@@ -51,12 +50,12 @@ Return aRot
  *---------------------------------------------------------------------*/
 Static Function ModelDef()
 
-	Local oModel   := Nil
-	Local bPre     := Nil
-   Local bPos     := Nil
-   Local bCommit  := Nil
-   Local bCancel  := Nil
-	Local oStZA0   := FWFormStruct(1, "ZA0")
+    Local oModel   := Nil
+    Local bPre     := Nil
+    Local bPos     := Nil
+    Local bCommit  := Nil
+    Local bCancel  := Nil
+    Local oStZA0   := FWFormStruct(1, "ZA0")
  
 	oStZA0:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
 	oStZA0:SetProperty('ZA0_LOJA'  ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
@@ -76,7 +75,6 @@ Static Function ModelDef()
 	oModel:SetPrimaryKey({'ZA0_FILIAL','ZA0_CODPED'})
 	oModel:SetDescription(cTitulo)
 	oModel:GetModel("FORMZA0"):SetDescription("Formulario do Cadastro "+cTitulo)
-
 Return oModel
 
 /*---------------------------------------------------------------------*
@@ -84,17 +82,17 @@ Return oModel
  *---------------------------------------------------------------------*/
 Static Function ViewDef()
 
-	Local oView  := Nil
-	Local oModel := FWLoadModel("PL020")      
-   Local oStZA0 := FWFormStruct(2, "ZA0")    
+    Local oView  := Nil
+    Local oModel := FWLoadModel("PL020")      
+    Local oStZA0 := FWFormStruct(2, "ZA0")    
 
-	oView:= FWFormView():New()               
-	oView:SetModel(oModel)
-	oView:AddField("VIEW_ZA0", oStZA0, "FORMZA0")
-	oView:CreateHorizontalBox("TELA",100)
-	oView:EnableTitleView('VIEW_ZA0', 'Dados - '+cTitulo )  
-	oView:SetCloseOnOk({||.T.})
-	oView:SetOwnerView("VIEW_ZA0","TELA")
+    oView:= FWFormView():New()               
+    oView:SetModel(oModel)
+    oView:AddField("VIEW_ZA0", oStZA0, "FORMZA0")
+    oView:CreateHorizontalBox("TELA",100)
+    oView:EnableTitleView('VIEW_ZA0', 'Dados - '+cTitulo )  
+    oView:SetCloseOnOk({||.T.})
+    oView:SetOwnerView("VIEW_ZA0","TELA")
 
 Return oView
 
@@ -103,12 +101,11 @@ Return oView
  *---------------------------------------------------------------------*/
 User Function ProLeg()
    
-   Local aLegenda := {}
-   
-   AAdd(aLegenda,{"BR_VERDE","Ativo"})
-	AAdd(aLegenda,{"BR_AMARELO","Com Erro"})
-	AAdd(aLegenda,{"BR_VERMELHO","Inativo"})
-   
-   BrwLegenda("Registros", "Status", aLegenda)
+    Local aLegenda := {}
+
+    AAdd(aLegenda,{"BR_VERDE","Ativo"})
+    AAdd(aLegenda,{"BR_AMARELO","Com Erro"})
+    AAdd(aLegenda,{"BR_VERMELHO","Inativo"})
+    BrwLegenda("Registros", "Status", aLegenda)
 
 return

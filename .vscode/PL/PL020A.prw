@@ -2,8 +2,8 @@
 #Include 'FWMVCDef.ch'
 
 /*/{Protheus.doc} PL020A
-Ponto de entrada para o PL020
-Consistencia do registro
+    Ponto de entrada para o PL020
+    Consistencia do registro
 @author Assis
 @since 05/01/2024
 @version 1.0
@@ -67,5 +67,4 @@ Static Function Consistencia()
 	else
 		M->ZA0_Status  := 1
 	EndIf
-
 Return .T.
