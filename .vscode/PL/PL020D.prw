@@ -127,6 +127,7 @@ User Function PL020D()
 		EndIf
 
 		nQtde := (cAlias)->ZA0_QTDE - (cAlias)->ZA0_QTCONF
+		nX := nX + 1
 
 		aLinha := {}
 		aadd(aLinha,{"C6_ITEM", StrZero(nX,2), Nil})
