@@ -28,5 +28,6 @@ Função Manutenção de pedidos EDI do cliente.
    Uma vez gerado o pedido, o programa altera o status = 9 (registro inativo)
    O campos C5_NATUREZ está no item X cliente
    O SA7 - item X cliente - foram criados 1 campo (natureza)
+   Antes de gravar o pedido é preciso explodir os itens buscando os componentes a retornar
    
    

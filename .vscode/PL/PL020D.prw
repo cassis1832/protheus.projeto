@@ -149,9 +149,13 @@ User Function PL020D()
 
 		aadd(aGravados,(cAlias)->R_E_C_N_O_)
 
+		//u_PL020E(@aItens)       // Gera devoluções com base na estrutura
+
 		(cAlias)->(DbSkip())
 
 	End While
+
+	GravaPedido()
 
 	FWAlertSuccess("Pedidos gerados com sucesso!", "Geração de Pedidos de Vendas")
 Return(.T.)
@@ -161,7 +165,7 @@ Return(.T.)
 /*-------------------------------------------------------------------------*/
 Static Function GravaPedido()
 
-	// Primeira vez não grava porque estÃ¡ vazio
+	// Primeira vez não grava porque está vazio
 	if cCliente != '' .and. lOk == .T. .and. lTemLinha == .T.
 
 		MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabec, aItens, nOpcX, .F.)

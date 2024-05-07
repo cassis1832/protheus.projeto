@@ -1,95 +1,58 @@
-#include 'totvs.ch'
+#INCLUDE "PROTHEUS.CH"
+#INCLUDE "TBICONN.CH"
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /*/{Protheus.doc} PL020E
-   Explosão dos itens do pedido para encontrar material para devolução ao cliente
-   @source PL020E.prw
-   @author Carlos Assis
-   @since 19/04/2024
-   @return  Array, Array com os itens a serem incluídos no pedido
-/*/
-//--------------------------------------------------------------------
-User Function PL020D()
-
-	Local aButton	:= {}
-
-	aAdd(aButton, {"PENDENTE", {|| u_fGeraEstr(aHeader,aCols,n) }, "[F9] Estr.Prod."})
-	SetKey(VK_F9, {|| u_fGeraEstr(aHeader,aCols,n) })
-
-Return aButton
-
-//------------------------------------------------------------------------------
-/*/{Protheus.doc} fGeraEstr
    Função que carrega a Estrutura do Produto no Pedido de Venda
+        @sample	   PL020E(aItens, aItens)
+        @param		aItens  , Array	    , Array dos Itens
+        @return		.T.		, Lógico
 
-	@sample	   fGeraEstr(aHeader,aCols,nX)
-   @param		aHeader , Array     , Array do Cabeçalho
-	@param		aCols   , Array	    , Array dos Itens
-	@param		nX      , Numérico 	, Número da linha posicionada
-	@return		.T.		, Lógico
+
+    O sistema não permite a inclusão do retorno sem que haja estoque ou NF para retornar
+    Então por enquanto essa rotina não funciona
 /*/
 //------------------------------------------------------------------------------
-User Function fGeraEstr(aHeader,aCols,nX)
+User Function PL020E(aItens)
 
 	Local aArea     := GetArea()
 	Local aBOM      := {}
-	Local nPProduto := aScan(aHeader,{|x| AllTrim(x[2]) == "C6_PRODUTO"})
-	Local nPTES     := aScan(aHeader,{|x| AllTrim(x[2]) == "C6_TES"})
-	Local nPQtdVen  := aScan(aHeader,{|x| AllTrim(x[2]) == "C6_QTDVEN"})
-	Local nPItem    := aScan(aHeader,{|x| AllTrim(x[2]) == "C6_ITEM"})
-	Local nPTotal   := aScan(aHeader,{|x| AllTrim(x[2]) == "C6_VALOR"})
-	Local nY        := 0
-	Local cItem     := ""
 
-	Private N 	    := nX
+	Local nPProduto := aScan(aItens[Len(aItens)],{|x| AllTrim(x[1]) == "C6_PRODUTO"})
+//	Local nPTES     := aScan(aItens[Len(aItens)],{|x| AllTrim(x[1]) == "C6_TES"})
+	Local nPQtdVen  := aScan(aItens[Len(aItens)],{|x| AllTrim(x[1]) == "C6_QTDVEN"})
+	Local nPItem    := aScan(aItens[Len(aItens)],{|x| AllTrim(x[1]) == "C6_ITEM"})
+	Local nPData    := aScan(aItens[Len(aItens)],{|x| AllTrim(x[1]) == "C6_ENTREG"})
+	Local cItem     := ""
+	Local nX        := 0
+
 	Private nEstru  := 0
 
-	//Localiza todos os componentes do primeiro nível da estrutura.
-	Explosao(aCols[nX][nPProduto],aCols[nX][nPQtdVen],@aBOM)
+	// Explodir a última linha da tabela
+	Explosao(aItens[Len(aItens)][nPProduto][2],	aItens[Len(aItens)][nPQtdVen][2], @aBOM)
 
 	//------------------------------------------------------------------------------
-	// Adiciona os produtos no aCols
+	// Adiciona os componentes no aItens
 	//------------------------------------------------------------------------------
-
 	For nX := 1 To Len(aBOM)
 
-		cItem := aCols[Len(aCols)][nPItem]
+		cItem := aItens[Len(aItens)][nPItem][2]    // ultimo item da lista
+		cItem := Soma1(cItem)
 
-		aAdd(aCOLS,Array(Len(aHeader)+1))
+		N := Len(aItens)
 
-		For nY	:= 1 To Len(aHeader)
-
-			If ( AllTrim(aHeader[nY][2]) == "C6_ITEM" )
-				aCols[Len(aCols)][nY] := Soma1(cItem)
-			Else
-				If (aHeader[nY,2] <> "C6_REC_WT") .And. (aHeader[nY,2] <> "C6_ALI_WT")
-					aCols[Len(aCols)][nY] := CriaVar(aHeader[nY][2])
-				EndIf
-			EndIf
-
-		Next nY
-
-		N := Len(aCols)
-		aCOLS[N][Len(aHeader)+1] := .F.
-		A410Produto(aBom[nX][1],.F.)
-		aCols[N][nPProduto] := aBom[nX][1]
-		A410MultT("M->C6_PRODUTO",aBom[nX][1])
-
-		If ExistTrigger("C6_PRODUTO")
-			RunTrigger(2,N,Nil,,"C6_PRODUTO")
-		EndIf
-
-		A410SegUm(.T.)
-		A410MultT("M->C6_QTDVEN",aBom[nX][2])
-
-		If ExistTrigger("C6_QTDVEN ")
-			RunTrigger(2,N,Nil,,"C6_QTDVEN ")
-		EndIf
-
-		If Empty(aCols[N][nPTotal]) .Or. Empty(aCols[N][nPTES])
-			aCOLS[N][Len(aHeader)+1] := .T.
-		EndIf
-
+		aLinha := {}
+		aadd(aLinha,{"C6_ITEM", StrZero(0,2), Nil})
+		aadd(aLinha,{"C6_PRODUTO", aBOM[nX][1], Nil})
+		aadd(aLinha,{"C6_TES", "685", Nil})
+		aadd(aLinha,{"C6_ENTREG", aItens[Len(aItens)][nPData][2], Nil})
+		aadd(aLinha,{"C6_QTDVEN", aBOM[nX][2], Nil})
+		aadd(aLinha,{"C6_PEDCLI", "", Nil})
+		aadd(aLinha,{"C6_XCODPED", "", Nil})
+		aadd(aLinha,{"C6_VALOR", 0, Nil})
+		aadd(aLinha,{"C6_PRCVEN", 0, Nil})
+		aadd(aLinha,{"C6_PRUNIT", 0, Nil})
+		aadd(aItens, aLinha)
 	Next nX
 
 	RestArea(aArea)
@@ -97,27 +60,25 @@ Return(.T.)
 
 //------------------------------------------------------------------------------
 /*/{Protheus.doc} Explosao
-   Função recursiva para localizar todos os componentes do primeiro nível
-	da estrutura.
-
-   @sample	   Explosao(cProduto,nQuant,aNewStruct
-	@param		cProduto   , Caractere 	, Código do Produto Pai
-	@param		nQuant     , Numérico  	, Quantidade do Produto Pai
-   @param		aNewStruct , Array     	, Array de retorno
-	@return		Nil
+   Função recursiva para localizar todos os componentes da estrutura.
+    @sample	   Explosao(cProduto,nQuant,aNewStruct
+    @param		cProduto   , Caractere 	, Código do Produto Pai
+    @param		nQuant     , Numérico  	, Quantidade do Produto Pai
+    @param		aNewStruct , Array     	, Array de retorno
+    @return		Nil
 /*/
 //------------------------------------------------------------------------------
-Static Function Explosao(cProduto,nQuant,aNewStruct)
+Static Function Explosao(cProduto, nQuant, aNewStruct)
 
-	Local aAreaAnt	   := GetArea()
-	Local nX		      := 0
-	Local aArrayAux   := {}
+	Local aAreaAnt	:= GetArea()
+	Local nX	    := 0
+	Local aArrayAux := {}
 
 	//Variável private declarada na função fGeraEstr()
 	nEstru := 0
 
 	//Faz a explosão do item a partir do SG1
-	aArrayAux := Estrut(cProduto,nQuant,.T.)
+	aArrayAux := Estrut(cProduto, nQuant, .T.)
 
 	//------------------------------------------------------------------------------
 	// Processa todos os componentes do produto passado no parametro
@@ -135,13 +96,13 @@ Static Function Explosao(cProduto,nQuant,aNewStruct)
 
 			if SG1->(MsSeek(fwxfilial('SG1')+SB1->B1_COD))
 				if SB1->B1_AGREGCU == '1'
-					aAdd(aNewStruct,{aArrayAux[nx,3],aArrayAux[nx,4],SB1->B1_DESC})
+					aAdd(aNewStruct,{aArrayAux[nx,3],aArrayAux[nx,4],SB1->B1_DESC,SB1->B1_TS})
 				endif
 
 				Explosao(aArrayAux[nx,3],aArrayAux[nx,4],aNewStruct) 	//Componente+Qtde
 			else
 				if SB1->B1_AGREGCU == '1'
-					aAdd(aNewStruct,{aArrayAux[nx,3],aArrayAux[nx,4],SB1->B1_DESC})
+					aAdd(aNewStruct,{aArrayAux[nx,3],aArrayAux[nx,4],SB1->B1_DESC,SB1->B1_TS})
 				endif
 			endif
 
