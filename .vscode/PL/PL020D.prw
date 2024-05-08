@@ -4,7 +4,7 @@
 //---------------------------------------------------------------------------------
 // PL030 - GERAÇÃO DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
 // MATA410 - EXECAUTO
-// Ler ZA0 por cliente/data/natureza/item
+// Ler ZA0 por cliente/data/natureza/hora de entrega/item
 //---------------------------------------------------------------------------------
 User Function PL020D()
 
@@ -33,6 +33,7 @@ User Function PL020D()
 	Private cLoja := ''
 	Private cData := ''
 	Private cNatureza := ''
+	Private cHrEntr := ''
 
 	Private lMsErroAuto := .F.
 	Private lAutoErrNoFile := .F.
@@ -65,7 +66,7 @@ User Function PL020D()
 	strSql += "   AND SB1010.D_E_L_E_T_ <> '*' "
 	strSql += "   AND SA7010.D_E_L_E_T_ <> '*' "
 	strSql += " ORDER BY ZA0_CLIENT, ZA0_LOJA, ZA0_DTENTR, "
-	strSql += " A7_XNATUR, ZA0_PRODUT "
+	strSql += "   A7_XNATUR, ZA0_HRENTR, ZA0_PRODUT "
 
 	cAlias := MPSysOpenQuery(strSql)
 
@@ -74,6 +75,7 @@ User Function PL020D()
 		if (cAlias)->ZA0_CLIENT != cCliente .or. ;
 				(cAlias)->ZA0_LOJA   != cLoja .or. ;
 				(cAlias)->ZA0_DTENTR != cData .or. ;
+				(cAlias)->ZA0_HRENTR != cHrEntr .or. ;
 				(cAlias)->A7_XNATUR  != cNatureza
 
 			GravaPedido()
@@ -81,6 +83,7 @@ User Function PL020D()
 			cCliente:= (cAlias)->ZA0_CLIENT
 			cLoja:= (cAlias)->ZA0_LOJA
 			cData:= (cAlias)->ZA0_DTENTR
+			cHrEntr:= (cAlias)->ZA0_HRENTR
 			cNatureza := (cAlias)->A7_XNATUR
 
 			// Verificar o cliente
