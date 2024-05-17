@@ -18,18 +18,18 @@ Função Manutenção de pedidos EDI do cliente.
 
 3- Geração de demandas para o MRP (PL020C)
     Leitura dos pedidos EDI (ZA0) e gravação da tabela de demandas
+    Leitura dos pedidos de vendas e gravação da tabela de demandas
     Só trata os registros com status = 0
     O programa deleta todas as linhas de demandas do código = "AUTO", e gera novos.
-    As demandas são geradas para o dia anterior à necessidade.
 
-4- Geração de pedidos de vendas (PL020D)
+4- Geração de pedidos de vendas (PL020D) - em pausa
     Via Execauto do MATA410
     Só trata os registros com status = 0
     Uma vez gerado o pedido, o programa altera o status = 9 (registro inativo)
     O campos C5_NATUREZ está no item X cliente
     O SA7 - item X cliente - foram criados 1 campo (natureza)
 
-5- Geração dos retornos de beneficiamento
+5- Geração dos retornos de beneficiamento - em pausa
     O sistema não permite a criação da linha do pedido sem os valores unitários e as notas a serem devolvidas.
     Portando a geração dos retornos tem que ser feita no momento do faturamento.
 

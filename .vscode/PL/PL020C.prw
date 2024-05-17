@@ -79,7 +79,7 @@ Static Function CriaEDI()
 	Local nSequencia := 0
     Local dData 
 
-	strSql := "SELECT ZA0010.* "
+	strSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, B1_LOCPAD, ZA0_QTDE, ZA0_NUMPED "
 	strSql += " FROM ZA0010, SB1010 "                     
 	strSql += " WHERE ZA0_STATUS = '0' "          
 	strSql += " AND ZA0_FILIAL   = B1_FILIAL "    
@@ -93,11 +93,12 @@ Static Function CriaEDI()
 
         nSequencia := nSequencia + 1
 
-        dData := DaySub((cAlias)->ZA0_DTENTR, 1)
-        if dData = 1
+        dData := DaySub(Stod((cAlias)->ZA0_DTENTR), 1)
+
+        if Dow(dData) = 1
             dData := DaySub(dData, 2)
         Endif
-        if dData = 7
+        if Dow(dData) = 7
             dData := DaySub(dData, 1)
         Endif
 
@@ -108,7 +109,7 @@ Static Function CriaEDI()
         SVR->VR_CODIGO  := "AUTO"
         SVR->VR_SEQUEN  := nSequencia
         SVR->VR_PROD 	:= (cAlias)->ZA0_PRODUT
-        SVR->VR_LOCAL   := (cAlias)->B1_LOCAL
+        SVR->VR_LOCAL   := (cAlias)->B1_LOCPAD
         SVR->VR_QUANT 	:= (cAlias)->ZA0_QTDE
         SVR->VR_DOC 	:= (cAlias)->ZA0_NUMPED
         SVR->VR_DATA 	:= dData
@@ -167,11 +168,11 @@ Static Function CriaPV()
 
         nSequencia := nSequencia + 1
 
-        dData := DaySub((cAlias)->C6_ENTREG, 1)
-        if dData = 1
+        dData := DaySub(Stod((cAlias)->C6_ENTREG), 1)
+        if dow(dData) = 1
             dData := DaySub(dData, 2)
         Endif
-        if dData = 7
+        if dow(dData) = 7
             dData := DaySub(dData, 1)
         Endif
 

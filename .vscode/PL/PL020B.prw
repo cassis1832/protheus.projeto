@@ -7,15 +7,6 @@ Função
    Importação do arquivo texto contendo pedidos EDI
    Gravar tabela ZA0 - movimentos EDI importados 
    Esse programa chamado a partir do PL020 (manutenção do ZA0)
-	cCliente	:= aLinha[1]
-	cLoja 	    := aLinha[2]
-	cNumPed 	:= aLinha[3]
-	cCodCli 	:= aLinha[4]
-	cDtEntr 	:= aLinha[6]
-	cQtde 	    := aLinha[7]
-	cTipo		:= aLinha[8]
-	cEmbal 	    := aLinha[9]
-	cQtEmb	    := aLinha[10]
 
 @author Assis
 @since 08/04/2024
@@ -109,26 +100,23 @@ Static Function GravaDados()
 
 	cCliente := aLinha[1]
 	cLoja 	 := aLinha[2]
-	cNumPed  := aLinha[3]
-	cCodCli  := aLinha[4]
-	cDtEntr  := aLinha[5]
+	cCodCli  := aLinha[3]
+	cDtEntr  := aLinha[4]
+    cHrEntr  := aLinha[5]
 	cQtde 	 := aLinha[6]
-	cTipo	 := aLinha[7]
-	cEmbal 	 := aLinha[8]
-	cQtEmb	 := aLinha[9]
+    cTipoPe  := "F"
+    cCodCli  := AvKey(cCodCli, "A7_CODCLI")
 
 	// Consistir o codigo do cliente e item do cliente
 	dbSelectArea("SA7")
 	SA7->(DBSetOrder(3))  // Filial/cliente/loja/codcli
 
- 	DBSeek(xFilial("SA7")+cCliente+cLoja+cCodCli)
+    cProduto := ""
 
-    if ! Eof()
-        IF A7_FILIAL == xFilial("SA7") .And. A7_CLIENTE == cCliente .And. A7_LOJA == cLoja .And. A7_CODCLI == cCodCli
-            cProduto := A7_PRODUTO
+	If SA7->(MsSeek(xFilial("SA7") + cCliente + cLoja + cCodCli))
+        IF SA7->A7_FILIAL == xFilial("SA7") .And. SA7->A7_CLIENTE == cCliente .And. SA7->A7_LOJA == cLoja .And. SA7->A7_CODCLI == cCodCli
+            cProduto := SA7->A7_PRODUTO
             lErro = .F.
-        Else
-            cProduto := ''
         EndIf
     EndIf
 
@@ -145,12 +133,10 @@ Static Function GravaDados()
         ZA0_DTENTR == cDtEntr
 
 		RecLock("ZA0", .F.)
-        ZA0->ZA0_TIPOPE   := cTipo
-		ZA0->ZA0_EMBAL 	  := cEmbal
-		ZA0->ZA0_QTEMB 	  := Val(StrTran(cQtEmb,",","."))
 		ZA0->ZA0_ARQUIV   := cArquivo
 		ZA0->ZA0_DTCRIA   := dtProcesso
 		ZA0->ZA0_HRCRIA   := hrProcesso
+		ZA0->ZA0_TIPOPE   := cTipoPe
 
 		if ZA0_STATUS == "0" .or. ZA0_STATUS == "1" 
             ZA0->ZA0_QTDE := Val(StrTran(cQtde,",","."))
@@ -166,19 +152,16 @@ Static Function GravaDados()
 		DbSelectArea("ZA0")
 		RecLock("ZA0", .T.)	
 		ZA0->ZA0_FILIAL	:= xFilial("ZA0")	
-		ZA0->ZA0_CODPED := GETSXENUM("ZA0", "ZA0_CODPED")                                                                                                  
+		ZA0->ZA0_CODPED := GETSXENUM("ZA0", "ZA0_CODPED", 1)                                                                                                  
 		ZA0->ZA0_CLIENT := cCliente
 		ZA0->ZA0_LOJA 	:= cLoja
-		ZA0->ZA0_NUMPED := cNumped
 		ZA0->ZA0_PRODUT := cProduto
 		ZA0->ZA0_ITCLI 	:= cCodCli
-		ZA0->ZA0_TIPOPE := cTipo
+		ZA0->ZA0_TIPOPE := cTipoPe
 		ZA0->ZA0_QTDE 	:= Val(StrTran(cQtde,",","."))
 		ZA0->ZA0_DTENTR := CTOD(cDtEntr)
-		ZA0->ZA0_EMBAL 	:= cEmbal
-		ZA0->ZA0_QTEMB 	:= Val(StrTran(cQtEmb,",","."))
 		ZA0->ZA0_ARQUIV := cArquivo
-		ZA0->ZA0_ORIGEM := "PL030"
+		ZA0->ZA0_ORIGEM := "PL020B"
 		ZA0->ZA0_DTCRIA := dtProcesso
 		ZA0->ZA0_HRCRIA := hrProcesso
 		if (lErro)
@@ -186,6 +169,7 @@ Static Function GravaDados()
 		else
 			ZA0->ZA0_STATUS := "0"
 		EndIf
+		ConfirmSx8()
 	endif
 	
 	MsUnLock() 
@@ -203,7 +187,7 @@ Static Function selArquivo()
 	Local cArqSel := ""
 
 	cArqSel := tFileDialog(;
-	   cTipArq,;  // Filtragem de tipos de arquivos que ser�o selecionados
+	   cTipArq,;  // Filtragem de tipos de arquivos que serão selecionados
 	   cTitulo,;  // Titulo da Janela para seleção dos arquivos
 	   ,;         // Compatibilidade
 	   cDirIni,;  // Diretorio inicial da busca de arquivos
@@ -226,12 +210,12 @@ Static Function LimpaDados()
    	dbSelectArea("ZA0")
    	ZA0->(DBSetOrder(2))  // Filial/cliente/loja
    
-   	DBSeek(xFilial("ZA0")+cCliente+cLoja)
+   	DBSeek(xFilial("ZA0") + cCliente + cLoja)
 
 	Do While ! Eof() .And. ;
 		ZA0_FILIAL == xFilial("ZA0") .And. ;
 		ZA0_CLIENT == cCliente .And. ;
-		ZA0_LOJA == cLoja
+		ZA0_LOJA   == cLoja
 
 		if ZA0_STATUS <> "9"
 			if ZA0->ZA0_DTCRIA <> dtProcesso .or. ;

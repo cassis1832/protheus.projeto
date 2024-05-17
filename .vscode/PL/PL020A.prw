@@ -37,11 +37,12 @@ User Function PL020PE()
 Return xRet
 
 Static Function Consistencia()
-	Local lOk	 	:= .T.
+	Local lOk	 := .T.
+	Local cItem  := AvKey("", "DA1_ITEM")
 
 	SA1->(dbSetOrder(1))
-	SA7->(dbSetOrder(1))
-	DA1->(dbSetOrder(2)) // produto + tabela + item
+	SA7->(dbSetOrder(1))    // Filial,Cliente,Loja,Produto
+	DA1->(dbSetOrder(2))    // Filial,Produto,Tabela,Item (seq)
 
 	// Verificar a relacao Item X Cliente
 	If SA7->(! MsSeek(xFilial("SA7") + M->ZA0_CLIENT + M->ZA0_LOJA + M->ZA0_PRODUT))
@@ -56,7 +57,7 @@ Static Function Consistencia()
 		lOk     := .F.
 		FWAlertError("Cliente não cadastrado!", "Cadastro de clientes")
 	else
-		If DA1->(! MsSeek(xFilial("DA1") + M->ZA0_PRODUT + SA1->A1_TABELA, .T.))
+		If DA1->(! MsSeek(xFilial("DA1") + M->ZA0_PRODUT + SA1->A1_TABELA + cItem, .T.))
 			FWAlertError("Tabela de preços não encontrada para o item!", "Tabela de preços")
 			lOk     := .F.
 		EndIf

@@ -18,6 +18,7 @@ User Function PL020()
 	Local oBrowse
 
 	chkFile("ZA0")
+	chkFile("SA7")
 	oBrowse := FWMBrowse():New()
 	oBrowse:SetAlias("ZA0")
 	oBrowse:SetDescription(cTitulo)
