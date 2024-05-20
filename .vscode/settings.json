@@ -1,5 +1,13 @@
 {
-   "files.encoding": "windows1252",
-   "totvsLanguageServer.welcomePage": false,
-   "totvsLanguageServer.editor.linter.includes": "C:\\Users\\carlos.assis\\Documents\\ADVPL\\includes"
+    "totvsLanguageServer.welcomePage": false,
+    "totvsLanguageServer.editor.linter.includes": "C:\\Users\\carlos.assis\\Documents\\ADVPL\\includes",
+    "[advpl]": {
+        "files.encoding": "windows1252",
+    },
+    "[prw]": {
+        "files.encoding": "windows1252",
+    },
+    "[PRW]": {
+        "files.encoding": "windows1252",
+    },
 }
