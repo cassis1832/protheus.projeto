@@ -1,0 +1,19 @@
+Tela para consulta do planejamento com visão semelhante ao quadro usado PCP
+
+Criar tab1 com as datas
+Criar tab2 com os itens
+
+Selecionar o cliente
+    Montar array com os itens do cliente - col 1
+
+Percorrer array dos itens selecionados
+    Ler os pedidos dos itens e do cliente selecionado ZA0, classificado por data
+    Salvar a primeira data
+    Montar demais ocorrencias com as datas a partir da primeira - 10 ocorrencias
+    Montar as qt. pedida dia a dia a partir da primeira data nas demais colunas
+    
+Calcular o saldo atual do item
+
+Montar grid com os dados selecionados
+
+

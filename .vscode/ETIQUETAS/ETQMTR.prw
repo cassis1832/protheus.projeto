@@ -3,7 +3,7 @@
 
 //-------------------------------------------------------------------
 /*/{Protheus.doc} ETQMTR
-Impressão Etiqueta Cliente GKTB
+Impressï¿½o Etiqueta Cliente GKTB
 @author  Vinicius Pereira
 @since   06/11/2023
 @version 1.0
@@ -26,15 +26,15 @@ User Function ETQMTR()
 	Private oNo := LoadBitmap( GetResources(), "LBNO")
 	Static oDlg
 
-	DEFINE MSDIALOG oDlg TITLE "Emissão de Etiqueta" FROM 000, 000  TO 450, 800 COLORS 0, 16777215 PIXEL
+	DEFINE MSDIALOG oDlg TITLE "Emissï¿½o de Etiqueta" FROM 000, 000  TO 450, 800 COLORS 0, 16777215 PIXEL
 
 	fWBrowse1()
 	//DEFINE SBUTTON oSButton1 FROM 008, 307 TYPE 06 OF oDlg ENABLE ACTION ETQMTRB(nRadMenu1,aWBrowse1)
 	//DEFINE SBUTTON oSButton2 FROM 027, 307 TYPE 17 OF oDlg ENABLE ACTION ETQMTRA(nRadMenu1,nRadMenu2,cGet1)
-    DEFINE SBUTTON oSButton1 FROM 008, 307 TYPE 06 OF oDlg ENABLE ACTION ETQMTRB(aWBrowse1)
+	DEFINE SBUTTON oSButton1 FROM 008, 307 TYPE 06 OF oDlg ENABLE ACTION ETQMTRB(aWBrowse1)
 	DEFINE SBUTTON oSButton2 FROM 027, 307 TYPE 17 OF oDlg ENABLE ACTION ETQMTRA(cGet1)
 	DEFINE SBUTTON oSButton3 FROM 046, 307 TYPE 02 OF oDlg ENABLE ACTION oDlg:end()
-    //@ 016, 005 RADIO oRadMenu1 VAR nRadMenu1 ITEMS "Vendas","Compras" SIZE 092, 018 OF oDlg COLOR 0, 16777215 PIXEL
+	//@ 016, 005 RADIO oRadMenu1 VAR nRadMenu1 ITEMS "Vendas","Compras" SIZE 092, 018 OF oDlg COLOR 0, 16777215 PIXEL
 	//@ 040, 005 RADIO oRadMenu2 VAR nRadMenu2 ITEMS "Pedido","Nota","Lote" SIZE 092, 026 OF oDlg COLOR 0, 16777215 PIXEL
 	@ 031, 111 SAY oSay1 PROMPT "DIGITE NUMERO DA NOTA / SERIE " SIZE 137, 007 OF oDlg COLORS 0, 16777215 PIXEL
 	@ 041, 112 MSGET oGet1 VAR cGet1 SIZE 111, 010 OF oDlg COLORS 0, 16777215 PIXEL
@@ -48,7 +48,7 @@ Static Function fWBrowse1()
 	// Insert items here
 	Aadd(aWBrowse1,{.f.,0," "," "," "," "," "," "," ",0," ",stod(" ")," "," "," "," "," "})
 
-	@ 068, 005 LISTBOX oWBrowse1 Fields HEADER " ","Qtd Impre","Pedido","Nota Fiscal","Serie","Cliente","Nome","Produto","Descrição","Quantidade","Lote","Emissão","Espécie","Peso Liq.","Cod. Prod. Cliente","Descr. Prod. Cliente","End. Cliente" SIZE 390, 152 OF oDlg PIXEL ColSizes 50,50
+	@ 068, 005 LISTBOX oWBrowse1 Fields HEADER " ","Qtd Impre","Pedido","Nota Fiscal","Serie","Cliente","Nome","Produto","Descriï¿½ï¿½o","Quantidade","Lote","Emissï¿½o","Espï¿½cie","Peso Liq.","Cod. Prod. Cliente","Descr. Prod. Cliente","End. Cliente" SIZE 390, 152 OF oDlg PIXEL ColSizes 50,50
 	oWBrowse1:SetArray(aWBrowse1)
 	oWBrowse1:bLine := {|| {;
 		If(aWBrowse1[oWBrowse1:nAT,1],oOk,oNo),;
@@ -120,18 +120,19 @@ STATIC FUNCTION ETQMTRA(cPesq)
     			AND B.D2_CLIENTE = E.A7_CLIENTE
 				AND B.D2_LOJA = E.A7_LOJA
 				AND B.D2_COD =  E.A7_PRODUTO
-			WHERE
-				A.F2_DOC = %EXP:cNota%
+			WHERE A.F2_DOC = %EXP:cNota%
 				AND A.F2_SERIE = %EXP:cSerie%
 		ENDSQL
 
 		DBSELECTAREA(cTrb)
+
 		if  (cTrb)->(EOF())
 			Aadd(aWBrowse1,{.f.,0," "," "," "," "," "," "," ",0," ",stod(" ")," "," "," "," "," "})
-			MsgInfo("NF não encontrada!")
+			MsgInfo("NF nï¿½o encontrada!")
 		else
 			WHILE (cTrb)->(!EOF())
-				(cTrb)->(AADD(aWBrowse1,{.F.,1,D2_PEDIDO,D2_DOC,D2_SERIE,A1_COD, A1_NOME, B1_COD, B1_DESC, D2_QUANT, D2_LOTECTL, stod(D2_EMISSAO),F2_ESPECI1,F2_PLIQUI,A7_CODCLI,A7_DESCCLI,B1_XENDCLI}))
+				(cTrb)->(AADD(aWBrowse1,{.F.,1,D2_PEDIDO,D2_DOC,D2_SERIE,A1_COD, A1_NOME, B1_COD, B1_DESC, D2_QUANT, D2_LOTECTL, stod(D2_EMISSAO),F2_ESPECI1,F2_PLIQUI,A7_CODCLI,A7_DESCCLI,"123"}))
+				// (cTrb)->(AADD(aWBrowse1,{.F.,1,D2_PEDIDO,D2_DOC,D2_SERIE,A1_COD, A1_NOME, B1_COD, B1_DESC, D2_QUANT, D2_LOTECTL, stod(D2_EMISSAO),F2_ESPECI1,F2_PLIQUI,A7_CODCLI,A7_DESCCLI,B1_XENDCLI}))
 				(cTrb)->(DBSKIP())
 			END
 		endif
@@ -170,26 +171,26 @@ Rotina para filtrar as etiquetas
 //-------------------------------------------------------------------
 STATIC FUNCTION ETQMTRB(aDados)
 	IF LEN(aDados) > 0
-    	Processa({|| ETQMTRC(aDados) },"Aguarde","Emitindo a Etiquetas",.F.)
+		Processa({|| ETQMTRC(aDados) },"Aguarde","Emitindo a Etiquetas",.F.)
 	ELSE
-		Aviso("Atenção","Não a Dados para ser impresso!",{"Ok"})
+		Aviso("Atenï¿½ï¿½o","Nï¿½o a Dados para ser impresso!",{"Ok"})
 	endif
 Return
 //-------------------------------------------------------------------
 /*/{Protheus.doc} ETQMTRC
-impressão de vendas
+impressï¿½o de vendas
 @author  Vinicius Pereira
 @since   06/11/2023
 @version 1.0
 /*/
 //-------------------------------------------------------------------
 Static Function ETQMTRC(aDados)
-    u_etqimpr(aDados)
+	u_etqimpr(aDados)
 RETURN
 
 //-------------------------------------------------------------------
 /*/{Protheus.doc} ETQMTRE
-ROTINA PARA EDIÇÃO DO GET
+ROTINA PARA EDIï¿½ï¿½O DO GET
 @author  Vinicius Pereira
 @since   06/11/2023
 @version 1.0
@@ -244,7 +245,7 @@ static function ETQMTRF(nGet1,npos)
 return
 //-------------------------------------------------------------------
 /*/{Protheus.doc} CriaSx1
-criação da estrutura de pergunte
+criaï¿½ï¿½o da estrutura de pergunte
 @author  Vinicius Pereira
 @since   08/03/2022
 @version 1.0
@@ -257,7 +258,7 @@ Static Function CriaSx1(cPerg)
 	Local aAreaSX1 := SX1->(GetArea())
 	Local aReg := {}
 
-	aAdd(aReg,{cPerg,"01","Porta de impressão"  ,"mv_ch1","C",45,0,0,"G","","mv_par01","","LPT1","","","","","","","","","","","","",""})
+	aAdd(aReg,{cPerg,"01","Porta de impressï¿½o"  ,"mv_ch1","C",45,0,0,"G","","mv_par01","","LPT1","","","","","","","","","","","","",""})
 	aAdd(aReg,{"X1_GRUPO","X1_ORDEM","X1_PERGUNT","X1_VARIAVL","X1_TIPO","X1_TAMANHO","X1_DECIMAL","X1_PRESEL","X1_GSC","X1_VALID","X1_VAR01","X1_DEF01","X1_CNT01","X1_VAR02","X1_DEF02","X1_CNT02","X1_VAR03","X1_DEF03","X1_CNT03","X1_VAR04","X1_DEF04","X1_CNT04","X1_VAR05","X1_DEF05","X1_CNT05","X1_F3"})
 
 
@@ -280,7 +281,7 @@ Static Function CriaSx1(cPerg)
 Return Nil
 
 /*/{Protheus.doc} EtqCli
-rotina de impressão via impressora termica ZEBRA
+rotina de impressï¿½o via impressora termica ZEBRA
 @author  Vinicius A. Pereira
 @since   06/11/2023
 @version 1.0
@@ -288,9 +289,9 @@ rotina de impressão via impressora termica ZEBRA
 User Function etqimpr(aDados)
 	Local aArea     := GetArea()
 	Local cPorta    := "LPT1"
-    Local cFila     := "ETQCLI"
+	Local cFila     := "ETQCLI"
 	Local ENTER		 := Chr(13)+Chr(10)
-    Local nX,nY
+	Local nX,nY
 
 	MSCBPRINTER("ZEBRA", cPorta ,,,.F.,,,,40000 , cFila, .F.)
 	MSCBCHKSTATUS(.F.)
@@ -361,10 +362,10 @@ User Function etqimpr(aDados)
 				MSCBWrite("^FT320,525^A0N,90,55^FH\^FD"+AllTrim(aDados[nX][15])+"^FS" +ENTER) //Cod. Produto Cliente
 				MSCBWrite("^FT290,565^A0N,30,30^FH\^FD"+AllTrim(aDados[nX][16])+"^FS" +ENTER) //Descr. Produto Cliente
 				MSCBWrite("^FT100,665^A0N,70,50^FH\^FD"+AllTrim(Str(aDados[nX][2]))+"^FS" +ENTER) //Qtd. de Etiquetas
-				MSCBWrite("^FT540,665^A0N,70,50^FH\^FD"+AllTrim(aDados[nX][17])+"^FS" +ENTER) //Endereço g-ktb
+				MSCBWrite("^FT540,665^A0N,70,50^FH\^FD"+AllTrim(aDados[nX][17])+"^FS" +ENTER) //Endereï¿½o g-ktb
 
-                // 1  2      3      4        5       6       7         8      9         10        11                12         13        14        15         16       17                  
-                //.F.,1,D2_PEDIDO,D2_DOC,D2_SERIE,A1_COD, A1_NOME, B1_COD, B1_DESC, D2_QUANT, D2_LOTECTL, stod(D2_EMISSAO,F2_ESPECI1,F2_PLIQUI,A7_CODCLI,A7_DESCCLI,B1_XENDCLI
+				// 1  2      3      4        5       6       7         8      9         10        11                12         13        14        15         16       17
+				//.F.,1,D2_PEDIDO,D2_DOC,D2_SERIE,A1_COD, A1_NOME, B1_COD, B1_DESC, D2_QUANT, D2_LOTECTL, stod(D2_EMISSAO,F2_ESPECI1,F2_PLIQUI,A7_CODCLI,A7_DESCCLI,B1_XENDCLI
 
 				MSCBWrite("^PQ1,0,1,Y" + ENTER)
 				MSCBWrite("^XZ" + ENTER)
