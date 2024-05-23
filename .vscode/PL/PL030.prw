@@ -29,6 +29,9 @@ User Function PL030()
 
 	Private nSaldo      := 0
 
+	Private nQtde := 0
+
+
 	// Carrega os itens e os saldos iniciais
 	strSql := "SELECT A7_PRODUTO, B1_LOCPAD "
 	strSql += "  FROM " + RetSQLName("SA7") + " SA7, " + RetSQLName("SB1") + " SB1"
@@ -53,7 +56,7 @@ User Function PL030()
 			nSaldo := 0
 		EndIf
 
-		Aadd(aPedidos,{(cAliasSA7)->A7_PRODUTO, nSaldo, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})
+		Aadd(aPedidos,{(cAliasSA7)->A7_PRODUTO, cValToChar(nSaldo), "0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0"})
 
 		(cAliasSA7)->(DbSkip())
 	EndDo
@@ -103,7 +106,8 @@ User Function PL030()
 
 		if nPosItem <> 0 .and. nPosData <> 0
 			// Soma a quantidade do pedido
-			aPedidos[nPosItem][nPosData+2] := aPedidos[nPosItem][nPosData+2] + (cAliasZA0)->ZA0_QTDE
+			nQtde := val(aPedidos[nPosItem][nPosData+2]) + (cAliasZA0)->ZA0_QTDE
+			aPedidos[nPosItem][nPosData+2] := cValToChar(nQtde)
 		endif
 
 		(cAliasZA0)->(DbSkip())
@@ -117,15 +121,40 @@ User Function PL030()
 		nPosData := aScan(aDatas, {|x| x == sToD((cAliasSC6)->C6_ENTREG)})
 
 		// Soma a quantidade do pedido
-		aPedidos[nPosItem][nPosData+2] := aPedidos[nPosItem][nPosData+2] + val((cAliasSC6)->C6_QTDVEN)
+		nQtde := val(aPedidos[nPosItem][nPosData+2]) + val((cAliasSC6)->C6_QTDVEN)
+		aPedidos[nPosItem][nPosData+2] := cValToChar(nQtde)
 
 		(cAliasSC6)->(DbSkip())
 	End While
 
+	CalculaSaldos()
+
 	fWBrowse1()
 Return
 
+Static Function	CalculaSaldos()
+	Local nRow := 0
+	Local nCol := 0
+	Local nSaldo :=0
 
+	For nRow := 1 to Len(aPedidos) Step 1
+		nSaldo := val(aPedidos[nRow][2])
+
+		For nCol := 3 to Len(aPedidos[nRow])
+
+			nSaldo := nSaldo - val(aPedidos[nRow][nCol])
+
+			if nSaldo < 0 .and. val(aPedidos[nRow][nCol]) > 0
+				aPedidos[nRow][nCol] := aPedidos[nRow][nCol] + " ( " + cValToChar(nSaldo) + " )"
+			endif
+		Next
+	Next
+return
+
+
+/*
+	Todas as datas do periodo
+*/
 Static Function MontaDatas()
 	Local nInd :=0
 	Local dData
@@ -149,6 +178,10 @@ Static Function MontaDatas()
 	Next
 Return
 
+
+/*
+	Somente as datas com conteúdo
+*/
 Static Function MontaDt2()
 	Local nX := 0
 	Local dData
@@ -199,6 +232,7 @@ Static Function fWBrowse1()
 
 	oFwBrowse := FWBrowse():New(oDlg)
 	oFwBrowse:SetDataArrayoBrowse()  //Define utilização de array
+	oFwBrowse:AddStatusColumns( { || BrwStatus() }, { || BrwLegend() } )
 
 	//Indica o array utilizado para apresentação dos dados no Browse.
 	oFwBrowse:SetArray(aPedidos)
@@ -222,22 +256,42 @@ Static Function RetColumns()
 	Local aColumns := {}
 
 	aAdd(aColumns, {"Item",  {|oBrw| aPedidos[oBrw:At(), 1] }, "C", "@!"     , 1, 10, 0, .F.})
-	aAdd(aColumns, {"Saldo", {|oBrw| aPedidos[oBrw:At(), 2] }, "N", "@E 9999", 0,  6, 2, .F.})
+	aAdd(aColumns, {"Saldo Atual", {|oBrw| aPedidos[oBrw:At(), 2] }, "C", "@!", 0,  6, 2, .F.})
 
-	aAdd(aColumns, {DtoC(aDatas[1]), {|oBrw| aPedidos[oBrw:At(),  3] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[2]), {|oBrw| aPedidos[oBrw:At(),  4] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[3]), {|oBrw| aPedidos[oBrw:At(),  5] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[4]), {|oBrw| aPedidos[oBrw:At(),  6] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[5]), {|oBrw| aPedidos[oBrw:At(),  7] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[6]), {|oBrw| aPedidos[oBrw:At(),  8] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[7]), {|oBrw| aPedidos[oBrw:At(),  9] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[8]), {|oBrw| aPedidos[oBrw:At(), 10] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[9]), {|oBrw| aPedidos[oBrw:At(), 11] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[10]),{|oBrw| aPedidos[oBrw:At(), 12] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[11]),{|oBrw| aPedidos[oBrw:At(), 13] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[12]),{|oBrw| aPedidos[oBrw:At(), 14] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[13]),{|oBrw| aPedidos[oBrw:At(), 15] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[14]),{|oBrw| aPedidos[oBrw:At(), 16] }, "N", "@E 9999",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[15]),{|oBrw| aPedidos[oBrw:At(), 17] }, "N", "@E 9999",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[1]), {|oBrw| aPedidos[oBrw:At(),  3] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[2]), {|oBrw| aPedidos[oBrw:At(),  4] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[3]), {|oBrw| aPedidos[oBrw:At(),  5] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[4]), {|oBrw| aPedidos[oBrw:At(),  6] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[5]), {|oBrw| aPedidos[oBrw:At(),  7] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[6]), {|oBrw| aPedidos[oBrw:At(),  8] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[7]), {|oBrw| aPedidos[oBrw:At(),  9] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[8]), {|oBrw| aPedidos[oBrw:At(), 10] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[9]), {|oBrw| aPedidos[oBrw:At(), 11] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[10]),{|oBrw| aPedidos[oBrw:At(), 12] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[11]),{|oBrw| aPedidos[oBrw:At(), 13] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[12]),{|oBrw| aPedidos[oBrw:At(), 14] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[13]),{|oBrw| aPedidos[oBrw:At(), 15] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[14]),{|oBrw| aPedidos[oBrw:At(), 16] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[15]),{|oBrw| aPedidos[oBrw:At(), 17] }, "C", "@!",	0, 6, 2, .F.})
 
 Return aColumns
+
+
+Static Function BrwStatus()
+Return Iif(ValidMark(),"BR_VERDE","BR_VERMELHO")
+
+
+Static Function ValidMark()
+	Local lRet := .T.
+Return lRet
+
+
+Static Function BrwLegend()
+	Local oLegend := FWLegend():New()
+
+	oLegend:Add("","BR_VERDE" , "VERDE" )
+	oLegend:Add("","BR_VERMELHO", "VERMELHO" )
+	oLegend:Activate()
+	oLegend:View()
+	oLegend:DeActivate()
+Return
