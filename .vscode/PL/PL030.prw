@@ -1,5 +1,6 @@
 #Include 'Protheus.ch'
 #Include 'FWMVCDef.ch'
+#INCLUDE "TBICONN.CH"
 
 /*/{Protheus.doc} PL030
 Função: Consulta de planejamento por cliente
@@ -23,6 +24,7 @@ User Function PL030()
 	oBrowse:Activate()
 
 Return Nil
+
 
 /*---------------------------------------------------------------------*
 	Criação do menu MVC

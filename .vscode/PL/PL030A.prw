@@ -235,14 +235,25 @@ Return
 
 Static Function fWBrowse1()
 	Local nX:=0
-	Local aSize		:= MsAdvSize(.T.)
-	Local nMSEsq   	:= aSize[7]		//Lin inicial
-	Local nMIEsq   	:= 0			//Col inicial
-	Local nMIDir 	:= aSize[6]		//Lin final
-	Local nMSDir  	:= aSize[5]  	//Col final
 
-	Define MsDialog oDlg Title "Visão Geral do Planejamento Por Cliente" From nMSEsq,nMIEsq To nMIDir,nMSDir Of oMainWnd Pixel STYLE nOR( WS_VISIBLE, WS_POPUP )
-	oDlg:lMaximized := .T.
+	Local cFontUti    := "Tahoma"
+	Local oFontAno    := TFont():New(cFontUti,,-38)
+	Local oFontSub    := TFont():New(cFontUti,,-20)
+	Local oFontSubN   := TFont():New(cFontUti,,-20,,.T.)
+	Local oFontBtn    := TFont():New(cFontUti,,-20)
+
+
+	oDlg:= FwDialogModal():New()
+	oDlg:SetEscClose(.T.)
+	oDlg:SetTitle('FwDialogModal')
+
+	//Seta a largura e altura da janela em pixel
+	oDlg:SetPos(000, 000)
+	oDlg:SetSize(400, 700)
+
+	oDlg:CreateDialog()
+	oDlg:AddCloseButton(Nil, 'Fechar')
+	oPnl:=oDlg:GetPanelMain()
 
 	oFwBrowse := FWBrowse():New()
 	oFwBrowse:SetDataArrayoBrowse()  //Define utilização de array
@@ -257,10 +268,15 @@ Static Function fWBrowse1()
 		oFwBrowse:AddColumn( aColumns[nX] )
 	Next
 
-	oFwBrowse:SetOwner(oDlg)
+	oFwBrowse:SetOwner(oPnl)
 	oFwBrowse:SetDescription( "Planejamento por Cliente" )
-	oFwBrowse:Activate()
 
+	//oFwBrowse:SetFontBrowse(oFontBtn)
+
+	oFwBrowse:SetCSS( "QTableWidget{ font-family: Tahoma; font-size: 36px; font-weight: bold; color: black; background-color: #B0E2FF; }" +;
+		"QTableWidget::item:selected{ color: black; background-color: yellow; }" )
+
+	oFwBrowse:Activate()
 	oDlg:Activate()
 Return
 
