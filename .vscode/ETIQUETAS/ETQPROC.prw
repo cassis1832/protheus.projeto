@@ -19,11 +19,11 @@ User Function ETQPROC()
 	Private nNumEtq := 0
 	PRivate nQtdeEmb:= 0
 
-	AAdd(aPergs, {1, "Número da Ordem", CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
-	aAdd(aPergs, {1, "Número de Etiquetas", nNumEtq, "@E 9,999", "Positivo()", "", ".T.", 80,  .F.})
-	aAdd(aPergs, {1, "Quantidade por Etiqueta", nQtdeEmb, "@E 99,999.99", "Positivo()", "", ".T.", 80,  .F.})
+	AAdd(aPergs, {1, "Numero da Ordem", CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
+	aAdd(aPergs, {1, "Numero de Etiquetas", nNumEtq, "@E 999", "Positivo()", "", ".T.", 80,  .F.})
+	aAdd(aPergs, {1, "Quantidade por Etiqueta", nQtdeEmb, "@E 99,999", "Positivo()", "", ".T.", 80,  .F.})
 
-	If ParamBox(aPergs, "Parâmetros", @aResps,,,,,,,, .T., .T.)
+	If ParamBox(aPergs, "Parametros", @aResps,,,,,,,, .T., .T.)
 		cOrdem    := aResps[1]
 	Else
 		return
@@ -74,15 +74,23 @@ Static Function etqproci(cAliasOrd)
 			nQtde := NoRound((cAliasOrd)->C2_QUANT / nQtdeEmb, 0)
 			nUltima := (cAliasOrd)->C2_QUANT - ((nQtde - 1) * nQtdeEmb )
 		else
-			if (cAliasOrd)->B1_XQEMB != 0
+			if (cAliasOrd)->B1_XQEMB != 0 .and. (cAliasOrd)->C2_QUANT > (cAliasOrd)->B1_XQEMB
 				nQtde := NoRound((cAliasOrd)->C2_QUANT / (cAliasOrd)->B1_XQEMB, 0)
 				nUltima := (cAliasOrd)->C2_QUANT - ((nQtde - 1) * (cAliasOrd)->B1_XQEMB )
+			else
+				nQtde := 1
+				nUltima := 1
 			endif
 		endif
 	endif
 
-	cMensagem := "Serão impressas <strong>" + cValToChar(nQtde) + " etiquetas.</strong>"
-	If ! FWAlertYesNo(cMensagem, "Confirma a impressão?")
+	if nQtde = 1
+		cMensagem := "SERA IMPRESSA <strong>" + cValToChar(nQtde) + " ETIQUETA.</strong>"
+	else
+		cMensagem := "SERAO IMPRESSAS <strong>" + cValToChar(nQtde) + " ETIQUETAS.</strong>"
+	endif
+
+	If ! FWAlertYesNo(cMensagem, "CONFIRMA A IMPRESSAO?")
 		return
 	EndIf
 

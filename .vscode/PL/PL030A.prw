@@ -236,13 +236,6 @@ Return
 Static Function fWBrowse1()
 	Local nX:=0
 
-	Local cFontUti    := "Tahoma"
-	Local oFontAno    := TFont():New(cFontUti,,-38)
-	Local oFontSub    := TFont():New(cFontUti,,-20)
-	Local oFontSubN   := TFont():New(cFontUti,,-20,,.T.)
-	Local oFontBtn    := TFont():New(cFontUti,,-20)
-	Local ctextoCss
-
 	oDlg:= FwDialogModal():New()
 	oDlg:SetEscClose(.T.)
 	oDlg:SetTitle('FwDialogModal')
