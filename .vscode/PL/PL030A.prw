@@ -241,7 +241,7 @@ Static Function fWBrowse1()
 	Local oFontSub    := TFont():New(cFontUti,,-20)
 	Local oFontSubN   := TFont():New(cFontUti,,-20,,.T.)
 	Local oFontBtn    := TFont():New(cFontUti,,-20)
-
+	Local ctextoCss
 
 	oDlg:= FwDialogModal():New()
 	oDlg:SetEscClose(.T.)
@@ -270,12 +270,6 @@ Static Function fWBrowse1()
 
 	oFwBrowse:SetOwner(oPnl)
 	oFwBrowse:SetDescription( "Planejamento por Cliente" )
-
-	//oFwBrowse:SetFontBrowse(oFontBtn)
-
-	oFwBrowse:SetCSS( "QTableWidget{ font-family: Tahoma; font-size: 36px; font-weight: bold; color: black; background-color: #B0E2FF; }" +;
-		"QTableWidget::item:selected{ color: black; background-color: yellow; }" )
-
 	oFwBrowse:Activate()
 	oDlg:Activate()
 Return
