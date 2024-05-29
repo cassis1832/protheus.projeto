@@ -34,13 +34,13 @@ Return
 
 Static Function ObterDados()
 	Local cSql := ""
-	Local nSaldo:= 0
 	Local nQtde:= 0
+	Local nSaldo:= 0
 	Local nPosItem:=0
 	Local nPosData:=0
 
 	// Carrega os itens e os saldos iniciais
-	cSql := "SELECT A7_PRODUTO, B1_LOCPAD "
+	cSql := "SELECT A7_PRODUTO, B1_LOCPAD, A7_CODCLI "
 	cSql += "  FROM " + RetSQLName("SA7") + " SA7, " + RetSQLName("SB1") + " SB1"
 	cSql += " WHERE A7_FILIAL         = '" + xFilial("SA7") + "' "
 	cSql += "   AND B1_FILIAL         = '" + xFilial("SB1") + "' "
@@ -63,7 +63,7 @@ Static Function ObterDados()
 			nSaldo := 0
 		EndIf
 
-		Aadd(aPedidos,{(cAliasSA7)->A7_PRODUTO, cValToChar(nSaldo), "0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0"})
+		Aadd(aPedidos,{(cAliasSA7)->A7_PRODUTO, (cAliasSA7)->A7_CODCLI, cValToChar(nSaldo), "0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0"})
 
 		(cAliasSA7)->(DbSkip())
 	EndDo
@@ -119,8 +119,8 @@ Static Function ObterDados()
 
 		if nPosItem <> 0 .and. nPosData <> 0
 			// Soma a quantidade do pedido
-			nQtde := val(aPedidos[nPosItem][nPosData+2]) + (cAliasZA0)->ZA0_QTDE
-			aPedidos[nPosItem][nPosData+2] := cValToChar(nQtde)
+			nQtde := val(aPedidos[nPosItem][nPosData+3]) + (cAliasZA0)->ZA0_QTDE
+			aPedidos[nPosItem][nPosData+3] := cValToChar(nQtde)
 		endif
 
 		(cAliasZA0)->(DbSkip())
@@ -133,8 +133,8 @@ Static Function ObterDados()
 		nPosData := aScan(aDatas, {|x| x == sToD((cAliasSC6)->C6_ENTREG)})
 
 		// Soma a quantidade do pedido
-		nQtde := val(aPedidos[nPosItem][nPosData+2]) + val((cAliasSC6)->C6_QTDVEN)
-		aPedidos[nPosItem][nPosData+2] := cValToChar(nQtde)
+		nQtde := val(aPedidos[nPosItem][nPosData+3]) + val((cAliasSC6)->C6_QTDVEN)
+		aPedidos[nPosItem][nPosData+3] := cValToChar(nQtde)
 
 		(cAliasSC6)->(DbSkip())
 	End While
@@ -146,9 +146,9 @@ Static Function	CalculaSaldos()
 	Local nSaldo :=0
 
 	For nRow := 1 to Len(aPedidos) Step 1
-		nSaldo := val(aPedidos[nRow][2])
+		nSaldo := val(aPedidos[nRow][3])
 
-		For nCol := 3 to Len(aPedidos[nRow])
+		For nCol := 4 to Len(aPedidos[nRow])
 
 			nSaldo := nSaldo - val(aPedidos[nRow][nCol])
 
@@ -272,23 +272,24 @@ Static Function RetColumns()
 	Local aColumns := {}
 
 	aAdd(aColumns, {"Item",  {|oBrw| aPedidos[oBrw:At(), 1] }, "C", "@!"     , 1, 10, 0, .F.})
-	aAdd(aColumns, {"Saldo Atual", {|oBrw| aPedidos[oBrw:At(), 2] }, "C", "@!", 0,  6, 2, .F.})
+	aAdd(aColumns, {"Item do cliente", {|oBrw| aPedidos[oBrw:At(), 2] }, "C", "@!"     , 1, 10, 0, .F.})
+	aAdd(aColumns, {"Saldo Atual", {|oBrw| aPedidos[oBrw:At(), 3] }, "C", "@!", 0,  6, 2, .F.})
 
-	aAdd(aColumns, {DtoC(aDatas[1]), {|oBrw| aPedidos[oBrw:At(),  3] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[2]), {|oBrw| aPedidos[oBrw:At(),  4] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[3]), {|oBrw| aPedidos[oBrw:At(),  5] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[4]), {|oBrw| aPedidos[oBrw:At(),  6] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[5]), {|oBrw| aPedidos[oBrw:At(),  7] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[6]), {|oBrw| aPedidos[oBrw:At(),  8] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[7]), {|oBrw| aPedidos[oBrw:At(),  9] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[8]), {|oBrw| aPedidos[oBrw:At(), 10] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[9]), {|oBrw| aPedidos[oBrw:At(), 11] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[10]),{|oBrw| aPedidos[oBrw:At(), 12] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[11]),{|oBrw| aPedidos[oBrw:At(), 13] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[12]),{|oBrw| aPedidos[oBrw:At(), 14] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[13]),{|oBrw| aPedidos[oBrw:At(), 15] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[14]),{|oBrw| aPedidos[oBrw:At(), 16] }, "C", "@!",	0, 6, 2, .F.})
-	aAdd(aColumns, {DtoC(aDatas[15]),{|oBrw| aPedidos[oBrw:At(), 17] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[1]), {|oBrw| aPedidos[oBrw:At(),  4] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[2]), {|oBrw| aPedidos[oBrw:At(),  5] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[3]), {|oBrw| aPedidos[oBrw:At(),  6] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[4]), {|oBrw| aPedidos[oBrw:At(),  7] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[5]), {|oBrw| aPedidos[oBrw:At(),  8] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[6]), {|oBrw| aPedidos[oBrw:At(),  9] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[7]), {|oBrw| aPedidos[oBrw:At(), 10] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[8]), {|oBrw| aPedidos[oBrw:At(), 11] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[9]), {|oBrw| aPedidos[oBrw:At(), 12] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[10]),{|oBrw| aPedidos[oBrw:At(), 13] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[11]),{|oBrw| aPedidos[oBrw:At(), 14] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[12]),{|oBrw| aPedidos[oBrw:At(), 15] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[13]),{|oBrw| aPedidos[oBrw:At(), 16] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[14]),{|oBrw| aPedidos[oBrw:At(), 17] }, "C", "@!",	0, 6, 2, .F.})
+	aAdd(aColumns, {DtoC(aDatas[15]),{|oBrw| aPedidos[oBrw:At(), 18] }, "C", "@!",	0, 6, 2, .F.})
 
 Return aColumns
 

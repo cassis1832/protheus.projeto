@@ -13,13 +13,13 @@ User Function ETQPROC()
 	Local aArea     := GetArea()
 	Local aPergs    := {}
 	Local aResps	:= {}
-	Local cQuery 	:= ""
+	Local cSql 	    := ""
 
 	Local cOrdem	:= 0
 	Private nNumEtq := 0
 	PRivate nQtdeEmb:= 0
 
-	AAdd(aPergs, {1, "Numero da Ordem", CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
+	aAdd(aPergs, {1, "Numero da Ordem", CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
 	aAdd(aPergs, {1, "Numero de Etiquetas", nNumEtq, "@E 999", "Positivo()", "", ".T.", 80,  .F.})
 	aAdd(aPergs, {1, "Quantidade por Etiqueta", nQtdeEmb, "@E 99,999", "Positivo()", "", ".T.", 80,  .F.})
 
@@ -30,18 +30,18 @@ User Function ETQPROC()
 	endif
 
 	// LER OP E ITEM
-	cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_QUANT, "
-	cQuery += "       B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ, B1_XQEMB "
-	cQuery += "  FROM " + RetSQLName("SC2") + " SC2 "
-	cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
-	cQuery += "    ON C2_PRODUTO = B1_COD "
-	cQuery += " WHERE C2_FILIAL = '" + xFilial("SC2") + "' "
-	cQuery += "   AND B1_FILIAL = '" + xFilial("SB1") + "' "
-	cQuery += "   AND C2_NUM BETWEEN '" + cOrdem + "' AND '" + cOrdem + "' "
-	cQuery += "	  AND SC2.D_E_L_E_T_ = ' ' "
-	cQuery += "	  AND SB1.D_E_L_E_T_ = ' ' "
+	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_QUANT, "
+	cSql += "       B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ, B1_XQEMB "
+	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
+	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+	cSql += "    ON C2_PRODUTO = B1_COD "
+	cSql += " WHERE C2_FILIAL = '" + xFilial("SC2") + "' "
+	cSql += "   AND B1_FILIAL = '" + xFilial("SB1") + "' "
+	cSql += "   AND C2_NUM BETWEEN '" + cOrdem + "' AND '" + cOrdem + "' "
+	cSql += "	  AND SC2.D_E_L_E_T_ = ' ' "
+	cSql += "	  AND SB1.D_E_L_E_T_ = ' ' "
 
-	cAliasOrd := MPSysOpenQuery(cQuery)
+	cAliasOrd := MPSysOpenQuery(cSql)
 
 	if (cAliasOrd)->(EOF())
 		Alert("Ordem de Produção não encontrada")
