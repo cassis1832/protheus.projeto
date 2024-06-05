@@ -1,11 +1,18 @@
 #INCLUDE "PROTHEUS.CH"
 #INCLUDE "TBICONN.CH"
 
-//---------------------------------------------------------------------------------
-// PL030 - GERAÇÃO DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
-// MATA410 - EXECAUTO
-// Ler ZA0 por cliente/data/natureza/hora de entrega/item
-//---------------------------------------------------------------------------------
+/*/{Protheus.doc} PL020D
+    PL030 - GERAÇÃO DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
+    MATA410 - EXECAUTO
+    Ler ZA0 por cliente/data/natureza/hora de entrega/item
+	@type  Function
+	@author aSSIS
+	@since 05/06/2024
+	@version 1.0
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+    /*/
+
 User Function PL020D()
 
 	Private nOpcX := 3	                // Tipo da operação (3-Inclusão / 4-Alteração / 5-Exclusão)
@@ -27,7 +34,7 @@ User Function PL020D()
 	Private lTemLinha := .T.
 	Private nPed := 0
 	Private nQtde := 0
-	Private dData := DaySum(Date(),3)
+	Private dLimite := DaySum(Date(),7)
 
 	Private cCliente := ''
 	Private cLoja := ''
@@ -54,7 +61,7 @@ User Function PL020D()
 	strSql := "SELECT ZA0010.*, SA7010.*, B1_TS "
 	strSql += "  FROM ZA0010, SB1010, SA7010 "
 	strSql += " WHERE ZA0_TIPOPE  = 'F' "
-	strSql += "   AND ZA0_DTENTR <= '" + Dtos(dData) + "' "
+	strSql += "   AND ZA0_DTENTR <= '" + Dtos(dLimite) + "' "
 	strSql += "   AND ZA0_QTDE    > ZA0_QTCONF "
 	strSql += "   AND ZA0_FILIAL  = B1_FILIAL "
 	strSql += "   AND ZA0_PRODUT  = B1_COD "

@@ -5,7 +5,7 @@
 #Include "Colors.ch"
 
 /*/{Protheus.doc}	PL010
-	Ordem de Produção Modelo MR V01
+	Impressão da Ordem de Produção Modelo MR V01
 @author Carlos Assis
 @since 04/11/2023
 @version 1.0   
@@ -14,56 +14,56 @@
 Static oFont09 	:= TFont():New( "Arial",, -09, .T.)
 Static oFont10 	:= TFont():New( "Arial",, -10, .T.)
 Static oFont11 	:= TFont():New( "Arial",, -11, .T.)
-Static oFont11b 	:= TFont():New( "Arial",, -11, .T.,.T.)
+Static oFont11b := TFont():New( "Arial",, -11, .T.,.T.)
 Static oFont12 	:= TFont():New( "Arial",, -12, .T.)
-Static oFont12b 	:= TFont():New( "Arial",, -12, .T.,.T.)
-Static oFont16b 	:= TFont():New( "Arial",, -16, .T.,.T.)
+Static oFont12b := TFont():New( "Arial",, -12, .T.,.T.)
+Static oFont16b := TFont():New( "Arial",, -16, .T.,.T.)
 
 User Function PL010()
-	Local aPergs		   := {}
-	Local aResps		   := {}
-	Local cOrdemDe		   := 0
-	Local cOrdemAte	   := 0
-	Local lContinua	   := .T.
-	Local cOp			   := ""
-	Local nRecs			   := 0
+	Local aPergs	    := {}
+	Local aResps	    := {}
+	Local cOrdemDe	    := 0
+	Local cOrdemAte	    := 0
+	Local lContinua	    := .T.
+	Local cOp		    := ""
+	Local nRecs		    := 0
 
-	Private oPrinter	   := nil
-	Private cQuery 	   := ""
-	Private lOper 		   := .T.  		   // Todas as operações juntas
-	Private nLin 		   := 0
-	PRivate cDir		   := "c:\temp\"  // Local do relatório
-	Private cFilePrint 	:= ""
-	Private lComp		   := .F.
+	Private oPrinter    := nil
+	Private cQuery 	    := ""
+	Private lOper 	    := .T.  		   // Todas as operações juntas
+	Private nLin 	    := 0
+	PRivate cDir        := "c:\temp\"  // Local do relatório
+	Private cFilePrint  := ""
+	Private lComp		:= .F.
 
 	Private cAliasOrd 	:= ""			   // Dados da OP
-	Private cAliasCmp	   := ""			   // Componentes da OP
-	Private cAliasOper   := ""			   // Operações da OP
+	Private cAliasCmp	:= ""			   // Componentes da OP
+	Private cAliasOper  := ""			   // Operações da OP
 
-	AAdd(aPergs, {1, "Ordem Inicial"	, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
-	AAdd(aPergs, {1, "Ordem Final"   , CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
+	AAdd(aPergs, {1, "Ordem Inicial", CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
+	AAdd(aPergs, {1, "Ordem Final"  , CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
 	AAdd(aPergs ,{4,"Operações"    	,.T.,"Todas as operações juntas" ,90,"",.F.})
 
 	If ParamBox(aPergs, "Parâmetros do relatório", @aResps,,,,,,,, .T., .T.)
-		cOrdemDe	   := aResps[1]
+		cOrdemDe    := aResps[1]
 		cOrdemAte	:= aResps[2]
-		lOper		   := aResps[3]
+		lOper		:= aResps[3]
 	Else
 		lContinua   := .F.
 		return
 	endif
 
 	// LER OP E ITEM
-	cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, " + CRLF
-	cQuery += "	 C2_QUANT, CAST(C2_DATPRI AS DATE) C2_DATPRI, "	+ CRLF
-	cQuery += "	 CAST(C2_DATPRF AS DATE) C2_DATPRF, " 			   + CRLF
-	cQuery += "	 B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ " + CRLF
-	cQuery += " FROM " +	RetSQLName("SC2") + " SC2 " 			   + CRLF
-	cQuery += "INNER JOIN " + RetSQLName("SB1") + " SB1 " 		+ CRLF
-	cQuery += "	  ON C2_PRODUTO = B1_COD " 					      + CRLF
-	cQuery += "WHERE C2_FILIAL = '" + xFilial("SC5") + "' " 	   + CRLF
-	cQuery += "	 AND SC2.D_E_L_E_T_ = ' ' " 					      + CRLF
-	cQuery += "	 AND SB1.D_E_L_E_T_ = ' ' " 					      + CRLF
+	cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, "     + CRLF
+	cQuery += "	 C2_QUANT, CAST(C2_DATPRI AS DATE) C2_DATPRI, "	    + CRLF
+	cQuery += "	 CAST(C2_DATPRF AS DATE) C2_DATPRF, " 			    + CRLF
+	cQuery += "	 B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ "     + CRLF
+	cQuery += " FROM " +	RetSQLName("SC2") + " SC2 " 			+ CRLF
+	cQuery += "INNER JOIN " + RetSQLName("SB1") + " SB1 " 		    + CRLF
+	cQuery += "	  ON C2_PRODUTO = B1_COD " 					        + CRLF
+	cQuery += "WHERE C2_FILIAL = '" + xFilial("SC5") + "' " 	    + CRLF
+	cQuery += "	 AND SC2.D_E_L_E_T_ = ' ' " 					    + CRLF
+	cQuery += "	 AND SB1.D_E_L_E_T_ = ' ' " 					    + CRLF
 
 	If !Empty(cOrdemDe) .Or. !Empty(cOrdemAte)
 		cQuery += " AND C2_NUM BETWEEN '" + cOrdemDe  + "' AND '" + cOrdemAte + "' " + CRLF
@@ -78,17 +78,17 @@ User Function PL010()
 		cOp := (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN
 
 		// Ler os empenhos da OP
-		cQuery := "SELECT D4_COD, D4_OP, D4_DATA, D4_QTDEORI, " 	+ CRLF
-		cQuery += "	 D4_QUANT, D4_LOTECTL, "							+ CRLF
-		cQuery += "	 B1_COD, B1_DESC, B1_UM " 							+ CRLF
-		cQuery += " FROM " + RetSQLName("SD4") + " SD4 " 			+ CRLF
+		cQuery := "SELECT D4_COD, D4_OP, D4_DATA, D4_QTDEORI, " + CRLF
+		cQuery += "	 D4_QUANT, D4_LOTECTL, "					+ CRLF
+		cQuery += "	 B1_COD, B1_DESC, B1_UM " 					+ CRLF
+		cQuery += " FROM " + RetSQLName("SD4") + " SD4 " 		+ CRLF
 		cQuery += "INNER JOIN " + RetSQLName("SB1") + " SB1 " 	+ CRLF
-		cQuery += "	  ON D4_COD = B1_COD " 							   + CRLF
-		cQuery += "WHERE SD4.D_E_L_E_T_ = ' ' " 						+ CRLF
-		cQuery += "	 AND SB1.D_E_L_E_T_ = ' ' " 						+ CRLF
-		cQuery += "  AND D4_FILIAL = '" + xFilial("SC5") + "' " 	+ CRLF
-		cQuery += "  AND D4_OP = '" + cOp + "' " 						+ CRLF
-		cQuery += " ORDER BY D4_COD" 				 					   + CRLF
+		cQuery += "	  ON D4_COD = B1_COD " 						+ CRLF
+		cQuery += "WHERE SD4.D_E_L_E_T_ = ' ' " 				+ CRLF
+		cQuery += "	 AND SB1.D_E_L_E_T_ = ' ' " 				+ CRLF
+		cQuery += "  AND D4_FILIAL = '" + xFilial("SC5") + "' " + CRLF
+		cQuery += "  AND D4_OP = '" + cOp + "' " 				+ CRLF
+		cQuery += " ORDER BY D4_COD" 				 			+ CRLF
 		cAliasCmp := MPSysOpenQuery(cQuery)
 
 		nRecs = 0
@@ -98,24 +98,23 @@ User Function PL010()
 		EndDo
 
 		if nRecs = 0
-			cMensagem := "Item não possui estrutura"
-			Alert(cMensagem)
+			FWAlertError("ITEM NÃO POSSUI ESTRUTURA!", "ERRO")
 			return
 		endif
 
 		(cAliasCmp)->(dbGoTop())
 
 		// Ler as operações do item
-		cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, " 		   + CRLF
-		cQuery += "	G2_DESCRI, G2_MAOOBRA, G2_SETUP, "					   + CRLF
-		cQuery += "	G2_LOTEPAD, G2_TEMPAD, G2_CTRAB, "					   + CRLF
-		cQuery += "	G2_TEMPEND "										         + CRLF
-		cQuery += "FROM " + RetSQLName("SG2") + " SG2 " 				   + CRLF
-		cQuery += "WHERE SG2.D_E_L_E_T_ = ' ' " 						      + CRLF
-		cQuery += "  AND G2_FILIAL  = '" + xFilial("SC5") + "' " 	   + CRLF
-		cQuery += "  AND G2_CODIGO  = '01'" 						 	      + CRLF
-		cQuery += "  AND G2_PRODUTO = '" + (cAliasOrd)->B1_COD + "' " 	+ CRLF
-		cQuery += " ORDER BY G2_OPERAC" 			 					         + CRLF
+		cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, " 		    + CRLF
+		cQuery += "	G2_DESCRI, G2_MAOOBRA, G2_SETUP, "					+ CRLF
+		cQuery += "	G2_LOTEPAD, G2_TEMPAD, G2_CTRAB, "					+ CRLF
+		cQuery += "	G2_TEMPEND "										+ CRLF
+		cQuery += "FROM " + RetSQLName("SG2") + " SG2 " 				+ CRLF
+		cQuery += "WHERE SG2.D_E_L_E_T_ = ' ' " 						+ CRLF
+		cQuery += "  AND G2_FILIAL  = '" + xFilial("SC5") + "' " 	    + CRLF
+		cQuery += "  AND G2_CODIGO  = '01'" 						 	+ CRLF
+		cQuery += "  AND G2_PRODUTO = '" + (cAliasOrd)->B1_COD + "' "   + CRLF
+		cQuery += " ORDER BY G2_OPERAC" 			 					+ CRLF
 		cAliasOper := MPSysOpenQuery(cQuery)
 
 		nRecs = 0
@@ -124,11 +123,9 @@ User Function PL010()
 			(cAliasOper)->(DbSkip())
 		EndDo
 
-		if nRecs = 0
-			cMensagem := "Item não possui operações"
-			Alert(cMensagem)
+		If ! FWAlertYesNo("ITEM NÃO POSSUI OPERAÇÕES!", "Confirma a impressão?")
 			return
-		endif
+		EndIf
 
 		(cAliasOper)->(dbGoTop())
 

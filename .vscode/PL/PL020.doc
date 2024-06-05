@@ -21,6 +21,7 @@ Função Manutenção de pedidos EDI do cliente.
     Leitura dos pedidos de vendas e gravação da tabela de demandas
     Só trata os registros com status = 0
     O programa deleta todas as linhas de demandas do código = "AUTO", e gera novos.
+    Agrupa as demandas pelo campo B1_XDIAEO (dias entre ordens)
 
 4- Geração de pedidos de vendas (PL020D) - em pausa
     Via Execauto do MATA410

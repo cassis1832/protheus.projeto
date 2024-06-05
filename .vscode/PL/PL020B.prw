@@ -23,7 +23,7 @@ User Function PL020B()
 	Private cArquivo := ''
 	Private cCliente := ''
 	Private cLoja	 := ''
-	Private aLinhas
+	Private aLinhas  := {}
 	Private aLinha
 
 	Private dtProcesso := Date()
@@ -45,9 +45,7 @@ User Function PL020B()
 		EndIf
 	EndIf
 
-	MostraErro()
-
-	MessageBox("IMPORTAÇÃO EFETUADA COM SUCESSO!","",0)
+	FWAlertError("IMPORTAÇÃO EFETUADA COM SUCESSO! " + cCliente, "Importação EDI")
 
 	SetFunName(cFunBkp)
 	RestArea(aArea)
@@ -58,28 +56,23 @@ Return
  *---------------------------------------------------------------------*/
 Static Function TrataLinhas()
 
-  	Local lErro 
-	Local nLin 	   		
+  	Local lErro, nLin 	   		
 	Local nTotLinhas := Len(aLinhas)
 
 	// Salva o cliente/loja da primeira linha (que deve ser o mesmo das demais linhas)
   	aLinha   := strTokArr(aLinhas [1], ';')
-	cCliente := aLinha[1]
-	cLoja	 := aLinha[2]
+	cCliente := AvKey(aLinha[1], "A1_COD")
+	cLoja	 := AvKey(aLinha[2], "A1_LOJA")
 
    // Ver se o cliente está cadastrado
 	dbSelectArea("SA1")
 	SA1->(DBSetOrder(1))  // Filial/codigo/loja
 
- 	DBSeek(xFilial("SA1")+cCliente+cLoja)
-
-	if ! Eof()
-		IF A1_FILIAL == xFilial("SA1") .And. A1_COD == cCliente .And. A1_LOJA == cLoja 
-			lErro := .F.
-		Else
-            FWAlertError("Cliente não cadastrado: " + cCliente,"Cadastro de clientes")
-		    lErro := .T.
-		EndIf
+	If SA1->(MsSeek(xFilial("SA1") + cCliente + cLoja))
+        lErro := .F.
+    Else
+        FWAlertError("Cliente não cadastrado: " + cCliente,"Cadastro de clientes")
+        lErro := .T.
 	EndIf
 
     if ! lErro
@@ -95,59 +88,46 @@ return
 	Grava tabela ZA0
  *---------------------------------------------------------------------*/
 Static Function GravaDados()
-    Local lErro := .T.
-    Local cProduto
+    Local lErro     := .T.
+    Local cProduto  := ""
 
-	cCliente := aLinha[1]
-	cLoja 	 := aLinha[2]
-	cCodCli  := aLinha[3]
+    cCodCli  := AvKey(aLinha[3], "A7_CODCLI")
 	cDtEntr  := aLinha[4]
     cHrEntr  := aLinha[5]
 	cQtde 	 := aLinha[6]
     cTipoPe  := "F"
-    cCodCli  := AvKey(cCodCli, "A7_CODCLI")
 
 	// Consistir o codigo do cliente e item do cliente
-	dbSelectArea("SA7")
+	dbSelectArea("SA7") 
 	SA7->(DBSetOrder(3))  // Filial/cliente/loja/codcli
 
     cProduto := ""
 
 	If SA7->(MsSeek(xFilial("SA7") + cCliente + cLoja + cCodCli))
-        IF SA7->A7_FILIAL == xFilial("SA7") .And. SA7->A7_CLIENTE == cCliente .And. SA7->A7_LOJA == cLoja .And. SA7->A7_CODCLI == cCodCli
-            cProduto := SA7->A7_PRODUTO
-            lErro = .F.
-        EndIf
+        cProduto := SA7->A7_PRODUTO
+        lErro = .F.
     EndIf
 
     dbSelectArea("ZA0")
     ZA0->(DBSetOrder(2))  // Filial/cliente/loja/item/data
    
-    MsSeek(xFilial("ZA0")+cCliente+cLoja+cProduto+cDtEntr)
+    if ZA0->(MsSeek(xFilial("ZA0") + cCliente + cLoja + cProduto + cDtEntr)) 
+        RecLock("ZA0", .F.)
+        ZA0->ZA0_ARQUIV   := cArquivo
+        ZA0->ZA0_DTCRIA   := dtProcesso
+        ZA0->ZA0_HRCRIA   := hrProcesso
+        ZA0->ZA0_TIPOPE   := cTipoPe
 
-    if ! Eof() .And. ;
-        ZA0_FILIAL == xFilial("ZA0") .And. ;
-        ZA0_CLIENT == cCliente .And. ;
-        ZA0_LOJA   == cLoja .And. ;
-        ZA0_PRODUT == cProduto .And. ;
-        ZA0_DTENTR == cDtEntr
-
-		RecLock("ZA0", .F.)
-		ZA0->ZA0_ARQUIV   := cArquivo
-		ZA0->ZA0_DTCRIA   := dtProcesso
-		ZA0->ZA0_HRCRIA   := hrProcesso
-		ZA0->ZA0_TIPOPE   := cTipoPe
-
-		if ZA0_STATUS == "0" .or. ZA0_STATUS == "1" 
+        if ZA0->ZA0_STATUS == "0" .or. ZA0->ZA0_STATUS == "1" 
             ZA0->ZA0_QTDE := Val(StrTran(cQtde,",","."))
         else
             if ZA0->ZA0_QTDE < Val(StrTran(cQtde,",","."))
-	            ZA0->ZA0_QTDE := Val(StrTran(cQtde,",","."))
-			else
+                ZA0->ZA0_QTDE := Val(StrTran(cQtde,",","."))
+            else
                 ConOut("Quantidade divergente do pedido " + cProduto + " " + cDtEntr + " " + cQtde)
             Endif
         Endif
-	else
+    else
 		// Inclusão
 		DbSelectArea("ZA0")
 		RecLock("ZA0", .T.)	
