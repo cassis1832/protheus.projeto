@@ -17,7 +17,6 @@ Static cTitulo := "Planejamento por cliente"
 User Function PL030()
 
 	Local oBrowse
-
 	oBrowse := FWMBrowse():New()
 	oBrowse:SetAlias("SA1")
 	oBrowse:SetDescription(cTitulo)

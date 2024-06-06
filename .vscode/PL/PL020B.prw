@@ -129,7 +129,6 @@ Static Function GravaDados()
         Endif
     else
 		// Inclusão
-		DbSelectArea("ZA0")
 		RecLock("ZA0", .T.)	
 		ZA0->ZA0_FILIAL	:= xFilial("ZA0")	
 		ZA0->ZA0_CODPED := GETSXENUM("ZA0", "ZA0_CODPED", 1)                                                                                                  

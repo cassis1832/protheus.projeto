@@ -164,21 +164,20 @@ return
 	Todas as datas do periodo
 */
 Static Function MontaDatas()
-	Local nInd :=0
-	Local dData
+	Local nInd  :=0
+	Local dData := Date()
 
 	if (cAliasZA0)->(!EOF())
-		dData := (cAliasZA0)->ZA0_DTENTR
+		dData := sToD((cAliasZA0)->ZA0_DTENTR)
 	Endif
 
 	if (cAliasSC6)->(!EOF())
 		if (cAliasZA0)->ZA0_DTENTR > (cAliasSC6)->C6_ENTREG
-			dData := (cAliasSC6)->C6_ENTREG
+			dData := sToD((cAliasSC6)->C6_ENTREG)
 		endif
 	Endif
 
 	aDatas := {}
-	dData := sToD(dData)
 
 	For nInd := 1 to 15 Step 1
 		Aadd(aDatas,dData)
