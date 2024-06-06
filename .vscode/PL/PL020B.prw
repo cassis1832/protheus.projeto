@@ -23,6 +23,7 @@ User Function PL020B()
 	Private cArquivo := ''
 	Private cCliente := ''
 	Private cLoja	 := ''
+	Private dDtEntr  := Date()
 	Private aLinhas  := {}
 	Private aLinha
 
@@ -45,7 +46,7 @@ User Function PL020B()
 		EndIf
 	EndIf
 
-	FWAlertError("IMPORTAÇÃO EFETUADA COM SUCESSO! " + cCliente, "Importação EDI")
+	FWAlertSuccess("IMPORTACAO EFETUADA COM SUCESSO! " + cCliente, "Importacao EDI")
 
 	SetFunName(cFunBkp)
 	RestArea(aArea)
@@ -92,13 +93,12 @@ Static Function GravaDados()
     Local cProduto  := ""
 
     cCodCli  := AvKey(aLinha[3], "A7_CODCLI")
-	cDtEntr  := aLinha[4]
+	dDtEntr  := ctod(aLinha[4])
     cHrEntr  := aLinha[5]
 	cQtde 	 := aLinha[6]
     cTipoPe  := "F"
 
 	// Consistir o codigo do cliente e item do cliente
-	dbSelectArea("SA7") 
 	SA7->(DBSetOrder(3))  // Filial/cliente/loja/codcli
 
     cProduto := ""
@@ -108,10 +108,16 @@ Static Function GravaDados()
         lErro = .F.
     EndIf
 
-    dbSelectArea("ZA0")
-    ZA0->(DBSetOrder(2))  // Filial/cliente/loja/item/data
-   
-    if ZA0->(MsSeek(xFilial("ZA0") + cCliente + cLoja + cProduto + cDtEntr)) 
+	dbSelectArea("ZA0")
+    DBSetOrder(2)  // Filial/cliente/loja/item/data
+
+    if (MsSeek(xFilial("ZA0") + cCliente + cLoja + cProduto + dtos(dDtEntr),.T.)) .and. ;
+        ZA0->ZA0_FILIAL	== xFilial("ZA0")	.and.   ;
+		ZA0->ZA0_CLIENT == cCliente         .and.   ;
+		ZA0->ZA0_LOJA 	== cLoja            .and.   ;
+		ZA0->ZA0_PRODUT == cProduto         .and.   ;
+		ZA0->ZA0_DTENTR == dDtEntr
+
         RecLock("ZA0", .F.)
         ZA0->ZA0_ARQUIV   := cArquivo
         ZA0->ZA0_DTCRIA   := dtProcesso
@@ -123,8 +129,6 @@ Static Function GravaDados()
         else
             if ZA0->ZA0_QTDE < Val(StrTran(cQtde,",","."))
                 ZA0->ZA0_QTDE := Val(StrTran(cQtde,",","."))
-            else
-                ConOut("Quantidade divergente do pedido " + cProduto + " " + cDtEntr + " " + cQtde)
             Endif
         Endif
     else
@@ -138,7 +142,7 @@ Static Function GravaDados()
 		ZA0->ZA0_ITCLI 	:= cCodCli
 		ZA0->ZA0_TIPOPE := cTipoPe
 		ZA0->ZA0_QTDE 	:= Val(StrTran(cQtde,",","."))
-		ZA0->ZA0_DTENTR := CTOD(cDtEntr)
+		ZA0->ZA0_DTENTR := dDtEntr
 		ZA0->ZA0_ARQUIV := cArquivo
 		ZA0->ZA0_ORIGEM := "PL020B"
 		ZA0->ZA0_DTCRIA := dtProcesso
@@ -165,18 +169,12 @@ Static Function selArquivo()
 	Local lSalvar := .F.
 	Local cArqSel := ""
 
-	cArqSel := tFileDialog(;
-	   cTipArq,;  // Filtragem de tipos de arquivos que serão selecionados
-	   cTitulo,;  // Titulo da Janela para seleção dos arquivos
-	   ,;         // Compatibilidade
-	   cDirIni,;  // Diretorio inicial da busca de arquivos
-	   lSalvar,;  // Se for .T., serA uma Save Dialog, senão ser� Open Dialog
-	   ;          // Se não passar parAmetro, ir� pegar apenas 1 arquivo; Se for informado GETF_MULTISELECT serA possIvel pegar mais de 1 arquivo; Se for informado GETF_RETDIRECTORY ser� poss�vel selecionar o diret�rio
-	)
+	cArqSel := tFileDialog(cTipArq, cTitulo,, cDirIni, lSalvar)
 
 	If ! Empty(cArqSel)
-	   MsgInfo("O arquivo selecionado foi: " + cArqSel, "Atenção")
-		Return cArqSel
+    	If FWAlertYesNo("ARQUIVO SELECIONADO = " + cArqSel, "CONFIRMA A ATUALIZACAO?")
+    		Return cArqSel
+		EndIf
 	EndIf
 return
 
