@@ -237,7 +237,7 @@ Static Function fWBrowse1()
 
 	oDlg:= FwDialogModal():New()
 	oDlg:SetEscClose(.T.)
-	oDlg:SetTitle('FwDialogModal')
+	oDlg:SetTitle('Plano por cliente')
 
 	//Seta a largura e altura da janela em pixel
 	oDlg:SetPos(000, 000)
@@ -250,8 +250,6 @@ Static Function fWBrowse1()
 	oFwBrowse := FWBrowse():New()
 	oFwBrowse:SetDataArrayoBrowse()  //Define utilização de array
 	oFwBrowse:AddStatusColumns( { || BrwStatus() }, { || BrwLegend() } )
-
-	//Indica o array utilizado para apresentação dos dados no Browse.
 	oFwBrowse:SetArray(aPedidos)
 	aColumns := RetColumns()
 
