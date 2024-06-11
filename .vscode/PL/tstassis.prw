@@ -1,9 +1,9 @@
 #Include "Protheus.ch"
 
 /*/{Protheus.doc}tCarlos
-Rotina para validação de TI
+Rotina para validaï¿½ï¿½o de TI
 
 /*/
 User Function tstAssis()
-	u_PL040()
+	u_PL060("10614010")
 Return

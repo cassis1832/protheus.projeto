@@ -8,42 +8,82 @@
 //------------------------------------------------------------------------------
 User Function zAssis()
 	Local aArea     := FWGetArea()
+	Local aPergs	    := {}
+	Local aResps	    := {}
+	Local cCliente
 
-	If ! FWAlertNoYes("Atualização do SB1 - MRP e Validade do lote ", "Continuar?")
+	If ! FWAlertNoYes("Atualizacao do SB1 - MRP ", "Continuar?")
 		Return
 	EndIf
 
-	SetFunName("zUPDSB1")
+	SetFunName("zAssis")
 
-	dbSelectArea("SB1")
-	SB1->(DBSetOrder(1))
-	SB1->(DBGoTop())
+	AAdd(aPergs, {1, "Informe o cliente", CriaVar("A1_COD",.F.),,,"SA1",, 6, .F.})
 
-	While SB1->( !Eof() )
+	If ParamBox(aPergs, "Parametros do relatorio", @aResps,,,,,,,, .T., .T.)
+		cCliente    := aResps[1]
+	Else
+		return
+	endif
 
-		RecLock("SB1", .F.)
+	Atualiza(cCliente)
 
-		if Len(AllTrim(B1_COD)) < 8
-			SB1->B1_MRP := "N"
-		else
-			if SubString(B1_COD, 1, 1) == "1" .Or. ;
-					SubString(B1_COD, 1, 1) == "2" .Or. ;
-					SubString(B1_COD, 1, 1) == "3" .Or. ;
-					SubString(B1_COD, 1, 1) == "4"
-				SB1->B1_MRP := "S"
-				SB1->B1_PRVALID := 365
-			else
-				SB1->B1_MRP := "N"
-			endif
-		endif
-
-		SB1->(MsUnlock())
-
-		SB1->( dbSkip() )
-	EndDo
-
-	MessageBox("ATUALIZAÇÂO EFETUADA COM SUCESSO!","",0)
+	MessageBox("ATUALIZACAO EFETUADA COM SUCESSO!","",0)
 
 	FWRestArea(aArea)
 Return
 
+Static Function Atualiza(cCliente)
+	dbSelectArea("SA7")
+	SA7->(DBSetOrder(1))
+	SA7->(DBGoTop())
+
+	While SA7->( !Eof() )
+
+		if SA7->A7_CLIENTE == cCliente
+			dbSelectArea("SB1")
+			SB1->(DBSetOrder(1))
+
+			If SB1->(MsSeek(xFilial("SB1") + SA7->A7_PRODUTO))
+				RecLock("SB1", .F.)
+				SB1->B1_MRP := "S"
+				SB1->(MsUnlock())
+				gItem = SB1->B1_COD
+				Explode(gItem)
+			EndIf
+		EndIf
+
+		SA7->( dbSkip() )
+	EndDo
+Return
+
+
+Static Function Explode(cItem)
+	Local lItem := ""
+
+	lItem = cItem
+
+	cQuery := "SELECT G1_COD, G1_COMP "
+	cQuery += " FROM " +	RetSQLName("SG1") + " SG1 "
+	cQuery += "WHERE G1_COD = '" + lItem + "' "
+	cQuery += "	 AND SG1.D_E_L_E_T_ = ' ' "
+
+	cEstrut := MPSysOpenQuery(cQuery)
+
+	While (cEstrut)->(!EOF())
+
+		dbSelectArea("SB1")
+		SB1->(DBSetOrder(1))
+
+		If SB1->(MsSeek(xFilial("SB1") + (cEstrut)->G1_COMP))
+
+			if SB1->B1_AGREGCU == "2"
+				RecLock("SB1", .F.)
+				SB1->B1_MRP := "S"
+				SB1->(MsUnlock())
+				Explode((cEstrut)->G1_COMP)
+			EndIf
+		endif
+		(cEstrut)->(DbSkip())
+	enddo
+Return
