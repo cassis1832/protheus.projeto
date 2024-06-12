@@ -72,7 +72,7 @@ Static Function TrataLinhas()
 	If SA1->(MsSeek(xFilial("SA1") + cCliente + cLoja))
         lErro := .F.
     Else
-        FWAlertError("Cliente não cadastrado: " + cCliente,"Cadastro de clientes")
+        FWAlertError("Cliente nao cadastrado: " + cCliente,"Cadastro de clientes")
         lErro := .T.
 	EndIf
 
@@ -165,7 +165,7 @@ Static Function selArquivo()
 
 	Local cDirIni := GetTempPath()
 	Local cTipArq := "Arquivos texto (*.txt)"
-	Local cTitulo := "Seleção de arquivo para processamento"
+	Local cTitulo := "Selecao de arquivo para processamento"
 	Local lSalvar := .F.
 	Local cArqSel := ""
 

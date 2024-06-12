@@ -35,7 +35,6 @@ User Function PL060A(pItem)
 
 	CalculaSaldos()
 
-//	fWBrowse1()
 	fMontaTela()
 Return .T.
 
@@ -188,52 +187,6 @@ Static Function	CalculaSaldos()
 return
 
 
-Static Function fWBrowse1()
-	Local nX := 0
-
-	oDlg:= FwDialogModal():New()
-	oDlg:SetEscClose(.T.)
-	oDlg:SetTitle('Plano do Item')
-
-	//Seta a largura e altura da janela em pixel
-	oDlg:SetPos(000, 000)
-	oDlg:SetSize(400, 300)
-
-	oDlg:CreateDialog()
-	oDlg:AddCloseButton(Nil, 'Fechar')
-	oPnl:=oDlg:GetPanelMain()
-
-	oFwBrowse := FWBrowse():New()
-	oFwBrowse:SetDataArrayoBrowse()
-	oFwBrowse:SetArray(aLinhas)
-	aColumns := RetColumns()
-
-	//Cria as colunas do array
-	For nX := 1 To Len(aColumns )
-		oFwBrowse:AddColumn( aColumns[nX] )
-	Next
-
-	oFwBrowse:SetOwner(oPnl)
-	oFwBrowse:SetDescription( "Planejamento por Item" )
-	oFwBrowse:Activate()
-	oDlg:Activate()
-Return
-
-
-
-Static Function RetColumns()
-	Local aColumns := {}
-
-	aAdd(aColumns, {"Data",   {|oBrw| aLinhas[oBrw:At(), 5] }, "D", "@!", 1, 10, 0, .F.})
-	aAdd(aColumns, {"Tipo",   {|oBrw| aLinhas[oBrw:At(), 3] }, "C", "@!", 1,  5, 0, .F.})
-	aAdd(aColumns, {"Numero", {|oBrw| aLinhas[oBrw:At(), 4] }, "C", "@!", 0,  6, 2, .F.})
-	aAdd(aColumns, {"Qtde.",  {|oBrw| aLinhas[oBrw:At(), 6] }, "N", "@!", 0,  6, 2, .F.})
-	aAdd(aColumns, {"Saldo",  {|oBrw| aLinhas[oBrw:At(), 7] }, "N", "@!", 0,  6, 2, .F.})
-Return aColumns
-
-
-//-----------------------------------------------------------------------------------------
-
 Static Function fMontaTela()
 	Local nLargBtn := 50
 	Local nX := 0
@@ -244,25 +197,18 @@ Static Function fMontaTela()
 	Private oPanTitulo
 	Private oPanGrid
 
-	//Cabeçalho
-	Private oSayTitulo, cSayTitulo := 'Planejamento por item'
-	Private oSayDados, cSayDados   := 'Codigo do item: '
-
 	//Tamanho da janela
 	Private aSize := MsAdvSize(.T.)
-	Private nJanLarg := aSize[5]
-	Private nJanAltu := aSize[6]
+	Private nJanLarg := aSize[5] * 0.3
+	Private nJanAltu := aSize[6] * 0.8
 
 	//Fontes
 	Private cFontUti    := "Tahoma"
-	Private oFontMod    := TFont():New(cFontUti, , -38)
-	Private oFontSub    := TFont():New(cFontUti, , -20)
-	Private oFontSubN   := TFont():New(cFontUti, , -20, , .T.)
+	Private oFontSub    := TFont():New(cFontUti, , -16)
 	Private oFontBtn    := TFont():New(cFontUti, , -14)
-	Private oFontSay    := TFont():New(cFontUti, , -12)
 
 	//Cria a janela
-	DEFINE MSDIALOG oDlg TITLE "Planejamento por Item"  FROM 0, 0 TO  nJanAltu * 0.9, nJanLarg * 0.35 PIXEL
+	DEFINE MSDIALOG oDlg TITLE "Planejamento por Item"  FROM 0, 0 TO  nJanAltu, nJanLarg PIXEL
 
 	oFwLayer := FwLayer():New()
 	oFwLayer:init(oDlg,.F.)
@@ -270,27 +216,28 @@ Static Function fMontaTela()
 	//Cabeçalho da tela
 	oFWLayer:addLine("TIT",  8, .F.)
 	oFWLayer:addLine("DAD", 10, .F.)
-	oFWLayer:addLine("COR", 77, .F.)
+	oFWLayer:addLine("GRD", 77, .F.)
 
 	oFWLayer:addCollumn("HEADERTEXT", 075, .T., "TIT")
-	oFWLayer:addCollumn("BTNSAIR", 025, .T., "TIT")
+	oFWLayer:addCollumn("BTNSAIR"   , 025, .T., "TIT")
+	oFWLayer:addCollumn("DADOS"     , 90,  .T., "DAD")
 
-	oPanHeader := oFWLayer:GetColPanel("HEADERTEXT", "TIT")
-	oPanSair   := oFWLayer:GetColPanel("BTNSAIR",    "TIT")
+	oPanHeader := oFWLayer:GetColPanel("HEADERTEXT" , "TIT")
+	oPanSair   := oFWLayer:GetColPanel("BTNSAIR"    , "TIT")
+	oPanDados  := oFWLayer:GetColPanel("DADOS"      , "DAD")
 
-	oFWLayer:addCollumn("DADOS", 90, .T., "DAD")
-	oPanDados  := oFWLayer:GetColPanel("DADOS", "DAD")
+	oFWLayer:addCollumn("COLGRID1",  5, .T., "GRD")     // margem esquerda
+	oFWLayer:addCollumn("COLGRID2", 90, .T., "GRD")     // browse
 
-	oFWLayer:addCollumn("COLGRID1", 5, .T., "COR")  // margem esquerda
-	oFWLayer:addCollumn("COLGRID", 90, .T., "COR")
-	oPanGrid   := oFWLayer:GetColPanel("COLGRID1", "COR")
-	oPanGrid   := oFWLayer:GetColPanel("COLGRID", "COR")
+	oPanGrid   := oFWLayer:GetColPanel("COLGRID1", "GRD")
+	oPanGrid   := oFWLayer:GetColPanel("COLGRID2", "GRD")
 
-	oSayTitulo := TSay():New(004, 005, {|| cSayTitulo}, ;
+	oSayTitulo := TSay():New(004, 005, {|| "Planejamento por item"}, ;
 		oPanHeader, "", oFontSub,  , , , .T., RGB(031, 073, 125), , 200, 30, , , , , , .F., , )
 
 	oSayDados  := TSay():New(004, 010, {|| "Codigo do Item: " + cItem}, ;
 		oPanDados, "", oFontSub,  , , , .T., RGB(031, 073, 125), , 200, 30, , , , , , .F., , )
+
 	oSayDados2 := TSay():New(020, 010, {|| "Saldo inicial:  " + cValToChar(nSaldoIni)}, ;
 		oPanDados, "", oFontSub,  , , , .T., RGB(031, 073, 125), , 200, 30, , , , , , .F., , )
 
@@ -313,3 +260,14 @@ Static Function fMontaTela()
 
 	Activate MsDialog oDlg Centered
 Return
+
+
+Static Function RetColumns()
+	Local aColumns := {}
+	aAdd(aColumns, {"Data",   {|oBrw| aLinhas[oBrw:At(), 5] }, "D", "@!", 1,  8, 0, .F.})
+	aAdd(aColumns, {"Tipo",   {|oBrw| aLinhas[oBrw:At(), 3] }, "C", "@!", 1,  4, 0, .F.})
+	aAdd(aColumns, {"Numero", {|oBrw| aLinhas[oBrw:At(), 4] }, "C", "@!", 0,  5, 2, .F.})
+	aAdd(aColumns, {"Qtde.",  {|oBrw| aLinhas[oBrw:At(), 6] }, "N", "@!", 0,  4, 2, .F.})
+	aAdd(aColumns, {"Saldo",  {|oBrw| aLinhas[oBrw:At(), 7] }, "N", "@!", 0,  4, 2, .F.})
+Return aColumns
+
