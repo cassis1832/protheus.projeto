@@ -2,11 +2,11 @@
 
 //--------------------------------------------------------------------
 /*/{Protheus.doc} A410CONS
-Ponto de entrada que permite a criação de um menu na tela de de pedido de venda.
-@source A410CONS.prw
-@author Eduardo Patriani
-@since 20/12/2022
-@return  Array, Array com os novos botões que serão incluídos
+    Ponto de entrada que permite a criação de um menu na tela de de pedido de venda.
+    @source A410CONS.prw
+    @author Eduardo Patriani
+    @since 20/12/2022
+    @return  Array, Array com os novos botões que serão incluídos
 /*/
 //--------------------------------------------------------------------
 User Function A410CONS()
@@ -23,14 +23,14 @@ Return aButton
    Função que carrega a Estrutura do Produto no Pedido de Venda
 
 	@sample	   fGeraEstr(aHeader,aCols,nX)
-   @param		aHeader , Array     , Array do Cabeçalho
+    @param		aHeader , Array     , Array do Cabeçalho
 	@param		aCols   , Array	    , Array dos Itens
 	@param		nX      , Numérico 	, Número da linha posicionada
 	@return		.T.		, Lógico
 
-   @author     Eduardo Patriani
-   @since      20/12/2022
-   @version	1.0
+    @author     Eduardo Patriani
+    @since      20/12/2022
+    @version	1.0
 /*/
 //------------------------------------------------------------------------------
 User Function fGeraEstr(aHeader,aCols,nX)
@@ -48,21 +48,18 @@ User Function fGeraEstr(aHeader,aCols,nX)
 	Private N 	    := nX
 	Private nEstru  := 0
 
-	//Localiza todos os componentes do primeiro nível da estrutura.
+	//Localiza todos os componentes da linha do pedido que tenham que retornar ao cliente
 	A410Explod(aCols[nX][nPProduto],aCols[nX][nPQtdVen],@aBOM)
 
 	//------------------------------------------------------------------------------
 	// Adiciona os produtos no aCols
 	//------------------------------------------------------------------------------
-
 	For nX := 1 To Len(aBOM)
-
 		cItem := aCols[Len(aCols)][nPItem]
 
 		aAdd(aCOLS,Array(Len(aHeader)+1))
 
 		For nY	:= 1 To Len(aHeader)
-
 			If ( AllTrim(aHeader[nY][2]) == "C6_ITEM" )
 				aCols[Len(aCols)][nY] := Soma1(cItem)
 			Else
@@ -70,7 +67,6 @@ User Function fGeraEstr(aHeader,aCols,nX)
 					aCols[Len(aCols)][nY] := CriaVar(aHeader[nY][2])
 				EndIf
 			EndIf
-
 		Next nY
 
 		N := Len(aCols)
@@ -101,18 +97,17 @@ Return(.T.)
 
 //------------------------------------------------------------------------------
 /*/{Protheus.doc} A410Explod
-   Função recursiva para localizar todos os componentes do primeiro nível
-	da estrutura.
+   Função recursiva para localizar todos os componentes da estrutura
 
-   @sample	   A410Explod(cProduto,nQuant,aNewStruct
+    @sample	   A410Explod(cProduto,nQuant,aNewStruct
 	@param		cProduto   , Caractere 	, Código do Produto Pai
 	@param		nQuant     , Numérico  	, Quantidade do Produto Pai
-   @param		aNewStruct , Array     	, Array de retorno
+    @param		aNewStruct , Array     	, Array de retorno
 	@return		Nil
 
-   @author     Eduardo Patriani
-   @since      20/12/2022
-   @version	1.0
+    @author     Eduardo Patriani
+    @since      20/12/2022
+    @version	1.0
 /*/
 //------------------------------------------------------------------------------
 Static Function A410Explod(cProduto,nQuant,aNewStruct)

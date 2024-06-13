@@ -14,11 +14,9 @@ Função: Manutenção de pedido EDI do cliente
 Static cTitulo := "EDI - Pedidos de Clientes"
 
 User Function PL020()
-
 	Local oBrowse
 
 	chkFile("ZA0")
-	chkFile("SA7")
 	oBrowse := FWMBrowse():New()
 	oBrowse:SetAlias("ZA0")
 	oBrowse:SetDescription(cTitulo)
@@ -26,7 +24,6 @@ User Function PL020()
 	oBrowse:AddLegend("ZA0->ZA0_Status == '1'", "YELLOW", "Com erro")
 	oBrowse:AddLegend("ZA0->ZA0_Status == '9'", "RED", "Inativo")
 	oBrowse:Activate()
-
 Return Nil
 
 /*---------------------------------------------------------------------*
@@ -66,6 +63,7 @@ Static Function ModelDef()
 	oStZA0:SetProperty('ZA0_ARQUIV',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA0:SetProperty('ZA0_ORIGEM',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA0:SetProperty('ZA0_ITCLI' ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_STATUS',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 
 	oStZA0:SetProperty('ZA0_DTCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Date()'))
 	oStZA0:SetProperty('ZA0_HRCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Time()'))
@@ -101,12 +99,9 @@ Return oView
   Legendas
  *---------------------------------------------------------------------*/
 User Function ProLeg()
-   
     Local aLegenda := {}
-
     AAdd(aLegenda,{"BR_VERDE","Ativo"})
     AAdd(aLegenda,{"BR_AMARELO","Com Erro"})
     AAdd(aLegenda,{"BR_VERMELHO","Inativo"})
     BrwLegenda("Registros", "Status", aLegenda)
-
 return

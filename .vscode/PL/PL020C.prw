@@ -56,6 +56,8 @@ User Function PL020C()
 
 	oTempTable:Delete()
 
+	FWAlertSuccess("Demandas geradas com sucesso!", "Geracao de Demandas para o MRP")
+
 	SetFunName(cFunBkp)
 	RestArea(aArea)
 Return

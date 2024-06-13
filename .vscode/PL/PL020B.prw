@@ -43,6 +43,8 @@ User Function PL020B()
 			EndIf
 
 			oFile:Close()
+
+			LimpaDados()
 		EndIf
 	EndIf
 
@@ -111,13 +113,7 @@ Static Function GravaDados()
 	dbSelectArea("ZA0")
     DBSetOrder(2)  // Filial/cliente/loja/item/data
 
-    if (MsSeek(xFilial("ZA0") + cCliente + cLoja + cProduto + dtos(dDtEntr),.T.)) .and. ;
-        ZA0->ZA0_FILIAL	== xFilial("ZA0")	.and.   ;
-		ZA0->ZA0_CLIENT == cCliente         .and.   ;
-		ZA0->ZA0_LOJA 	== cLoja            .and.   ;
-		ZA0->ZA0_PRODUT == cProduto         .and.   ;
-		ZA0->ZA0_DTENTR == dDtEntr
-
+    if (MsSeek(xFilial("ZA0") + cCliente + cLoja + cProduto + dtos(dDtEntr))) 
         RecLock("ZA0", .F.)
         ZA0->ZA0_ARQUIV   := cArquivo
         ZA0->ZA0_DTCRIA   := dtProcesso
@@ -185,15 +181,13 @@ return
 Static Function LimpaDados()
 
    	dbSelectArea("ZA0")
-   	ZA0->(DBSetOrder(2))  // Filial/cliente/loja
+   	ZA0->(DBSetOrder(3))  
    
    	DBSeek(xFilial("ZA0") + cCliente + cLoja)
+	
+	Do While ! Eof() 
 
-	Do While ! Eof() .And. ;
-		ZA0_FILIAL == xFilial("ZA0") .And. ;
-		ZA0_CLIENT == cCliente .And. ;
-		ZA0_LOJA   == cLoja
-
+	if ZA0->ZA0_CLIENT == cCliente
 		if ZA0_STATUS <> "9"
 			if ZA0->ZA0_DTCRIA <> dtProcesso .or. ;
 				ZA0->ZA0_HRCRIA <> hrProcesso
@@ -203,7 +197,9 @@ Static Function LimpaDados()
 				ZA0->(MsUnlock())
 			endif
 		endif
+	endif
 
-		DbSkip()
+	DbSkip()
+	
    EndDo
 return

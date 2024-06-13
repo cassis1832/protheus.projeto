@@ -2,11 +2,11 @@
 #Include 'FWMVCDef.ch'
 
 /*/{Protheus.doc} PL020
-Função Manutenção de pedido EDI do cliente - Modelo 2
+Funï¿½ï¿½o Manutenï¿½ï¿½o de pedido EDI do cliente - Modelo 2
 @author Assis
 @since 05/01/2024
 @version 1.0
-	@return Nil, Função não tem retorno
+	@return Nil, Funï¿½ï¿½o nï¿½o tem retorno
 	@example
 	u_PL020()
 /*/
@@ -35,12 +35,12 @@ User Function PL020old()
 Return Nil
 
 /*---------------------------------------------------------------------*
-	Criação do menu MVC
+	Criaï¿½ï¿½o do menu MVC
  *---------------------------------------------------------------------*/
 Static Function MenuDef()
 	Local aRot := {}
 	
-	//Adicionando opções
+	//Adicionando opï¿½ï¿½es
 	ADD OPTION aRot TITLE 'Visualizar' ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 
 	ADD OPTION aRot TITLE 'Incluir'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT ACCESS 0 
 	ADD OPTION aRot TITLE 'Alterar'    ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 
@@ -51,7 +51,7 @@ Static Function MenuDef()
 Return aRot
 
 /*---------------------------------------------------------------------*
-	Criação do modelo de dados MVC
+	Criaï¿½ï¿½o do modelo de dados MVC
  *---------------------------------------------------------------------*/
 Static Function ModelDef()
 
@@ -75,40 +75,40 @@ Static Function ModelDef()
 	oModel:AddFields("FORMZA0",/*cOwner*/,oStZA0)
 	oModel:SetPrimaryKey({'ZA0_FILIAL','ZA0_CODPED'})
 	oModel:SetDescription(cTitulo)
-	oModel:GetModel("FORMZA0"):SetDescription("Formulário do Cadastro "+cTitulo)
+	oModel:GetModel("FORMZA0"):SetDescription("Formulï¿½rio do Cadastro "+cTitulo)
 Return oModel
 
 /*---------------------------------------------------------------------*
-	Criação da visão MVC
+	Criaï¿½ï¿½o da visï¿½o MVC
  *---------------------------------------------------------------------*/
 Static Function ViewDef()
 	Local oView := Nil
 	Local oModel := FWLoadModel("PL020")
-	Local oStZA0 := FWFormStruct(2, "ZA0")  //pode se usar um terceiro parâmetro para filtrar os campos exibidos { |cCampo| cCampo $ 'SZA0_NOME|SZA0_DTAFAL|'}
+	Local oStZA0 := FWFormStruct(2, "ZA0")  //pode se usar um terceiro parï¿½metro para filtrar os campos exibidos { |cCampo| cCampo $ 'SZA0_NOME|SZA0_DTAFAL|'}
 	
-	//Criando a view que será o retorno da função e setando o modelo da rotina
+	//Criando a view que serï¿½ o retorno da funï¿½ï¿½o e setando o modelo da rotina
 	oView := FWFormView():New()
 	oView:SetModel(oModel)
 	
-	//Atribuindo formulários para interface
+	//Atribuindo formulï¿½rios para interface
 	oView:AddField("VIEW_ZA0", oStZA0, "FORMZA0")
 	
 	//Criando um container com nome tela com 100%
 	oView:CreateHorizontalBox("TELA",100)
 	
-	//Colocando título do formulário
+	//Colocando tï¿½tulo do formulï¿½rio
 	oView:EnableTitleView('VIEW_ZA0', 'Dados - '+cTitulo )  
 	
-	//Força o fechamento da janela na confirmação
+	//Forï¿½a o fechamento da janela na confirmaï¿½ï¿½o
 	oView:SetCloseOnOk({||.T.})
 	
-	//O formulário da interface será colocado dentro do container
+	//O formulï¿½rio da interface serï¿½ colocado dentro do container
 	oView:SetOwnerView("VIEW_ZA0","TELA")
 
 Return oView
 
 /*---------------------------------------------------------------------
-	Verificação antes da gravação
+	Verificaï¿½ï¿½o antes da gravaï¿½ï¿½o
  *---------------------------------------------------------------------*/
 Static Function FazCommit()
     Local aArea  := FWGetArea()
@@ -122,13 +122,13 @@ Static Function FazCommit()
 	cFilSA1 := xFilial("SA1")
 	cFilDA1 := xFilial("DA1")
 
-    // Verificar a tabela de preços do cliente
+    // Verificar a tabela de precos do cliente
 	If SA1->(! MsSeek(cFilSA1 + ZA0->ZA0_CLIENT + ZA0->ZA0_LOJA))
 		lOk     := .F.
-		MessageBox("Cliente não cadastrado!","",0)
+		MessageBox("Cliente nao cadastrado!","",0)
 	else
 		If DA1->(! MsSeek(cFilDA1 + ZA0->ZA0_PRODUT + SA1->A1_TABELA, .T.))
-			MessageBox("Tabela de preços não encontrada para o item","",0)
+			MessageBox("Tabela de precos nao encontrada para o item","",0)
 			lOk     := .F.
 		EndIf
 	EndIf
@@ -139,10 +139,10 @@ Static Function FazCommit()
 		lOk:= oModel:LoadValue("FORMZA0","ZA0_STATUS","1")
 	Endif
 		
-	//Aciona o commit dos dados preenchidos no formulário
+	//Aciona o commit dos dados preenchidos no formulï¿½rio
 	FWFormCommit(oModel)
 
-	//Aqui você pode fazer as operações após gravar
+	//Aqui vocï¿½ pode fazer as operaï¿½ï¿½es apï¿½s gravar
 
 	FWRestArea(aArea)
 Return lRet
