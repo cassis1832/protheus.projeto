@@ -13,16 +13,16 @@ Função: Manutenção de pedido EDI do cliente
 
 Static cTitulo := "EDI - Pedidos de Clientes"
 
-User Function PL020()
+User Function PL020xpe()
 	Local oBrowse
 
 	chkFile("ZA0")
 	oBrowse := FWMBrowse():New()
 	oBrowse:SetAlias("ZA0")
 	oBrowse:SetDescription(cTitulo)
-	oBrowse:AddLegend("ZA0->ZA0_STATUS == '0'", "GREEN", "Ativo")
-	oBrowse:AddLegend("ZA0->ZA0_STATUS == '1'", "YELLOW", "Com erro")
-	oBrowse:AddLegend("ZA0->ZA0_STATUS == '9'", "RED", "Inativo")
+	oBrowse:AddLegend("ZA0->ZA0_Status == '0'", "GREEN", "Ativo")
+	oBrowse:AddLegend("ZA0->ZA0_Status == '1'", "YELLOW", "Com erro")
+	oBrowse:AddLegend("ZA0->ZA0_Status == '9'", "RED", "Inativo")
 	oBrowse:Activate()
 Return Nil
 
@@ -30,8 +30,8 @@ Return Nil
 	Criação do menu MVC
  *---------------------------------------------------------------------*/
 Static Function MenuDef()
-	Local aRot := {}
 
+	Local aRot := {}
 	ADD OPTION aRot TITLE 'Visualizar' 	  ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_VIEW   ACCESS 0 
 	ADD OPTION aRot TITLE 'Incluir'    	  ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT ACCESS 0 
 	ADD OPTION aRot TITLE 'Alterar'    	  ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 
@@ -40,13 +40,19 @@ Static Function MenuDef()
 	ADD OPTION aRot TITLE 'Gerar Demanda' ACTION 'U_PL020C()'    OPERATION 6 					  ACCESS 0 
 	ADD OPTION aRot TITLE 'Gerar Pedidos' ACTION 'U_PL020D()'    OPERATION 7 					  ACCESS 0 
 	ADD OPTION aRot TITLE 'Legenda'    	  ACTION 'u_ProLeg' 	 OPERATION 8     				  Access 0       
+
 Return aRot
 
 /*---------------------------------------------------------------------*
 	Criação do modelo de dados MVC
  *---------------------------------------------------------------------*/
 Static Function ModelDef()
+
     Local oModel   := Nil
+    Local bPre     := Nil
+    Local bPos     := Nil
+    Local bCommit  := Nil
+    Local bCancel  := Nil
     Local oStZA0   := FWFormStruct(1, "ZA0")
  
 	oStZA0:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
@@ -57,11 +63,13 @@ Static Function ModelDef()
 	oStZA0:SetProperty('ZA0_ARQUIV',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA0:SetProperty('ZA0_ORIGEM',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA0:SetProperty('ZA0_ITCLI' ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_STATUS',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 
 	oStZA0:SetProperty('ZA0_DTCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Date()'))
 	oStZA0:SetProperty('ZA0_HRCRIA',MODEL_FIELD_INIT,FwBuildFeature(STRUCT_FEATURE_INIPAD,'Time()'))
+	oStZA0:SetProperty('ZA0_STATUS',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_INIPAD,'0'))
 
-	oModel:=MPFormModel():New("PL020M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil) 
+	oModel:=MPFormModel():New("PL020PE",bPre, {|oModel| MVCMODELPOS(oModel)},bCommit,bCancel) 
 	oModel:AddFields("FORMZA0",/*cOwner*/,oStZA0)
 	oModel:SetPrimaryKey({'ZA0_FILIAL','ZA0_CODPED'})
 	oModel:SetDescription(cTitulo)
@@ -72,6 +80,7 @@ Return oModel
 	Criação da visão MVC
  *---------------------------------------------------------------------*/
 Static Function ViewDef()
+
     Local oView  := Nil
     Local oModel := FWLoadModel("PL020")      
     Local oStZA0 := FWFormStruct(2, "ZA0")    
@@ -99,32 +108,16 @@ return
 
 
 Static Function MVCMODELPOS(oModel)
-    Local cItem := AvKey("", "DA1_ITEM")
-    Local xRet  := .T.
+    Local nOperation	:=	oModel:GetOperation()
+    //Local oModelGrid	:=	oModel:GetModel('ID_VIEW_GRD_MVCAULA6')
+    Local lRet			:=	.T.
 
-	SA1->(dbSetOrder(1))
-	SB1->(dbSetOrder(1))
-	SA7->(dbSetOrder(1))    // Filial,Cliente,Loja,Produto
-	DA1->(dbSetOrder(2))    // Filial,Produto,Tabela,Item (seq)
-
-	If SA1->(! MsSeek(xFilial("SA1") + M->ZA0_CLIENT + M->ZA0_LOJA))
-		FWAlertError("CLIENTE NAO CADASTRADO!", "Cadastro de clientes")
-	else
-		If SB1->(! MsSeek(xFilial("SB1") + M->ZA0_PRODUT))
-			FWAlertError("ITEM NAO CADASTRADO!", "Cadastro de itens")
-		else
-			// Verificar a relacao Item X Cliente
-			If SA7->(! MsSeek(xFilial("SA7") + M->ZA0_CLIENT + M->ZA0_LOJA + M->ZA0_PRODUT))
-				FWAlertError("PRODUTO CLIENTE NAO CADASTRADO", "Cadastro Produto/Cliente")
-			else
-				// Verificar a tabela de precos do cliente
-				If DA1->(! MsSeek(xFilial("DA1") + M->ZA0_PRODUT + SA1->A1_TABELA + cItem, .T.))
-					if DA1->DA1_CODPRO == M->ZA0_PRODUT .AND. DA1->DA1_CODTAB == SA1->A1_TABELA
-					else
-						FWAlertError("TABELA DE PRECO NAO ENCONTRADA!", "Tabela de precos")
-					EndIf
-				EndIf
-			EndIf
-		EndIf
-	EndIf
-Return xRet
+    FWAlertError("XXXXXXXXXXXXXXXXXX", "Tabela de precos")
+    
+    If nOperation	==	MODEL_OPERATION_UPDATE
+        IF Empty(FwFldGet('ZA0_PRODUT'))
+            lRet	:= .F.
+            MsgInfo("aaaaaaaaaaaaaaa","Atenção")
+        ENDIF
+    EndIf
+Return lRet

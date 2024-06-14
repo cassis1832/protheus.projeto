@@ -13,6 +13,7 @@
 /*/
 
 User Function PL020PE()
+	Local aArea   := GetArea()
 
 	Local aParam    := PARAMIXB
 	Local xRet      := .T.
@@ -20,7 +21,6 @@ User Function PL020PE()
 	Local cIdPonto  := ''
 	Local cIdModel  := ''
 	Local lIsGrid   := .F.
-	Local cItem     := AvKey("", "DA1_ITEM")
 
 	If aParam == NIL
 		Return xRet
@@ -35,6 +35,18 @@ User Function PL020PE()
 	If cIdPonto != 'MODELPOS'
 		Return xRet
 	EndIf
+
+	If oObj:GetOperation() == MODEL_OPERATION_INSERT .Or. ;
+			o_Obj:GetOperation() == MODEL_OPERATION_UPDATE
+		MsgInfo("aqiiiiiiiiiiii!")
+	EndIf
+
+	RestArea(aArea)
+Return xRet
+
+
+Static Function Consiste()
+	Local cItem     := AvKey("", "DA1_ITEM")
 
 	SA1->(dbSetOrder(1))
 	SB1->(dbSetOrder(1))
@@ -66,4 +78,5 @@ User Function PL020PE()
 			EndIf
 		EndIf
 	EndIf
-Return xRet
+
+return
