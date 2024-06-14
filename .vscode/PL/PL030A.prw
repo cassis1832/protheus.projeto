@@ -57,13 +57,17 @@ Static Function ObterDados()
 
 	While (cAliasSA7)->(!EOF())
 
-		If SB2->(MsSeek(xFilial("SB2") + (cAliasSA7)->A7_PRODUTO + (cAliasSA7)->B1_LOCPAD))
-			nSaldo := SB2->B2_QATU
-		else
-			nSaldo := 0
-		EndIf
+		if SubString((cAliasSA7)->A7_PRODUTO, 1, 1) != "7"
 
-		Aadd(aPedidos,{(cAliasSA7)->A7_PRODUTO, (cAliasSA7)->A7_CODCLI, cValToChar(nSaldo), "0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0"})
+			If SB2->(MsSeek(xFilial("SB2") + (cAliasSA7)->A7_PRODUTO + (cAliasSA7)->B1_LOCPAD))
+				nSaldo := SB2->B2_QATU
+			else
+				nSaldo := 0
+			EndIf
+
+			Aadd(aPedidos,{(cAliasSA7)->A7_PRODUTO, (cAliasSA7)->A7_CODCLI, cValToChar(nSaldo), "0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0"})
+
+		EndIf
 
 		(cAliasSA7)->(DbSkip())
 	EndDo
@@ -84,13 +88,13 @@ Static Function ObterDados()
 	// Carregar pedidos de vendas
 	cSql := "SELECT B1_COD, C6_ENTREG, C6_QTDVEN "
 	cSql += "  FROM SC5010, SC6010, SB1010, SF4010 "
-	cSql += " WHERE C5_NOTA      = '' "
+	cSql += " WHERE C5_NOTA        = '' "
 	cSql += "   AND C5_CLIENTE     = '" + cCliente + "'"
 	cSql += "   AND C5_LOJACLI     = '" + cLoja + "'"
 	cSql += "   AND C5_LIBEROK    <> 'E' "
 	cSql += "   AND C5_FILIAL      = C6_FILIAL "
 	cSql += "   AND C5_NUM         = C6_NUM "
-	cSql += "   AND C6_QTDENT     <= C6_QTDVEN "
+	cSql += "   AND C6_QTDENT      < C6_QTDVEN "
 	cSql += "   AND SC6010.C6_BLQ <> 'R' "
 	cSql += "   AND C6_FILIAL      = B1_FILIAL "
 	cSql += "   AND C6_PRODUTO     = B1_COD "
