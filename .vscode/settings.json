@@ -1,7 +1,12 @@
 {
     "totvsLanguageServer.welcomePage": false,
     "totvsLanguageServer.editor.linter.includes": "C:\\Users\\carlos.assis\\Documents\\ADVPL\\includes",
+    "files.encoding": "windows1252",
+    "files.associations": {
+        "*.prw": "advpl"
+    },
     "[advpl]": {
+        "editor.defaultFormatter": "TOTVS.tds-vscode",
         "files.encoding": "windows1252",
     },
     "[prw]": {
@@ -9,5 +14,8 @@
     },
     "[PRW]": {
         "files.encoding": "windows1252",
+    },
+    "[advpl-asp]": {
+        "files.encoding": "windows1252"
     },
 }
