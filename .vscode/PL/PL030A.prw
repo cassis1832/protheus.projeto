@@ -249,12 +249,17 @@ Static Function fWBrowse1()
 
 	oDlg:CreateDialog()
 	oDlg:AddCloseButton(Nil, 'Fechar')
+
+	//oDlg:AddButton('Sair'    , { || oModal:DeActivate() }, 'Sair',,.T.,.F.,.T.,)
+
 	oPnl:=oDlg:GetPanelMain()
 
 	oFwBrowse := FWBrowse():New()
 	oFwBrowse:SetDataArrayoBrowse()  //Define utilização de array
 	oFwBrowse:AddStatusColumns( { || BrwStatus() }, { || BrwLegend() } )
 	oFwBrowse:SetArray(aPedidos)
+
+
 	aColumns := RetColumns()
 
 	//Cria as colunas do array
@@ -263,7 +268,9 @@ Static Function fWBrowse1()
 	Next
 
 	oFwBrowse:SetOwner(oPnl)
+	oFwBrowse:SetDoubleClick( {|| fDupClique() } )
 	oFwBrowse:SetDescription( "Planejamento por Cliente" )
+
 	oFwBrowse:Activate()
 	oDlg:Activate()
 Return
@@ -316,4 +323,18 @@ Static Function BrwLegend()
 	oLegend:Activate()
 	oLegend:View()
 	oLegend:DeActivate()
+Return
+
+
+
+Static Function fDupClique()
+	Local aArea   := FWGetArea()
+
+	nLinha := oFwBrowse:At()
+	nColuna := oFwBrowse:ColPos()
+	cItem := aPedidos[nLinha][1]
+
+	u_PL060A(cItem)
+
+	FWRestArea(aArea)
 Return
