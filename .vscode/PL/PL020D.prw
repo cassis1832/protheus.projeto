@@ -32,6 +32,7 @@ User Function PL020D()
 	Private lTemLinha   := .T.
 	Private nPed        := 0
 	Private nQtde       := 0
+	Private nValor		:= 0
 	Private dLimite     := Date()
 
 	Private cCliente    := ''
@@ -57,7 +58,7 @@ User Function PL020D()
 
 	SA1->(dbSetOrder(1))
 	SE4->(dbSetOrder(1))
-	DA1->(dbSetOrder(2)) // DA1_FILIAL+DA1_CODPRO+DA1_CODTAB+DA1_ITEM
+	DA1->(dbSetOrder(1))
 
 	// Verificar o cliente
 	if SA1->(! MsSeek(xFilial("SA1") + cCliente + cLoja))
@@ -137,9 +138,8 @@ User Function PL020D()
 			EndIf
 
 			nQtde := (cAlias)->ZA0_QTDE - (cAlias)->ZA0_QTCONF
+			nValor := (cAlias)->ZA0_QTDE * DA1->DA1_PRCVEN
 			nX := nX + 1
-
-			//nItem := nItem + 5
 
 			aLinha := {}
 			aadd(aLinha,{"C6_ITEM"      , StrZero(nX,2), Nil})
@@ -149,7 +149,7 @@ User Function PL020D()
 			aadd(aLinha,{"C6_QTDVEN"    , nQtde, Nil})
 			aadd(aLinha,{"C6_PEDCLI"    , (cAlias)->ZA0_NUMPED, Nil})
 			aadd(aLinha,{"C6_XCODPED"   , (cAlias)->ZA0_CODPED, Nil})
-			aadd(aLinha,{"C6_VALOR"     , (cAlias)->ZA0_QTDE * DA1->DA1_PRCVEN, Nil})
+			aadd(aLinha,{"C6_VALOR"     , nValor, Nil})
 			aadd(aLinha,{"C6_PRCVEN"    , DA1->DA1_PRCVEN, Nil})
 			aadd(aLinha,{"C6_PRUNIT"    , DA1->DA1_PRCVEN, Nil})
 
@@ -163,7 +163,7 @@ User Function PL020D()
 			aadd(aGravados,(cAlias)->R_E_C_N_O_)
 
 			//Gera devoluções com base na estrutura
-			//u_PL020E(@aItens)
+			u_PL020E(@aItens)
 		endif
 
 		(cAlias)->(DbSkip())
@@ -234,9 +234,9 @@ Static Function Consistencia()
 
     // Verificar a tabela de precos do item/cliente
     if lOk1 == .T.
-    	If DA1->(! MsSeek(xFilial("DA1") + (cAlias)->ZA0_PRODUT + SA1->A1_TABELA + AvKey("", "DA1_ITEM"), .T.))
-            if DA1->DA1_CODPRO == (cAlias)->ZA0_PRODUT .AND. DA1->DA1_CODTAB == SA1->A1_TABELA
-            else
+		// Verificar a tabela de precos do cliente
+		If DA1->(! MsSeek(xFilial("DA1") + SA1->A1_TABELA + (cAlias)->ZA0_PRODUT, .T.))
+			if DA1->DA1_CODPRO == (cAlias)->ZA0_PRODUT .AND. DA1->DA1_CODTAB == SA1->A1_TABELA
                 lOk1 := .F.
                 FWAlertError("Tabela de precos nao encontrada para o item = " + (cAlias)->ZA0_PRODUT, ;
                 "Tabela de precos")

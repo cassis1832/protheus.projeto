@@ -89,22 +89,24 @@ Return oView
 
 Static Function MVCMODELPRE(oModel)
     Local xRet  := .T.
+ 	Local nOperation :=	oModel:GetOperation()
 
-	If M->ZA0_STATUS == "9"
-		FWAlertError("PEDIDO JA FOI GERADO E NAO PODE SER ALTERADO!", "Pedido EDI")
-     	xRet  := .F.
-	EndIf
+    If nOperation == MODEL_OPERATION_UPDATE
+		If M->ZA0_STATUS == "9"
+			FWAlertError("PEDIDO JA FOI GERADO E NAO PODE SER ALTERADO!", "Pedido EDI")
+			xRet  := .F.
+		EndIf
+    EndIf
 Return xRet
 
 
 Static Function MVCMODELPOS(oModel)
-    Local cItem := AvKey("", "DA1_ITEM")
 	Local lOk	:= .T.
 
 	SA1->(dbSetOrder(1))
 	SB1->(dbSetOrder(1))
 	SA7->(dbSetOrder(1))    // Filial,Cliente,Loja,Produto
-	DA1->(dbSetOrder(2))    // Filial,Produto,Tabela,Item (seq)
+	DA1->(dbSetOrder(1))    // Filial,Tabela,Produto,xxxxxxxxxxx
 
 	If SA1->(! MsSeek(xFilial("SA1") + M->ZA0_CLIENT + M->ZA0_LOJA))
 		FWAlertError("CLIENTE NAO CADASTRADO!", "Cadastro de clientes")
@@ -120,10 +122,10 @@ Static Function MVCMODELPOS(oModel)
     		 	lOk  := .F.
 			else
 				// Verificar a tabela de precos do cliente
-				If DA1->(! MsSeek(xFilial("DA1") + M->ZA0_PRODUT + SA1->A1_TABELA + cItem, .T.))
+			  	If DA1->(! MsSeek(xFilial("DA1") + SA1->A1_TABELA + M->ZA0_PRODUT, .T.))
 					if DA1->DA1_CODPRO == M->ZA0_PRODUT .AND. DA1->DA1_CODTAB == SA1->A1_TABELA
 					else
-						Help('',1,'Tabela de precos',,'TABELA DE PRECO NAO ENCONTRADA',1,0,,,,,,{"Cadastre a tabela de preço para o item"}) 
+						Help('',1,'Tabela de precos',,'TABELA DE PRECO NAO ENCONTRADA',1,0,,,,,,{"Cadastre a tabela de preco para o item"}) 
      					lOk  := .F.
 					EndIf
 				EndIf
