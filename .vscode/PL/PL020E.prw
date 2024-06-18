@@ -35,7 +35,7 @@ User Function PL020E(aItens)
 			nValor := nQtde * 1
 
 			aLinha := {}
-			aadd(aLinha,{"C6_ITEM", StrZero(cItem, 2), Nil})
+			aadd(aLinha,{"C6_ITEM", StrZero(val(cItem), 2), Nil})
 			aadd(aLinha,{"C6_PRODUTO", aBOM[nX][1], Nil})
 			aadd(aLinha,{"C6_TES", "888", Nil})
 			aadd(aLinha,{"C6_ENTREG", aItens[Len(aItens)][nPData][2], Nil})
