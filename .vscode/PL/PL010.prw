@@ -5,7 +5,7 @@
 #Include "Colors.ch"
 
 /*/{Protheus.doc}	PL010
-	Impressão da Ordem de Produção Modelo MR V01
+	Impressao da Ordem de Producao Modelo MR V01
 @author Carlos Assis
 @since 04/11/2023
 @version 1.0   
@@ -30,21 +30,21 @@ User Function PL010()
 
 	Private oPrinter    := nil
 	Private cQuery 	    := ""
-	Private lOper 	    := .T.  		   // Todas as operações juntas
+	Private lOper 	    := .T.  		   	// Todas as operacões juntas
 	Private nLin 	    := 0
-	PRivate cDir        := "c:\temp\"  // Local do relatório
+	PRivate cDir        := "c:\temp\"  		// Local do relatorio
 	Private cFilePrint  := ""
 	Private lComp		:= .F.
 
-	Private cAliasOrd 	:= ""			   // Dados da OP
-	Private cAliasCmp	:= ""			   // Componentes da OP
-	Private cAliasOper  := ""			   // Operações da OP
+	Private cAliasOrd 	:= ""			   	// Dados da OP
+	Private cAliasCmp	:= ""			   	// Componentes da OP
+	Private cAliasOper  := ""			   	// Operacões da OP
 
 	AAdd(aPergs, {1, "Ordem Inicial", CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
 	AAdd(aPergs, {1, "Ordem Final"  , CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
-	AAdd(aPergs ,{4,"Operações"    	,.T.,"Todas as operações juntas" ,90,"",.F.})
+	AAdd(aPergs ,{4, "Operacoes"   	,.T.,"Todas as operacoes juntas" ,90,"",.F.})
 
-	If ParamBox(aPergs, "Parâmetros do relatório", @aResps,,,,,,,, .T., .T.)
+	If ParamBox(aPergs, "Parametros do relatorio", @aResps,,,,,,,, .T., .T.)
 		cOrdemDe    := aResps[1]
 		cOrdemAte	:= aResps[2]
 		lOper		:= aResps[3]
@@ -61,7 +61,7 @@ User Function PL010()
 	cQuery += " FROM " +	RetSQLName("SC2") + " SC2 " 			+ CRLF
 	cQuery += "INNER JOIN " + RetSQLName("SB1") + " SB1 " 		    + CRLF
 	cQuery += "	  ON C2_PRODUTO = B1_COD " 					        + CRLF
-	cQuery += "WHERE C2_FILIAL = '" + xFilial("SC5") + "' " 	    + CRLF
+	cQuery += "WHERE C2_FILIAL = '" + xFilial("SC2") + "' " 	    + CRLF
 	cQuery += "	 AND SC2.D_E_L_E_T_ = ' ' " 					    + CRLF
 	cQuery += "	 AND SB1.D_E_L_E_T_ = ' ' " 					    + CRLF
 
@@ -98,13 +98,13 @@ User Function PL010()
 		EndDo
 
 		if nRecs = 0
-			FWAlertError("ITEM NÃO POSSUI ESTRUTURA!", "ERRO")
+			FWAlertError("ITEM NAO POSSUI ESTRUTURA!", "ERRO")
 			return
 		endif
 
 		(cAliasCmp)->(dbGoTop())
 
-		// Ler as operações do item
+		// Ler as operacões do item
 		cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, " 		    + CRLF
 		cQuery += "	G2_DESCRI, G2_MAOOBRA, G2_SETUP, "					+ CRLF
 		cQuery += "	G2_LOTEPAD, G2_TEMPAD, G2_CTRAB, "					+ CRLF
@@ -123,15 +123,17 @@ User Function PL010()
 			(cAliasOper)->(DbSkip())
 		EndDo
 
-		If ! FWAlertYesNo("ITEM NÃO POSSUI OPERAÇÕES!", "Confirma a impressão?")
-			return
+		if nRecs = 0
+			If ! FWAlertYesNo("ITEM NAO POSSUI OPERACOES!", "Confirma a impressao?")
+				return
+			EndIf
 		EndIf
 
 		(cAliasOper)->(dbGoTop())
 
 		lComp = .F.
 
-		if lOper	// Imprime todas as operações da ordem na mesma página
+		if lOper	// Imprime todas as operacões da ordem na mesma página
 			cFilePrint	:= "OP" + cValToChar((cAliasOrd)->C2_NUM)
 			cFilePrint	+= cValToChar((cAliasOrd)->C2_ITEM)
 			cFilePrint	+= cValToChar((cAliasOrd)->C2_SEQUEN)
@@ -143,7 +145,7 @@ User Function PL010()
 			printApont	()
 			printParada ()
 
-		else // Imprime uma pagina por operação
+		else // Imprime uma pagina por operacao
 			While (cAliasOper)->(!EOF())
 				cFilePrint	:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + cValToChar((cAliasOrd)->C2_ITEM)
 				cFilePrint	+= cValToChar((cAliasOrd)->C2_SEQUEN) + cValToChar((cAliasOper)->G2_OPERAC)
@@ -166,7 +168,7 @@ return
 
 
 //-----------------------------------------------------------------------------
-//	Imprime o cabeçalho da OP
+//	Imprime o cabecalho da OP
 //-----------------------------------------------------------------------------
 Static Function printCabec()
 
@@ -183,7 +185,7 @@ Static Function printCabec()
 
 	nLin := 40
 	oPrinter:SayBitmap(nLin-15, 20, "\images\logo.png", 130, 30)
-	oPrinter:Say(nLin+3, 190,"ORDEM DE PRODUÇÃO",oFont16b)
+	oPrinter:Say(nLin+3, 190,"ORDEM DE PRODUCAO",oFont16b)
 
 	oPrinter:Line(nLin-20, 400, 60, 400)
 	oPrinter:Say(nLin-10, 430,"Num. Ordem",oFont10)
@@ -198,7 +200,7 @@ Static Function printCabec()
 	nLin +=20
 	oPrinter:Say(nLin, 15, "Data Inicio:",oFont10)
 	oPrinter:Say(nLin, 75, DTOC((cAliasOrd)->C2_DATPRI), oFont11)
-	oPrinter:Say(nLin, 150, "Data Término:",oFont10)
+	oPrinter:Say(nLin, 150, "Data Termino:",oFont10)
 	oPrinter:Say(nLin, 220, DTOC((cAliasOrd)->C2_DATPRF), oFont11)
 	oPrinter:Say(nLin, 400, "Quantidade:",oFont10)
 
@@ -221,8 +223,8 @@ Return
 //-----------------------------------------------------------------------------
 Static Function printCompon()
 
-	if lOper = .F. 					// Uma operação por pagina
-		if lComp = .T.					// Já imprimiu a primeira operação, não imprime os componentes de novo
+	if lOper = .F. 					// Uma operacao por pagina
+		if lComp = .T.					// Já imprimiu a primeira operacao, nao imprime os componentes de novo
 			return
 		else
 			lComp = .T.
@@ -230,7 +232,7 @@ Static Function printCompon()
 	endif
 
 	oPrinter:Line(nLin+10, 15, nLin+10, 550)
-	oPrinter:Say(nLin+25, 225, "Material Necessário",oFont12b)
+	oPrinter:Say(nLin+25, 225, "Material Necessario",oFont12b)
 	oPrinter:Line(nLin+30, 15, nLin+30, 550)
 
 	nLin +=45
@@ -253,21 +255,21 @@ Static Function printCompon()
 Return
 
 //-----------------------------------------------------------------------------
-//	Imprime as operações da OP
+//	Imprime as operacões da OP
 //-----------------------------------------------------------------------------
 Static Function printOper()
 
 	oPrinter:Line(nLin+10, 15, nLin+10, 550)
-	oPrinter:Say(nLin+25, 250, "Operações",oFont12b)
+	oPrinter:Say(nLin+25, 250, "Operacoes",oFont12b)
 	oPrinter:Line(nLin+30, 15, nLin+30, 550)
 
 	nLin +=45
 	oPrinter:Say(nLin, 15, "Oper.",oFont09)
 	oPrinter:Say(nLin, 60, "Descricao",oFont09)
-	oPrinter:Say(nLin, 180, "Máquina",oFont09)
+	oPrinter:Say(nLin, 180, "Maquina",oFont09)
 	oPrinter:Say(nLin, 260, "Qtde/Hr",oFont09)
 	oPrinter:Say(nLin, 360, "Qtde Real.",oFont09)
-	oPrinter:Say(nLin, 460, "Observações",oFont09)
+	oPrinter:Say(nLin, 460, "Observacoes",oFont09)
 
 	if lOper
 		While (cAliasOper)->(!EOF())
@@ -299,7 +301,7 @@ Static Function printOper()
 Return
 
 //-----------------------------------------------------------------------------
-//	Imprime o espaço para registro dos apontamentos e o rodapé da ordem
+//	Imprime o espaco para registro dos apontamentos e o rodapé da ordem
 //-----------------------------------------------------------------------------
 Static Function printApont()
 	Local nLinIni	:= 0
@@ -349,10 +351,10 @@ Static Function printApont()
 	oPrinter:Box(nLin, 15, nLin+85, 550)		      // Box(row, col, bottom, right)
 
 	nlin += 12
-	oPrinter:Say(nLin, 240, "Sim     N�o",oFont10)
+	oPrinter:Say(nLin, 240, "Sim     Nao",oFont10)
 
 	nlin += 18
-	oPrinter:Say(nLin, 30, "Peças Separadas Para Liberação:",oFont10)
+	oPrinter:Say(nLin, 30, "Pecas Separadas Para Liberacao:",oFont10)
 	oPrinter:Box(nLin-10, 240, nLin+5, 260)		   // Box(row, col, bottom, right)
 	oPrinter:Box(nLin-10, 270, nLin+5, 290)		   // Box(row, col, bottom, right)
 	oPrinter:Say(nLin, 330, "Visto Qualidade:",oFont10)
@@ -362,7 +364,7 @@ Static Function printApont()
 	oPrinter:Say(nLin, 30, "Ordem Finalizada:",oFont10)
 	oPrinter:Box(nLin-10, 240, nLin+5, 260)		   // Box(row, col, bottom, right)
 	oPrinter:Box(nLin-10, 270, nLin+5, 290)		   // Box(row, col, bottom, right)
-	oPrinter:Say(nLin, 330, "Visto Liderança:",oFont10)
+	oPrinter:Say(nLin, 330, "Visto Lideranca:",oFont10)
 	oPrinter:Say(nLin, 420, "_____________________",oFont10)
 
 	nlin += 20
@@ -397,11 +399,11 @@ Static Function printParada()
 	oPrinter:Say(nLin, 164, "Inicio",oFont09)
 	oPrinter:Say(nLin, 215, "Fim",oFont09)
 
-	oPrinter:Say(nLin, 252, "Cód.Par.",oFont09)
+	oPrinter:Say(nLin, 252, "Cod.Par.",oFont09)
 	oPrinter:Say(nLin, 304, "Qtde.",oFont09)
 	oPrinter:Say(nLin, 350, "Refugo",oFont09)
-	oPrinter:Say(nLin, 408, "Cód.Ref.",oFont09)
-	oPrinter:Say(nLin, 472, "Observação",oFont09)
+	oPrinter:Say(nLin, 408, "Cod.Ref.",oFont09)
+	oPrinter:Say(nLin, 472, "Observacao",oFont09)
 
 	// Looping de linhas em branco para apontamentos
 	nLin += 2

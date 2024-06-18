@@ -29,41 +29,30 @@ Return Nil
 	Criação do menu MVC
  *---------------------------------------------------------------------*/
 Static Function MenuDef()
-
 	Local aRot := {}
-	ADD OPTION aRot TITLE 'Consultar'  ACTION 'U_PL030Consulta()' OPERATION 5 ACCESS 0 
-	
+	ADD OPTION aRot TITLE 'Visualizar'  ACTION 'U_PL030Consulta()' OPERATION MODEL_OPERATION_VIEW ACCESS 0 
 Return aRot
+
 
 /*---------------------------------------------------------------------*
 	Criação do modelo de dados MVC
  *---------------------------------------------------------------------*/
 Static Function ModelDef()
-
     Local oModel   := Nil
-    Local bPre     := Nil
-    Local bPos     := Nil
-    Local bCommit  := Nil
-    Local bCancel  := Nil
     Local oStSA1   := FWFormStruct(1, "SA1")
  
-	// oStSA1:SetProperty('A1_COD'   ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	// oStSA1:SetProperty('A1_LOJA'  ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	// oStSA1:SetProperty('A1_NOME'  ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	// oStSA1:SetProperty('A1_NREDUZ',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-
-	oModel:=MPFormModel():New("PL030PE",bPre, bPos,bCommit,bCancel) 
+	oModel:=MPFormModel():New("PL030PE",,,,) 
 	oModel:AddFields("FORMSA1",/*cOwner*/,oStSA1)
 	oModel:SetPrimaryKey({'A1_FILIAL','A1_COD','A1_LOJA'})
 	oModel:SetDescription(cTitulo)
 	oModel:GetModel("FORMSA1"):SetDescription("Cliente "+cTitulo)
 Return oModel
 
+
 /*---------------------------------------------------------------------*
 	Criação da visão MVC
  *---------------------------------------------------------------------*/
 Static Function ViewDef()
-
     Local oView  := Nil
     Local oModel := FWLoadModel("PL030")      
     Local oStSA1 := FWFormStruct(2, "SA1")    
@@ -74,11 +63,8 @@ Static Function ViewDef()
     oView:CreateHorizontalBox("TELA",100)
     oView:EnableTitleView('VIEW_SA1', 'Dados - '+cTitulo )  
     oView:SetCloseOnOk({||.T.})
-
 	oView:RemoveField('A1_NOME')
-
     oView:SetOwnerView("VIEW_SA1","TELA")
-
 Return oView
 
 

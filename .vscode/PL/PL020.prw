@@ -102,44 +102,48 @@ Return xRet
 
 Static Function MVCMODELPOS(oModel)
 	Local lOk	:= .T.
+ 	Local nOperation :=	oModel:GetOperation()
 
-	SA1->(dbSetOrder(1))
-	SB1->(dbSetOrder(1))
-	SA7->(dbSetOrder(1))    // Filial,Cliente,Loja,Produto
-	DA1->(dbSetOrder(1))    // Filial,Tabela,Produto,xxxxxxxxxxx
+    If nOperation <> MODEL_OPERATION_DELETE
 
-	If SA1->(! MsSeek(xFilial("SA1") + M->ZA0_CLIENT + M->ZA0_LOJA))
-		FWAlertError("CLIENTE NAO CADASTRADO!", "Cadastro de clientes")
-     	lOk  := .F.
-	else
-		If SB1->(! MsSeek(xFilial("SB1") + M->ZA0_PRODUT))
-			FWAlertError("ITEM NAO CADASTRADO!", "Cadastro de itens")
-	     	lOk  := .F.
+		SA1->(dbSetOrder(1))
+		SB1->(dbSetOrder(1))
+		SA7->(dbSetOrder(1))    // Filial,Cliente,Loja,Produto
+		DA1->(dbSetOrder(1))    // Filial,Tabela,Produto,xxxxxxxxxxx
+
+		If SA1->(! MsSeek(xFilial("SA1") + M->ZA0_CLIENT + M->ZA0_LOJA))
+			FWAlertError("CLIENTE NAO CADASTRADO!", "Cadastro de clientes")
+			lOk  := .F.
 		else
-			// Verificar a relacao Item X Cliente
-			If SA7->(! MsSeek(xFilial("SA7") + M->ZA0_CLIENT + M->ZA0_LOJA + M->ZA0_PRODUT))
-				FWAlertError("PRODUTO CLIENTE NAO CADASTRADO", "Cadastro Produto/Cliente")
-    		 	lOk  := .F.
+			If SB1->(! MsSeek(xFilial("SB1") + M->ZA0_PRODUT))
+				FWAlertError("ITEM NAO CADASTRADO!", "Cadastro de itens")
+				lOk  := .F.
 			else
-				// Verificar a tabela de precos do cliente
-			  	If DA1->(! MsSeek(xFilial("DA1") + SA1->A1_TABELA + M->ZA0_PRODUT, .T.))
-					if DA1->DA1_CODPRO == M->ZA0_PRODUT .AND. DA1->DA1_CODTAB == SA1->A1_TABELA
-					else
-						Help('',1,'Tabela de precos',,'TABELA DE PRECO NAO ENCONTRADA',1,0,,,,,,{"Cadastre a tabela de preco para o item"}) 
-     					lOk  := .F.
+				// Verificar a relacao Item X Cliente
+				If SA7->(! MsSeek(xFilial("SA7") + M->ZA0_CLIENT + M->ZA0_LOJA + M->ZA0_PRODUT))
+					FWAlertError("PRODUTO CLIENTE NAO CADASTRADO", "Cadastro Produto/Cliente")
+					lOk  := .F.
+				else
+					// Verificar a tabela de precos do cliente
+					If DA1->(! MsSeek(xFilial("DA1") + SA1->A1_TABELA + M->ZA0_PRODUT, .T.))
+						if DA1->DA1_CODPRO == M->ZA0_PRODUT .AND. DA1->DA1_CODTAB == SA1->A1_TABELA
+						else
+							Help('',1,'Tabela de precos',,'TABELA DE PRECO NAO ENCONTRADA',1,0,,,,,,{"Cadastre a tabela de preco para o item"}) 
+							lOk  := .F.
+						EndIf
 					EndIf
 				EndIf
 			EndIf
 		EndIf
-	EndIf
 
-	oField := oModel:GetModel("FORMZA0")
+		oField := oModel:GetModel("FORMZA0")
 
-	if lOk == .F.
-		xRet := oField:LoadValue("ZA0_STATUS","1")
-	else
-		xRet := oField:LoadValue("ZA0_STATUS","0")
-	EndIf
+		if lOk == .F.
+			xRet := oField:LoadValue("ZA0_STATUS","1")
+		else
+			xRet := oField:LoadValue("ZA0_STATUS","0")
+		EndIf
+	endif
 Return lOk
 
 

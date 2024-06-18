@@ -31,7 +31,7 @@ Return Nil
 Static Function MenuDef()
 
 	Local aRot := {}
-	ADD OPTION aRot TITLE 'Consultar'  ACTION 'U_PL060Consulta()' OPERATION 5 ACCESS 0 
+	ADD OPTION aRot TITLE 'Visualizar'  ACTION 'U_PL060Consulta()' OPERATION 1 ACCESS 0 
 	
 Return aRot
 
