@@ -12,12 +12,12 @@ User Function PL020E(aItens)
 
 	Local nPProduto := aScan(aItens[Len(aItens)],{|x| AllTrim(x[1]) == "C6_PRODUTO"})
 	Local nPQtdVen  := aScan(aItens[Len(aItens)],{|x| AllTrim(x[1]) == "C6_QTDVEN"})
-	Local nPItem    := aScan(aItens[Len(aItens)],{|x| AllTrim(x[1]) == "C6_ITEM"})
 	Local nPData    := aScan(aItens[Len(aItens)],{|x| AllTrim(x[1]) == "C6_ENTREG"})
-	Local cItem     := ""
+	Local nItem     := aScan(aItens[Len(aItens)],{|x| AllTrim(x[1]) == "C6_ITEM"})
 	Local nX        := 0
 	Local nQtde		:= 0
-	Local nValor	:= 0
+
+	Local cItem 	:= val(aItens[Len(aItens)][nItem][2])
 
 	// Explodir a última linha da tabela
 	Estrutura(@aBom, aItens[Len(aItens)][nPProduto][2],	aItens[Len(aItens)][nPQtdVen][2])
@@ -28,22 +28,20 @@ User Function PL020E(aItens)
 	For nX := 1 To Len(aBOM)
 
 		if aBOM[nX][3] == "1" // permite agregar custo
-			cItem := aItens[Len(aItens)][nPItem][2]    // ultimo item da lista
-			cItem := Soma1(cItem)
+			cItem := cItem + 1
 
 			nQtde := aBOM[nX][2]
-			nValor := nQtde * 1
 
 			aLinha := {}
-			aadd(aLinha,{"C6_ITEM", StrZero(val(cItem), 2), Nil})
-			aadd(aLinha,{"C6_PRODUTO", aBOM[nX][1], Nil})
-			aadd(aLinha,{"C6_TES", "888", Nil})
-			aadd(aLinha,{"C6_ENTREG", aItens[Len(aItens)][nPData][2], Nil})
-			aadd(aLinha,{"C6_QTDVEN", nQtde, Nil})
-			aadd(aLinha,{"C6_PEDCLI", "", Nil})
+			aadd(aLinha,{"C6_ITEM"		, StrZero(cItem, 2), Nil})
+			aadd(aLinha,{"C6_PRODUTO"	, aBOM[nX][1], Nil})
+			aadd(aLinha,{"C6_QTDVEN"	, nQtde, Nil})
+			aadd(aLinha,{"C6_PRCVEN"	, 1, Nil})
+			aadd(aLinha,{"C6_PRUNIT"	, 1, Nil})
+			aadd(aLinha,{"C6_TES"		, "888", Nil})
+			aadd(aLinha,{"C6_ENTREG"	, aItens[Len(aItens)][nPData][2], Nil})
+			aadd(aLinha,{"C6_PEDCLI"	, "", Nil})
 			aadd(aLinha,{"C6_XCODPED", "", Nil})
-			aadd(aLinha,{"C6_PRCVEN", 1, Nil})
-			aadd(aLinha,{"C6_PRUNIT", 1, Nil})
 			aadd(aItens, aLinha)
 		endif
 	Next nX
@@ -51,28 +49,32 @@ Return(.T.)
 
 
 Static Function	Estrutura(aBom, cProduto, nQtPai)
+	Local cAliasSG1
 	Local cSql := ""
 	Local nQtFilho := 0
 
 	cSql := "SELECT G1_COD, G1_COMP, G1_QUANT, G1_INI, G1_FIM, G1_FANTASM, B1_AGREGCU "
 	cSql += " FROM " + RetSQLName("SG1") + " SG1 "
+
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
-	csQL += "	 ON G1_COMP = B1_COD "
+	csQL += "	 ON G1_COMP 		= B1_COD "
+	cSql += "  AND B1_FILIAL 		= '" + xFilial("SB1") + "' "
+	cSql += "  AND SB1.D_E_L_E_T_ 	= ' ' "
+
 	cSql += "WHERE SG1.D_E_L_E_T_ = ' ' "
-	cSql += "  AND SB1.D_E_L_E_T_ = ' ' "
 	cSql += "  AND G1_FILIAL = '" + xFilial("SG1") + "' "
-	cSql += "  AND B1_FILIAL = '" + xFilial("SB1") + "' "
 	cSql += "  AND G1_COD = '" + cProduto + "' "
 	cSql += " ORDER BY G1_TRT, G1_COMP "
-	cAlias := MPSysOpenQuery(cSql)
 
-	While (cAlias)->(!EOF())
-		nQtFilho := nQtPai * (cAlias)->G1_QUANT
+	cAliasSG1 := MPSysOpenQuery(cSql)
 
-		aadd(aBOM, {(cAlias)->G1_COMP, nQtFilho, (cAlias)->B1_AGREGCU})
+	While (cAliasSG1)->(!EOF())
+		nQtFilho := nQtPai * (cAliasSG1)->G1_QUANT
 
-		Estrutura(@aBOM, (cAlias)->G1_COMP, nQtFilho)
+		aadd(aBOM, {(cAliasSG1)->G1_COMP, nQtFilho, (cAliasSG1)->B1_AGREGCU})
 
-		(cAlias)->(DbSkip())
+		Estrutura(@aBOM, (cAliasSG1)->G1_COMP, nQtFilho)
+
+		(cAliasSG1)->(DbSkip())
 	EndDo
 return

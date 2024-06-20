@@ -89,14 +89,14 @@ Return oView
 
 Static Function MVCMODELPRE(oModel)
     Local xRet  := .T.
- 	Local nOperation :=	oModel:GetOperation()
+ 	// Local nOperation :=	oModel:GetOperation()
 
-    If nOperation == MODEL_OPERATION_UPDATE
-		If M->ZA0_STATUS == "9"
-			FWAlertError("PEDIDO JA FOI GERADO E NAO PODE SER ALTERADO!", "Pedido EDI")
-			xRet  := .F.
-		EndIf
-    EndIf
+    // If nOperation == MODEL_OPERATION_UPDATE
+	// 	If M->ZA0_STATUS == "9"
+	// 		FWAlertError("PEDIDO JA FOI GERADO E NAO PODE SER ALTERADO!", "Pedido EDI")
+	// 		xRet  := .F.
+	// 	EndIf
+    // EndIf
 Return xRet
 
 

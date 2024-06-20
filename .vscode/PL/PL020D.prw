@@ -1,4 +1,4 @@
-#INCLUDE "PROTHEUS.CH"
+#Include "PROTHEUS.ch"
 #INCLUDE "TBICONN.CH"
 
 /*/{Protheus.doc} PL020D
@@ -14,25 +14,20 @@
     /*/
 
 User Function PL020D()
-	Local aPergs        := {}
-	Local aResps	    := {}
-	Local nItem 	    := 0
+	Local nQtde       	:= 0
+	Local nValor		:= 0
+	Local nLinha     	:= 0
+	Local aLinha      	:= {}
 
-	Private nOpcX       := 3	                // Tipo da operação (3-Inclusão / 4-Alteração / 5-Exclusão)
-	Private cDoc        := ""    	            // Numero do Pedido de Vendas (alteracao ou exclusao)
+	Private cAliasZA0
 
-	Private nX          := 0
-	Private nY          := 0
+	Private nOpcX       := 3            //Seleciona o tipo da operacao (3-Inclusao / 4-Alteracao / 5-Exclusao)
+	Private cDoc       	:= ""    	    // Numero do Pedido de Vendas (alteracao ou exclusao)
 	Private aCabec      := {}
 	Private aItens      := {}
-	Private aLinha      := {}
 	Private aGravados   := {}
 
-	Private lOk         := .T.
-	Private lTemLinha   := .T.
 	Private nPed        := 0
-	Private nQtde       := 0
-	Private nValor		:= 0
 	Private dLimite     := Date()
 
 	Private cCliente    := ''
@@ -41,8 +36,121 @@ User Function PL020D()
 	Private cNatureza   := ''
 	Private cHrEntr     := ''
 
-	Private lMsErroAuto := .F.
-	Private lAutoErrNoFile := .F.
+	Private lMsErroAuto 	:= .F.
+	Private lAutoErrNoFile 	:= .F.
+
+	chkFile("SC5")
+	chkFile("SC6")
+
+	if VerParam() == .F.
+		return
+	endif
+
+	cSql := "SELECT ZA0.*, A7_XNATUR, B1_DESC, B1_TS, B1_UM "
+	cSql += "  FROM  " + RetSQLName("ZA0") + " ZA0 "
+
+	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+	cSql += "    ON B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
+	cSql += "   AND B1_COD 			=  ZA0_PRODUT "
+	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
+
+	cSql += " INNER JOIN " + RetSQLName("SA7") + " SA7 "
+	cSql += "    ON A7_FILIAL 		=  '" + xFILIAL("SA7") + "'"
+	cSql += "   AND A7_CLIENTE 		=  ZA0_CLIENT "
+	cSql += "   AND A7_LOJA 		=  ZA0_LOJA "
+	cSql += "   AND A7_PRODUTO 		=  ZA0_PRODUT "
+	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
+
+	cSql += " WHERE ZA0_CLIENT  	=  '" + cCliente + "' "
+	cSql += "   AND ZA0_LOJA    	=  '" + cLoja + "' "
+	cSql += "   AND ZA0_DTENTR 		<= '" + Dtos(dLimite) + "' "
+	cSql += "   AND ZA0_TIPOPE  	=  'F' "
+	cSql += "   AND ZA0_STATUS  	=  '0' "
+	cSql += "   AND ZA0_QTDE    	>  ZA0_QTCONF "
+	cSql += "   AND ZA0.D_E_L_E_T_ 	<> '*' "
+	cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, ZA0_PRODUT "
+
+	cAliasZA0 := MPSysOpenQuery(cSql)
+
+	if (cAliasZA0)->(EOF())
+		FWAlertWarning("NAO FOI ENCONTRADO NENHUM PEDIDO PARA SER GERADO! ","Geracao de pedidos de venda")
+		return .T.
+	endif
+
+	While (cAliasZA0)->(!EOF())
+		if Consistencia() == .T.
+			if (cAliasZA0)->ZA0_DTENTR != cData .or. ;
+					(cAliasZA0)->ZA0_HRENTR != cHrEntr .or. ;
+					(cAliasZA0)->A7_XNATUR  != cNatureza
+
+				if Len(aCabec) > 0 .And. Len(aItens) > 0
+					GravaPedido()
+				endif
+
+				cData       := (cAliasZA0)->ZA0_DTENTR
+				cHrEntr     := (cAliasZA0)->ZA0_HRENTR
+				cNatureza   := (cAliasZA0)->A7_XNATUR
+				nLinha 		:= 0
+
+				cDoc := GetSxeNum("SC5", "C5_NUM")
+				RollBAckSx8()
+
+				aCabec   := {}
+				aItens   := {}
+				aLinha   := {}
+
+				aadd(aCabec, {"C5_NUM"    , cDoc, Nil})
+				aadd(aCabec, {"C5_TIPO"	  , "N", Nil})
+				aadd(aCabec, {"C5_CLIENTE", cCliente, Nil})
+				aadd(aCabec, {"C5_LOJACLI", cLoja, Nil})
+				aadd(aCabec, {"C5_LOJAENT", cLoja, Nil})
+				aadd(aCabec, {"C5_CONDPAG", SA1->A1_COND, Nil})
+				aadd(aCabec, {"C5_NATUREZ", cNatureza, Nil})
+			EndIf
+
+			nQtde  := (cAliasZA0)->ZA0_QTDE - (cAliasZA0)->ZA0_QTCONF
+			nValor := (cAliasZA0)->ZA0_QTDE * DA1->DA1_PRCVEN
+			nLinha := nLinha + 1
+
+			aLinha := {}
+			aadd(aLinha,{"C6_ITEM"      , StrZero(nLinha,2), Nil})
+			aadd(aLinha,{"C6_PRODUTO"   , (cAliasZA0)->ZA0_PRODUT, Nil})
+			aadd(aLinha,{"C6_QTDVEN"    , nQtde, Nil})
+			aadd(aLinha,{"C6_PRCVEN"    , DA1->DA1_PRCVEN, Nil})
+			aadd(aLinha,{"C6_PRUNIT"    , DA1->DA1_PRCVEN, Nil})
+			aadd(aLinha,{"C6_TES"       , (cAliasZA0)->B1_TS, Nil})
+			aadd(aLinha,{"C6_ENTREG"    , Stod((cAliasZA0)->ZA0_DTENTR), Nil})
+			aadd(aLinha,{"C6_PEDCLI"    , (cAliasZA0)->ZA0_NUMPED, Nil})
+
+			// aadd(aLinha,{"C6_NUMPCOM" 	, (cAliasZA0)->ZA0_NUMPED 	, Nil})
+			// aadd(aLinha,{"C6_ITEMPC" 	, (cAliasZA0)->ZA0_NUMPED 	, Nil})
+
+			aadd(aItens, aClone(aLinha))
+
+			aadd(aGravados,(cAliasZA0)->R_E_C_N_O_)
+
+			//Gera devoluções com base na estrutura
+			u_PL020E(@aItens)
+		endif
+
+		(cAliasZA0)->(DbSkip())
+	End While
+
+	if Len(aCabec) > 0 .And. Len(aItens) > 0
+		GravaPedido()
+	endif
+
+	FWAlertSuccess("Foram criados " + cValToChar(nPed) + " pedidos de vendas", "Geracao de Pedidos de Vendas")
+Return(.T.)
+
+
+/*--------------------------------------------------------------------------
+   Consistir os parametros informados pelo usuario
+/*-------------------------------------------------------------------------*/
+Static Function VerParam()
+	Local aPergs        := {}
+	Local aResps	    := {}
+	Local lRet 			:= .T.
 
 	AAdd(aPergs, {1, "Informe o cliente ", CriaVar("ZA0_CLIENT",.F.),,,"SA1",, 50, .F.})
 	AAdd(aPergs, {1, "Informe a loja "   , CriaVar("ZA0_LOJA",.F.),,,"SA1",, 50, .F.})
@@ -53,7 +161,8 @@ User Function PL020D()
 		cLoja    := aResps[2]
 		dLimite  := aResps[3]
 	Else
-		return
+		lRet := .F.
+		return lRet
 	endif
 
 	SA1->(dbSetOrder(1))
@@ -62,138 +171,38 @@ User Function PL020D()
 
 	// Verificar o cliente
 	if SA1->(! MsSeek(xFilial("SA1") + cCliente + cLoja))
-		lOk := .F.
+		lRet := .F.
 		FWAlertError("Cliente nao cadastrado: " + cCliente,"Cadastro de Clientes")
 	else
 		// Verificar condição de pagamento do cliente
 		If SE4->(! MsSeek(xFilial("SE4") + SA1->A1_COND))
-			lOk := .F.
+			lRet := .F.
 			FWAlertError("Cliente sem condicao de pagamento cadastrada: " + cCliente,"Condicao de Pagamento")
 		EndIf
 
 		// Verificar a tabela de precos do cliente
 		If SA1->A1_TABELA == ""
-			lOk:= .F.
+			lRet := .F.
 			FWAlertError("Tabela de precos do cliente nao encontrada!", "Tabela de precos")
 		EndIf
 	EndIf
 
-	if lOk == .F.
-		return
-	endif
+return lRet
 
-	strSql := "SELECT ZA0010.*, SA7010.*, B1_TS "
-	strSql += "  FROM ZA0010, SB1010, SA7010 "
-	strSql += " WHERE ZA0_CLIENT  = '" + cCliente + "' "
-	strSql += "   AND ZA0_LOJA    = '" + cLoja + "' "
-	strSql += "   AND ZA0_DTENTR <= '" + Dtos(dLimite) + "' "
-	strSql += "   AND ZA0_TIPOPE  = 'F' "
-	strSql += "   AND ZA0_STATUS  = '0' "
-	strSql += "   AND ZA0_QTDE    > ZA0_QTCONF "
-	strSql += "   AND ZA0_FILIAL  = B1_FILIAL "
-	strSql += "   AND ZA0_PRODUT  = B1_COD "
-	strSql += "   AND ZA0_FILIAL  = A7_FILIAL "
-	strSql += "   AND ZA0_CLIENT  = A7_CLIENTE "
-	strSql += "   AND ZA0_LOJA    = A7_LOJA "
-	strSql += "   AND ZA0_PRODUT  = A7_PRODUTO "
-	strSql += "   AND ZA0010.D_E_L_E_T_ <> '*' "
-	strSql += "   AND SB1010.D_E_L_E_T_ <> '*' "
-	strSql += "   AND SA7010.D_E_L_E_T_ <> '*' "
-	strSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, ZA0_PRODUT "
-
-	cAlias := MPSysOpenQuery(strSql)
-
-	While (cAlias)->(!EOF())
-
-		lOk := 	Consistencia()
-
-		if lOk == .T.
-			if (cAlias)->ZA0_DTENTR != cData .or. ;
-					(cAlias)->ZA0_HRENTR != cHrEntr .or. ;
-					(cAlias)->A7_XNATUR  != cNatureza
-
-				GravaPedido()
-
-				cData       := (cAlias)->ZA0_DTENTR
-				cHrEntr     := (cAlias)->ZA0_HRENTR
-				cNatureza   := (cAlias)->A7_XNATUR
-
-				cDoc := GetSxeNum("SC5", "C5_NUM")
-
-				RollBAckSx8()
-				aCabec      := {}
-				aItens      := {}
-				aLinha      := {}
-				aGravados   := {}
-				lTemLinha   := .F.
-				nItem       := 0
-
-				// aadd(aCabec, {"C5_NUM"    , (cAlias)->ZA0_DOC	, Nil})
-				aadd(aCabec, {"C5_TIPO",    "N", Nil})
-				aadd(aCabec, {"C5_CLIENTE", cCliente, Nil})
-				aadd(aCabec, {"C5_LOJACLI", cLoja, Nil})
-				aadd(aCabec, {"C5_LOJAENT", cLoja, Nil})
-				aadd(aCabec, {"C5_CONDPAG", SA1->A1_COND, Nil})
-				aadd(aCabec, {"C5_NATUREZ", cNatureza, Nil})
-			EndIf
-
-			nQtde := (cAlias)->ZA0_QTDE - (cAlias)->ZA0_QTCONF
-			nValor := (cAlias)->ZA0_QTDE * DA1->DA1_PRCVEN
-			nX := nX + 1
-
-			aLinha := {}
-			aadd(aLinha,{"C6_ITEM"      , StrZero(nX,2), Nil})
-			aadd(aLinha,{"C6_PRODUTO"   , (cAlias)->ZA0_PRODUT, Nil})
-			aadd(aLinha,{"C6_TES"       , (cAlias)->B1_TS, Nil})
-			aadd(aLinha,{"C6_ENTREG"    , Stod((cAlias)->ZA0_DTENTR), Nil})
-			aadd(aLinha,{"C6_QTDVEN"    , nQtde, Nil})
-			aadd(aLinha,{"C6_PEDCLI"    , (cAlias)->ZA0_NUMPED, Nil})
-			aadd(aLinha,{"C6_XCODPED"   , (cAlias)->ZA0_CODPED, Nil})
-			aadd(aLinha,{"C6_VALOR"     , nValor, Nil})
-			aadd(aLinha,{"C6_PRCVEN"    , DA1->DA1_PRCVEN, Nil})
-			aadd(aLinha,{"C6_PRUNIT"    , DA1->DA1_PRCVEN, Nil})
-
-			// aadd(aLinha,{"C6_NUMPCOM" 	, (cAlias)->ZA0_NUMPED 	, Nil})
-			// aadd(aLinha,{"C6_ITEMPC" 	, (cAlias)->ZA0_NUMPED 	, Nil})
-
-			aadd(aItens, aLinha)
-
-			lTemLinha := .T.
-
-			aadd(aGravados,(cAlias)->R_E_C_N_O_)
-
-			//Gera devoluções com base na estrutura
-			u_PL020E(@aItens)
-		endif
-
-		(cAlias)->(DbSkip())
-
-	End While
-
-	GravaPedido()
-
-	FWAlertSuccess("Pedidos gerados com sucesso!", "Geracao de Pedidos de Vendas")
-Return(.T.)
 
 /*--------------------------------------------------------------------------
    Grava o pedido no sistema
 /*-------------------------------------------------------------------------*/
 Static Function GravaPedido()
+	MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabec, aItens, nOpcX, .F.)
 
-	// Primeira vez não grava porque está vazio
-	if cNatureza != '' .and. lTemLinha == .T.
-
-		MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabec, aItens, nOpcX, .F.)
-
-		If !lMsErroAuto
-			nPed := nPed + 1
-			AtualizaGravados()
-		Else
-			ConOut("Erro na inclusao!")
-			MOSTRAERRO()
-		EndIf
-	Endif
-
+	If !lMsErroAuto
+		nPed := nPed + 1
+		AtualizaGravados()
+	Else
+		ConOut("Erro na inclusao!")
+		MOSTRAERRO()
+	EndIf
 return
 
 /*--------------------------------------------------------------------------
@@ -203,7 +212,6 @@ Static Function AtualizaGravados()
 	Local nInd :=0
 
 	For nInd := 1 to Len(aGravados) Step 1
-
         ZA0->(DbGoTo(aGravados[nInd]))
 		RecLock("ZA0", .F.)
         ZA0->ZA0_QTCONF  := ZA0->ZA0_QTDE
@@ -211,6 +219,7 @@ Static Function AtualizaGravados()
 		ZA0->(MsUnlock())
 	Next
 
+	aGravados := {}
 return
 
 /*--------------------------------------------------------------------------
@@ -220,12 +229,12 @@ Static Function Consistencia()
 	Local lOk1 := .T.
 
     // Verificar a TES do item
-    if (cAlias)->B1_TS == ''
+    if (cAliasZA0)->B1_TS == ''
         lOk1:= .F.
         FWAlertError("TES INVALIDA DO ITEM = " + ZA0->ZA0_PRODUT, ;
         "Cadastro Produto")
     Else
-        if (cAlias)->A7_XNATUR == ''
+        if (cAliasZA0)->A7_XNATUR == ''
             lOk1:= .F.
             FWAlertError("Falta natureza na relacao Item X Cliente (" + ZA0->ZA0_PRODUT + "/" + ZA0->ZA0_CLIENT + ")!", ;
             "Cadastro Produto/Cliente")
@@ -235,10 +244,10 @@ Static Function Consistencia()
     // Verificar a tabela de precos do item/cliente
     if lOk1 == .T.
 		// Verificar a tabela de precos do cliente
-		If DA1->(! MsSeek(xFilial("DA1") + SA1->A1_TABELA + (cAlias)->ZA0_PRODUT, .T.))
-			if DA1->DA1_CODPRO == (cAlias)->ZA0_PRODUT .AND. DA1->DA1_CODTAB == SA1->A1_TABELA
+		If DA1->(! MsSeek(xFilial("DA1") + SA1->A1_TABELA + (cAliasZA0)->ZA0_PRODUT, .T.))
+			if DA1->DA1_CODPRO == (cAliasZA0)->ZA0_PRODUT .AND. DA1->DA1_CODTAB == SA1->A1_TABELA
                 lOk1 := .F.
-                FWAlertError("Tabela de precos nao encontrada para o item = " + (cAlias)->ZA0_PRODUT, ;
+                FWAlertError("Tabela de precos nao encontrada para o item = " + (cAliasZA0)->ZA0_PRODUT, ;
                 "Tabela de precos")
             EndIf
         EndIf
