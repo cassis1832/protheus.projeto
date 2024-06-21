@@ -73,20 +73,21 @@ Static Function ObterDados()
 	EndDo
 
 	// Carregar pedidos EDI
-	cSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, ZA0_QTDE "
+	cSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO "
 	cSql += "  FROM ZA0010, SB1010 "
-	cSql += " WHERE ZA0_STATUS = '0' "
-	cSql += "   AND ZA0_CLIENT = '" + cCliente + "'"
-	cSql += "   AND ZA0_LOJA   = '" + cLoja + "'"
-	cSql += "   AND ZA0_FILIAL = B1_FILIAL "
-	cSql += "   AND ZA0_PRODUT = B1_COD "
+	cSql += " WHERE ZA0_STATUS 		= '0' "
+	cSql += "   AND ZA0_CLIENT 		= '" + cCliente + "'"
+	cSql += "   AND ZA0_LOJA   		= '" + cLoja + "'"
+	cSql += "   AND ZA0_FILIAL 		= B1_FILIAL "
+	cSql += "   AND ZA0_PRODUT 		= B1_COD "
+	cSql += "   AND ZA0_QTDE   		> ZA0_QTCONF "
 	cSql += "   AND ZA0010.D_E_L_E_T_ <> '*' "
 	cSql += "   AND SB1010.D_E_L_E_T_ <> '*' "
 	cSql += " ORDER BY ZA0_DTENTR, ZA0_PRODUT "
 	cAliasZA0 := MPSysOpenQuery(cSql)
 
 	// Carregar pedidos de vendas
-	cSql := "SELECT B1_COD, C6_ENTREG, C6_QTDVEN "
+	cSql := "SELECT B1_COD, C6_ENTREG, C6_QTDVEN, C6_QTDENT, C6_QTDVEN - C6_QTDENT AS C6_SALDO "
 	cSql += "  FROM SC5010, SC6010, SB1010, SF4010 "
 	cSql += " WHERE C5_NOTA        = '' "
 	cSql += "   AND C5_CLIENTE     = '" + cCliente + "'"
@@ -123,7 +124,7 @@ Static Function ObterDados()
 
 		if nPosItem <> 0 .and. nPosData <> 0
 			// Soma a quantidade do pedido
-			nQtde := val(aPedidos[nPosItem][nPosData+3]) + (cAliasZA0)->ZA0_QTDE
+			nQtde := val(aPedidos[nPosItem][nPosData+3]) + (cAliasZA0)->ZA0_SALDO
 			aPedidos[nPosItem][nPosData+3] := cValToChar(nQtde)
 		endif
 
@@ -137,7 +138,7 @@ Static Function ObterDados()
 		nPosData := aScan(aDatas, {|x| x == sToD((cAliasSC6)->C6_ENTREG)})
 
 		// Soma a quantidade do pedido
-		nQtde := val(aPedidos[nPosItem][nPosData+3]) + val((cAliasSC6)->C6_QTDVEN)
+		nQtde := val(aPedidos[nPosItem][nPosData+3]) + val((cAliasSC6)->C6_SALDO)
 		aPedidos[nPosItem][nPosData+3] := cValToChar(nQtde)
 
 		(cAliasSC6)->(DbSkip())

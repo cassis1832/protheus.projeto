@@ -68,7 +68,7 @@ Return
 Static Function CriaEDI()
     Local dData, cAlias
 
-	strSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, B1_LOCPAD, B1_XDIAEO, ZA0_QTDE, ZA0_NUMPED "
+	strSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, B1_LOCPAD, B1_XDIAEO, ZA0_QTDE, ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO "
 	strSql += " FROM ZA0010, SB1010 "                     
 	strSql += " WHERE ZA0_STATUS = '0' "          
 	strSql += " AND ZA0_FILIAL   = B1_FILIAL "    
@@ -90,7 +90,7 @@ Static Function CriaEDI()
 
         cSql := "INSERT INTO " + cTableName + " (ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO) VALUES "
         cSql += "('" + FWUUIDv4() + "','" + (cAlias)->ZA0_PRODUT + "'"
-        cSql += ",'" + (cAlias)->B1_LOCPAD + "','" + cValToChar((cAlias)->ZA0_QTDE) + "'" 
+        cSql += ",'" + (cAlias)->B1_LOCPAD + "','" + cValToChar((cAlias)->ZA0_SALDO) + "'" 
         cSql += ",'" + dtoc( dData) + "','" + (cAlias)->ZA0_NUMPED + "'" 
         cSql += ",'" + cValToChar((cAlias)->B1_XDIAEO) + "')"
 
@@ -110,13 +110,13 @@ Return
 Static Function CriaPV()
     Local dData, cAlias
 
-    strSql := "SELECT B1_COD, C6_LOCAL, C6_ENTREG, C6_QTDVEN, C6_NUM, B1_XDIAEO "
+    strSql := "SELECT B1_COD, C6_LOCAL, C6_ENTREG, C6_QTDVEN, C6_NUM, B1_XDIAEO, C6_QTDVEN - C6_QTDENT AS C6_SALDO "
     strSql += " FROM SC5010, SC6010, SB1010, SF4010 "  
     strSql += " WHERE C5_NOTA      = '' "         
     strSql += " AND C5_LIBEROK    <> 'E' "       
     strSql += " AND C5_FILIAL      = C6_FILIAL " 
     strSql += " AND C5_NUM         = C6_NUM "    
-    strSql += " AND C6_QTDENT     <= C6_QTDVEN " 
+    strSql += " AND C6_QTDENT      < C6_QTDVEN " 
     strSql += " AND SC6010.C6_BLQ <> 'R' "       
     strSql += " AND C6_FILIAL      = B1_FILIAL "  
     strSql += " AND C6_PRODUTO     = B1_COD "     
@@ -140,11 +140,9 @@ Static Function CriaPV()
             dData := DaySub(dData, 1)
         Endif
 
-        nQtde := (cAlias)->C6_QTDVEN - (cAlias)->C6_QTDENT
-
         cSql := "INSERT INTO " + cTableName + " (ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO) VALUES "
         cSql += "('" + FWUUIDv4() + "','" + (cAlias)->B1_COD + "'"
-        cSql += ",'" + (cAlias)->C6_LOCAL + "','" + cValToChar(nQtde) + "'" 
+        cSql += ",'" + (cAlias)->C6_LOCAL + "','" + cValToChar((cAlias)->C6_SALDO) + "'" 
         cSql += ",'" + dtoc(dData) + "','" + (cAlias)->C6_NUM + "'" 
         cSql += ",'" + cValToChar((cAlias)->B1_XDIAEO) + "')"
 

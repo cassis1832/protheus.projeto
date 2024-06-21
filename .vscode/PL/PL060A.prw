@@ -12,11 +12,9 @@ Função: (RPAD))
 /*/
 
 User Function PL060A(pItem)
-
-	Private cItem := pItem
-
-	Private nSaldoIni := 0
-	Private nSaldoAtu := 0
+	Private cItem 		:= pItem
+	Private nSaldoIni 	:= 0
+	Private nSaldoAtu 	:= 0
 
 	Private oDlg       := Nil
 	Private oFwBrowse  := Nil
@@ -24,25 +22,11 @@ User Function PL060A(pItem)
 	Private aLinhas    := {}
 	Private aColumns   := {}
 
-	LerItem()
-	ObterPedidos()
-	ObterProducao()
-	ObterCompras()
-
-	if len(aLinhas) == 0
-		return .F.
-	endif
-
-	CalculaSaldos()
-
-	fMontaTela()
-Return .T.
-
-Static Function LerItem()
 	dbSelectArea("SB1")
 	SB1->(DBSetOrder(1))
 
 	If ! SB1->(MsSeek(xFilial("SB1") + cItem))
+		FWAlertWarning("ITEM NAO ENCONTRADO NO CADASTRO! ", "CADASTRO DE PRODUTOS")
 		return
 	EndIf
 
@@ -54,19 +38,32 @@ Static Function LerItem()
 	else
 		nSaldoIni := 0
 	EndIf
-return
+
+	ObterPedidos()
+	ObterProducao()
+	ObterCompras()
+
+	if len(aLinhas) == 0
+		FWAlertWarning("NAO EXISTEM DADOS PARA MOSTRAR! ", "PLANO DO ITEM")
+		return .F.
+	endif
+
+	CalculaSaldos()
+
+	fMontaTela()
+Return .T.
+
 
 Static Function ObterCompras()
 	Local cSql
 	Local cAlias
 
-	cSql := "SELECT C1_NUM, C1_ITEM, C1_PRODUTO, "
-	cSql += "	C1_QUANT, C1_DATPRF "
+	cSql := "SELECT C1_NUM, C1_ITEM, C1_PRODUTO, C1_QUANT, C1_DATPRF "
 	cSql += " FROM " +	RetSQLName("SC1") + " SC1 "
 	cSql += "WHERE C1_FILIAL  = '" + xFilial("SC1") + "' "
 	cSql += "  AND C1_PRODUTO = '" + cItem + "'"
 	cSql += "  AND SC1.D_E_L_E_T_ = ' ' "
-	cSql += "	ORDER BY C1_DATPRF "
+	cSql += "ORDER BY C1_DATPRF "
 
 	cAlias := MPSysOpenQuery(cSql)
 
@@ -93,7 +90,7 @@ Static Function ObterProducao()
 	cSql += "  AND C2_PRODUTO   = '" + cItem + "'"
 	cSql += "  AND C2_QUANT     > C2_QUJE "
 	cSql += "  AND SC2.D_E_L_E_T_ = ' ' "
-	cSql += "	ORDER BY C2_DATPRF "
+	cSql += "ORDER BY C2_DATPRF "
 	cAliasOrd := MPSysOpenQuery(cSql)
 
 	While (cAliasOrd)->(!EOF())
@@ -122,11 +119,12 @@ Static Function ObterPedidos()
 	Local cSql := ""
 
 	// Carregar pedidos EDI
-	cSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, ZA0_QTDE, ZA0_NUMPED "
+	cSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, ZA0_QTDE, ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO "
 	cSql += "  FROM ZA0010 "
 	cSql += " WHERE ZA0_STATUS          = '0' "
 	cSql += "   AND ZA0_FILIAL          = '" + xFilial("ZA0") + "'"
 	cSql += "   AND ZA0_PRODUT          = '" + cItem +  "'"
+	cSql += "   AND ZA0_QTCONF          < ZA0_QTDE "
 	cSql += "   AND ZA0010.D_E_L_E_T_  <> '*' "
 	cSql += " ORDER BY ZA0_DTENTR "
 	cAliasZA0 := MPSysOpenQuery(cSql)
@@ -134,12 +132,12 @@ Static Function ObterPedidos()
 	While (cAliasZA0)->(!EOF())
 		Aadd(aLinhas,{(cAliasZA0)->ZA0_DTENTR + "2", 2, "EDI", ;
 			(cAliasZA0)->ZA0_NUMPED, ;
-			DtoC(sToD((cAliasZA0)->ZA0_DTENTR)),(cAliasZA0)->ZA0_QTDE, 0})
+			DtoC(sToD((cAliasZA0)->ZA0_DTENTR)),(cAliasZA0)->ZA0_SALDO, 0})
 		(cAliasZA0)->(DbSkip())
 	End While
 
 	// Carregar pedidos de vendas
-	cSql := "SELECT C6_PRODUTO, C6_ENTREG, C6_QTDVEN, C6_NUM "
+	cSql := "SELECT C6_PRODUTO, C6_ENTREG, C6_QTDVEN, C6_QTDENT, C6_QTDVEN - C6_QTDENT AS C6_SALDO, C6_NUM "
 	cSql += "  FROM SC5010, SC6010, SF4010 "
 	cSql += " WHERE C6_FILIAL           = '" + xFilial("SC6") + "'"
 	cSql += "   AND C5_FILIAL           = '" + xFilial("SC5") + "'"
@@ -147,10 +145,10 @@ Static Function ObterPedidos()
 	cSql += "   AND C6_PRODUTO          = '" + cItem + "'"
 	cSql += "   AND C5_NOTA             = '' "
 	cSql += "   AND C5_LIBEROK          <> 'E' "
-	cSql += "   AND C5_NUM              = C6_NUM "
-	cSql += "   AND C6_QTDENT           <= C6_QTDVEN "
-	cSql += "   AND SC6010.C6_BLQ       <> 'R' "
-	cSql += "   AND F4_CODIGO           = C6_TES "
+	cSql += "   AND C5_NUM              =  C6_NUM "
+	cSql += "   AND C6_QTDENT           <  C6_QTDVEN "
+	cSql += "   AND C6_BLQ       		<> 'R' "
+	cSql += "   AND F4_CODIGO           =  C6_TES "
 	cSql += "   AND F4_QTDZERO          <> '1' "
 	cSql += "   AND SC5010.D_E_L_E_T_   <> '*' "
 	cSql += "   AND SC6010.D_E_L_E_T_   <> '*' "
@@ -158,11 +156,10 @@ Static Function ObterPedidos()
 	cSql += " ORDER BY C6_ENTREG "
 	cAliasSC6 := MPSysOpenQuery(cSql)
 
-
 	While (cAliasSC6)->(!EOF())
 		Aadd(aLinhas,{(cAliasSC6)->C6_ENTREG + "2", 2,"PV",	(cAliasSC6)->C6_NUM, ;
 			DtoC(sToD((cAliasSC6)->C6_ENTREG)),     ;
-			(cAliasSC6)->C6_QTDVEN, 0})
+			(cAliasSC6)->C6_SALDO, 0})
 		(cAliasSC6)->(DbSkip())
 	End While
 return

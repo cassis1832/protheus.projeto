@@ -124,7 +124,7 @@ Static Function ObterDados()
 
 		if nPosItem <> 0 .and. nPosData <> 0
 			// Soma a quantidade do pedido
-			nQtde := val(aPedidos[nPosItem][nPosData+4]) + (cAliasSC6)->C6_QTDVEN
+			nQtde := val(aPedidos[nPosItem][nPosData+4]) + ((cAliasSC6)->C6_QTDVEN - (cAliasSC6)->C6_QTDENT)
 			aPedidos[nPosItem][nPosData+4] := cValToChar(nQtde)
 		EndIf
 
