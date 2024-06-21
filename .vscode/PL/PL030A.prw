@@ -12,18 +12,18 @@ Consulta geral do planejamento
 //-------------------------------------------------------------------
 User Function PL030A(cCliente1, cLoja1)
 
-	Private cCliente := cCliente1
-	Private cLoja := cLoja1
+	Private cCliente 	:= cCliente1
+	Private cLoja 	 	:= cLoja1
 
-	Private aDatas := {}
-	Private aPedidos := {}
+	Private aDatas 		:= {}
+	Private aPedidos 	:= {}
 
 	Private cAliasZA0
 	Private cAliasSC6
 
-	Private oDlg       := Nil
-	Private oFwBrowse  := Nil
-	Private aColumns   := {}
+	Private oDlg       	:= Nil
+	Private oFwBrowse  	:= Nil
+	Private aColumns   	:= {}
 
 	ObterDados()
 
@@ -73,12 +73,13 @@ Static Function ObterDados()
 	EndDo
 
 	// Carregar pedidos EDI
-	cSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO "
+	cSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, ZA0_QTDE, ZA0_QTCONF, (ZA0_QTDE - ZA0_QTCONF) AS ZA0_SALDO "
 	cSql += "  FROM ZA0010, SB1010 "
 	cSql += " WHERE ZA0_STATUS 		= '0' "
 	cSql += "   AND ZA0_CLIENT 		= '" + cCliente + "'"
 	cSql += "   AND ZA0_LOJA   		= '" + cLoja + "'"
-	cSql += "   AND ZA0_FILIAL 		= B1_FILIAL "
+	cSql += "   AND ZA0_FILIAL 		= '" + xFilial("ZA0") + "'"
+	cSql += "   AND B1_FILIAL 		= '" + xFilial("SB1") + "'"
 	cSql += "   AND ZA0_PRODUT 		= B1_COD "
 	cSql += "   AND ZA0_QTDE   		> ZA0_QTCONF "
 	cSql += "   AND ZA0010.D_E_L_E_T_ <> '*' "
@@ -87,27 +88,28 @@ Static Function ObterDados()
 	cAliasZA0 := MPSysOpenQuery(cSql)
 
 	// Carregar pedidos de vendas
-	cSql := "SELECT B1_COD, C6_ENTREG, C6_QTDVEN, C6_QTDENT, C6_QTDVEN - C6_QTDENT AS C6_SALDO "
+	cSql := "SELECT B1_COD, C6_ENTREG, C6_QTDVEN, C6_QTDENT, (C6_QTDVEN - C6_QTDENT) AS C6_SALDO "
 	cSql += "  FROM SC5010, SC6010, SB1010, SF4010 "
 	cSql += " WHERE C5_NOTA        = '' "
 	cSql += "   AND C5_CLIENTE     = '" + cCliente + "'"
 	cSql += "   AND C5_LOJACLI     = '" + cLoja + "'"
 	cSql += "   AND C5_LIBEROK    <> 'E' "
-	cSql += "   AND C5_FILIAL      = C6_FILIAL "
 	cSql += "   AND C5_NUM         = C6_NUM "
 	cSql += "   AND C6_QTDENT      < C6_QTDVEN "
 	cSql += "   AND SC6010.C6_BLQ <> 'R' "
-	cSql += "   AND C6_FILIAL      = B1_FILIAL "
 	cSql += "   AND C6_PRODUTO     = B1_COD "
-	cSql += "   AND C5_FILIAL      = F4_FILIAL "
 	cSql += "   AND F4_CODIGO      = C6_TES "
 	cSql += "   AND F4_QTDZERO    <> '1' "
+	cSql += "   AND B1_FILIAL      = '" + xFilial("SB1") + "'"
+	cSql += "   AND C5_FILIAL      = '" + xFilial("SC5") + "'"
+	cSql += "   AND C6_FILIAL      = '" + xFilial("SC6") + "'"
+	cSql += "   AND F4_FILIAL      = '" + xFilial("SF4") + "'"
 	cSql += "   AND SC5010.D_E_L_E_T_   <> '*' "
 	cSql += "   AND SC6010.D_E_L_E_T_   <> '*' "
 	cSql += "   AND SF4010.D_E_L_E_T_   <> '*' "
 	cSql += "   AND SB1010.D_E_L_E_T_   <> '*' "
 	cSql += "   AND SB1010.D_E_L_E_T_   <> '*' "
-	cSql += " ORDER BY C6_ENTREG, C6_PRODUTO "
+	cSql += " ORDER BY C6_ENTREG, B1_COD "
 	cAliasSC6 := MPSysOpenQuery(cSql)
 
 	if (cAliasZA0)->(EOF()) .and. (cAliasSC6)->(EOF())
@@ -122,8 +124,8 @@ Static Function ObterDados()
 		nPosItem := aScan(aPedidos, {|x| AllTrim(x[1]) == AllTrim((cAliasZA0)->ZA0_PRODUT)})
 		nPosData := aScan(aDatas, {|x| x == sToD((cAliasZA0)->ZA0_DTENTR)})
 
+		// Soma a quantidade do pedido
 		if nPosItem <> 0 .and. nPosData <> 0
-			// Soma a quantidade do pedido
 			nQtde := val(aPedidos[nPosItem][nPosData+3]) + (cAliasZA0)->ZA0_SALDO
 			aPedidos[nPosItem][nPosData+3] := cValToChar(nQtde)
 		endif
@@ -134,12 +136,14 @@ Static Function ObterDados()
 	While (cAliasSC6)->(!EOF())
 
 		// Localiza o item e a data
-		nPosItem := aScan(aPedidos, {|x| AllTrim(x[1]) == AllTrim((cAliasSC6)->C6_PRODUTO)})
+		nPosItem := aScan(aPedidos, {|x| AllTrim(x[1]) == AllTrim((cAliasSC6)->B1_COD)})
 		nPosData := aScan(aDatas, {|x| x == sToD((cAliasSC6)->C6_ENTREG)})
 
 		// Soma a quantidade do pedido
-		nQtde := val(aPedidos[nPosItem][nPosData+3]) + val((cAliasSC6)->C6_SALDO)
-		aPedidos[nPosItem][nPosData+3] := cValToChar(nQtde)
+		if nPosItem <> 0 .And. nPosData <> 0
+			nQtde := val(aPedidos[nPosItem][nPosData+3]) + (cAliasSC6)->C6_SALDO
+			aPedidos[nPosItem][nPosData+3] := cValToChar(nQtde)
+		endif
 
 		(cAliasSC6)->(DbSkip())
 	End While
@@ -170,18 +174,20 @@ return
 */
 Static Function MontaDatas()
 	Local nInd  :=0
-	Local dData := Date()
+	Local dData := Nil
+	Local cData := dToS(Date())
 
-	if (cAliasZA0)->(!EOF())
-		dData := sToD((cAliasZA0)->ZA0_DTENTR)
+	if ! (cAliasZA0)->(EOF())
+		cData := (cAliasZA0)->ZA0_DTENTR
 	Endif
 
-	if (cAliasSC6)->(!EOF())
-		if (cAliasZA0)->ZA0_DTENTR > (cAliasSC6)->C6_ENTREG
-			dData := sToD((cAliasSC6)->C6_ENTREG)
+	if ! (cAliasSC6)->(EOF())
+		if cData > (cAliasSC6)->C6_ENTREG
+			cData := (cAliasSC6)->C6_ENTREG
 		endif
 	Endif
 
+	dData  := stod(cData)
 	aDatas := {}
 
 	For nInd := 1 to 15 Step 1
