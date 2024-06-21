@@ -110,7 +110,7 @@ Return
 Static Function CriaPV()
     Local dData, cAlias
 
-    strSql := "SELECT B1_COD, C6_LOCAL, C6_ENTREG, C6_QTDVEN, C6_NUM, B1_XDIAEO, C6_QTDVEN - C6_QTDENT AS C6_SALDO "
+    strSql := "SELECT B1_COD, C6_LOCAL, C6_ENTREG, C6_QTDVEN, C6_NUM, B1_XDIAEO, (C6_QTDVEN - C6_QTDENT) AS C6_SALDO "
     strSql += " FROM SC5010, SC6010, SB1010, SF4010 "  
     strSql += " WHERE C5_NOTA      = '' "         
     strSql += " AND C5_LIBEROK    <> 'E' "       

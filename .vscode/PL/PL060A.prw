@@ -2,7 +2,7 @@
 #Include 'FWMVCDef.ch'
 
 /*/{Protheus.doc} PL060
-Função: (RPAD))
+Função: Consulta de planejamento por item - RPAD
 @author Assis
 @since 10/06/2024
 @version 1.0
@@ -137,7 +137,7 @@ Static Function ObterPedidos()
 	End While
 
 	// Carregar pedidos de vendas
-	cSql := "SELECT C6_PRODUTO, C6_ENTREG, C6_QTDVEN, C6_QTDENT, C6_QTDVEN - C6_QTDENT AS C6_SALDO, C6_NUM "
+	cSql := "SELECT C6_PRODUTO, C6_ENTREG, C6_QTDVEN, C6_QTDENT, (C6_QTDVEN - C6_QTDENT) AS C6_SALDO, C6_NUM "
 	cSql += "  FROM SC5010, SC6010, SF4010 "
 	cSql += " WHERE C6_FILIAL           = '" + xFilial("SC6") + "'"
 	cSql += "   AND C5_FILIAL           = '" + xFilial("SC5") + "'"
