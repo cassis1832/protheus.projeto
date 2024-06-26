@@ -43,6 +43,28 @@ User Function PL020D()
 		return
 	endif
 
+//---------------------------------------
+	FWAlertWarning("Vai atualizar o SA7 ", "SA7")
+
+	SA7->(DBSetOrder(1))
+	SB1->(DBSetOrder(1))
+
+	While (SA7->(!EOF()))
+		RecLock("SA7", .F.)
+
+		If ! SB1->(MsSeek(xFilial("SB1") + SA7->A7_PRODUTO))
+			FWAlertWarning("ITEM NAO ENCONTRADO NO CADASTRO! ", "CADASTRO DE PRODUTOS")
+			return
+		EndIf
+
+		SA7->A7_XGRUPV  := SB1->B1_XPROJ
+		SA7->(MsUnlock())
+		SA7->(DbSkip())
+	end
+
+	FWAlertWarning("Atualizou o SA7 ", "SA7")
+//---------------------------------------
+
 	cSql := "SELECT ZA0.*, A7_XNATUR, B1_DESC, B1_TS, B1_UM, A7_XGRUPV "
 	cSql += "  FROM  " + RetSQLName("ZA0") + " ZA0 "
 
