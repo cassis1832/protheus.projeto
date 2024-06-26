@@ -36,10 +36,11 @@ Static Function MenuDef()
 	ADD OPTION aRot TITLE 'Incluir'    	  ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_INSERT ACCESS 0 
 	ADD OPTION aRot TITLE 'Alterar'    	  ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 
 	ADD OPTION aRot TITLE 'Excluir'    	  ACTION 'VIEWDEF.PL020' OPERATION MODEL_OPERATION_DELETE ACCESS 0 
-	ADD OPTION aRot TITLE 'Importar EDI'  ACTION 'U_PL020B()'    OPERATION 5 					  ACCESS 0 
-	ADD OPTION aRot TITLE 'Gerar Demanda' ACTION 'U_PL020C()'    OPERATION 6 					  ACCESS 0 
-	ADD OPTION aRot TITLE 'Gerar Pedidos' ACTION 'U_PL020D()'    OPERATION 7 					  ACCESS 0 
-	ADD OPTION aRot TITLE 'Legenda'    	  ACTION 'u_ProLeg' 	 OPERATION 8     				  Access 0       
+	ADD OPTION aRot TITLE 'Importar EDI'  ACTION 'U_PL020A()'    OPERATION 5 					  ACCESS 0 
+	ADD OPTION aRot TITLE 'Gerar Gestamp' ACTION 'U_PL020B()'    OPERATION 6 					  ACCESS 0 
+	ADD OPTION aRot TITLE 'Gerar Demanda' ACTION 'U_PL020C()'    OPERATION 7 					  ACCESS 0 
+	ADD OPTION aRot TITLE 'Gerar Pedidos' ACTION 'U_PL020D()'    OPERATION 8 					  ACCESS 0 
+	ADD OPTION aRot TITLE 'Legenda'    	  ACTION 'u_ProLeg' 	 OPERATION 9     				  Access 0       
 Return aRot
 
 /*---------------------------------------------------------------------*

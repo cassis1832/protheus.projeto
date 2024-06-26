@@ -4,12 +4,12 @@
 
 /*/{Protheus.doc} PL020B
 Função 
-   Importação do arquivo texto contendo pedidos EDI
-   Gravar tabela ZA0 - movimentos EDI importados 
+   Gerar pedidos EDI para a Gestamp
+   Gravar tabela ZA0 
    Esse programa chamado a partir do PL020 (manutenção do ZA0)
 
 @author Assis
-@since 08/04/2024
+@since 24/06/2024
 @version 1.0
 	@return Nil, Função não tem retorno
 	@example
@@ -20,159 +20,115 @@ User Function PL020B()
 	Local aArea   := GetArea()
 	Local cFunBkp := FunName()
 
-	Private cArquivo := ''
 	Private cCliente := ''
 	Private cLoja	 := ''
-	Private dDtEntr  := Date()
-	Private aLinhas  := {}
-	Private aLinha
+	Private dInicio	 := date()
+	Private dLimite  := date()
 
+	Private cAliasSA7
 	Private dtProcesso := Date()
 	Private hrProcesso := Time()
 
-	SetFunName("PL020A")
-	cArquivo := selArquivo()
+	SetFunName("PL020B")
 
-	if cArquivo != ''
-		oFile := FWFileReader():New(cArquivo)
+	if VerParam() == .F.
+		return
+	endif
 
-		If (oFile:Open())
-			If ! (oFile:EoF())
-				aLinhas := oFile:GetAllLines()
-				TrataLinhas()
-			EndIf
+	TrataLinhas()
 
-			oFile:Close()
+	LimpaDados()
 
-			LimpaDados()
-		EndIf
-	EndIf
-
-	FWAlertSuccess("IMPORTACAO EFETUADA COM SUCESSO! " + cCliente, "Importacao EDI")
+	FWAlertSuccess("GERACAO EFETUADA COM SUCESSO! " + cCliente, "Importacao EDI")
 
 	SetFunName(cFunBkp)
 	RestArea(aArea)
 Return
 
 /*---------------------------------------------------------------------*
-	Trata todas as linhas que estão na variavel aLinhas
+	Obtem os itens do cliente da tabela itemXcliente
  *---------------------------------------------------------------------*/
 Static Function TrataLinhas()
+	cSql := "SELECT SA7.*, B1_DESC, B1_TS, B1_UM "
+	cSql += "  FROM  " + RetSQLName("SA7") + " SA7 "
 
-  	Local lErro, nLin 	   		
-	Local nTotLinhas := Len(aLinhas)
+	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+	cSql += "    ON B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
+	cSql += "   AND B1_COD 			=  A7_PRODUTO "
+	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
 
-	// Salva o cliente/loja da primeira linha (que deve ser o mesmo das demais linhas)
-  	aLinha   := strTokArr(aLinhas [1], ';')
-	cCliente := AvKey(aLinha[1], "A1_COD")
-	cLoja	 := AvKey(aLinha[2], "A1_LOJA")
+	cSql += " WHERE A7_FILIAL 		=  '" + xFILIAL("SA7") + "'"
+	cSql += "   AND A7_CLIENTE 		=  '" + cCliente + "'"
+	cSql += "   AND A7_LOJA 		=  '" + cLoja + "'" 
+	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
 
-   // Ver se o cliente está cadastrado
-	dbSelectArea("SA1")
-	SA1->(DBSetOrder(1))  // Filial/codigo/loja
+	cSql += " ORDER BY A7_PRODUTO "
 
-	If SA1->(MsSeek(xFilial("SA1") + cCliente + cLoja))
-        lErro := .F.
-    Else
-        FWAlertError("Cliente nao cadastrado: " + cCliente,"Cadastro de clientes")
-        lErro := .T.
-	EndIf
-
-    if ! lErro
-        For nlin := 1 To nTotLinhas
-            aLinha := strTokArr(aLinhas [nLin], ';')
-            GravaDados()
-        next	
-    EndIf
+	cAliasSA7 := MPSysOpenQuery(cSql)	
  
+ 	if (cAliasSA7)->(EOF())
+		FWAlertWarning("NAO FOI GERADA NENHUMA LINHA! ","Geracao de pedidos edi")
+		return .T.
+	endif
+
+	While (cAliasSA7)->(!EOF()) 
+
+		if (cAliasSA7)->A7_XFRENT != 0 .AND. (cAliasSA7)->A7_XQTENT != 0
+			GravaDados()
+		endif
+
+		(cAliasSA7)->(DbSkip())
+	End While
 return
 
 /*---------------------------------------------------------------------*
 	Grava tabela ZA0
  *---------------------------------------------------------------------*/
 Static Function GravaDados()
-    Local lErro     := .T.
-    Local cProduto  := ""
+	Local dData  := dInicio
 
-    cCodCli  := AvKey(aLinha[3], "A7_CODCLI")
-	dDtEntr  := ctod(aLinha[4])
-    cHrEntr  := aLinha[5]
-	cQtde 	 := aLinha[6]
-    cTipoPe  := "F"
+	While dData <= dLimite
 
-	// Consistir o codigo do cliente e item do cliente
-	SA7->(DBSetOrder(3))  // Filial/cliente/loja/codcli
+		if Dow(dData) = 1
+			dData := daySum(dData, 1)
+		endif
+		if Dow(dData) = 7
+			dData := daySum(dData, 2)
+		endif
 
-    cProduto := ""
+		dbSelectArea("ZA0")
+		DBSetOrder(2)  // Filial/cliente/loja/item/data
 
-	If SA7->(MsSeek(xFilial("SA7") + cCliente + cLoja + cCodCli))
-        cProduto := SA7->A7_PRODUTO
-        lErro = .F.
-    EndIf
-
-	dbSelectArea("ZA0")
-    DBSetOrder(2)  // Filial/cliente/loja/item/data
-
-    if (MsSeek(xFilial("ZA0") + cCliente + cLoja + cProduto + dtos(dDtEntr))) 
-        RecLock("ZA0", .F.)
-        ZA0->ZA0_ARQUIV   := cArquivo
-        ZA0->ZA0_DTCRIA   := dtProcesso
-        ZA0->ZA0_HRCRIA   := hrProcesso
-        ZA0->ZA0_TIPOPE   := cTipoPe
-
-        if ZA0->ZA0_STATUS == "0" .or. ZA0->ZA0_STATUS == "1" 
-            ZA0->ZA0_QTDE := Val(StrTran(cQtde,",","."))
-        else
-            if ZA0->ZA0_QTDE < Val(StrTran(cQtde,",","."))
-                ZA0->ZA0_QTDE := Val(StrTran(cQtde,",","."))
-            Endif
-        Endif
-    else
-		// Inclusão
-		RecLock("ZA0", .T.)	
-		ZA0->ZA0_FILIAL	:= xFilial("ZA0")	
-		ZA0->ZA0_CODPED := GETSXENUM("ZA0", "ZA0_CODPED", 1)                                                                                                  
-		ZA0->ZA0_CLIENT := cCliente
-		ZA0->ZA0_LOJA 	:= cLoja
-		ZA0->ZA0_PRODUT := cProduto
-		ZA0->ZA0_ITCLI 	:= cCodCli
-		ZA0->ZA0_TIPOPE := cTipoPe
-		ZA0->ZA0_QTDE 	:= Val(StrTran(cQtde,",","."))
-		ZA0->ZA0_DTENTR := dDtEntr
-		ZA0->ZA0_ARQUIV := cArquivo
-		ZA0->ZA0_ORIGEM := "PL020B"
-		ZA0->ZA0_DTCRIA := dtProcesso
-		ZA0->ZA0_HRCRIA := hrProcesso
-		if (lErro)
-			ZA0->ZA0_STATUS := "1"
-		else
+		if (MsSeek(xFilial("ZA0") + cCliente + cLoja + (cAliasSA7)->A7_PRODUTO + dtos(dData))) .AND. ZA0->ZA0_STATUS != "9"
+			RecLock("ZA0", .F.)
+			ZA0->ZA0_DTCRIA   := dtProcesso
+			ZA0->ZA0_HRCRIA   := hrProcesso
+			ZA0->ZA0_TIPOPE   := "F"
+			ZA0->ZA0_QTDE 	  := (cAliasSA7)->A7_XQTENT
+		else	
+			// Inclusão
+			RecLock("ZA0", .T.)	
+			ZA0->ZA0_FILIAL	:= xFilial("ZA0")	
+			ZA0->ZA0_CODPED := GETSXENUM("ZA0", "ZA0_CODPED", 1)                                                                                                  
+			ZA0->ZA0_CLIENT := cCliente
+			ZA0->ZA0_LOJA 	:= cLoja
+			ZA0->ZA0_PRODUT := (cAliasSA7)->A7_PRODUTO
+			ZA0->ZA0_ITCLI 	:= (cAliasSA7)->A7_CODCLI
+			ZA0->ZA0_TIPOPE := "F"
+			ZA0->ZA0_QTDE 	:= (cAliasSA7)->A7_XQTENT
+			ZA0->ZA0_DTENTR := dData
+			ZA0->ZA0_ORIGEM := "PL020B"
+			ZA0->ZA0_DTCRIA := dtProcesso
+			ZA0->ZA0_HRCRIA := hrProcesso
 			ZA0->ZA0_STATUS := "0"
-		EndIf
-		ConfirmSx8()
-	endif
+			ConfirmSx8()
+		endif
 	
-	MsUnLock() 
+		MsUnLock() 
+
+		dData := daysum(dData, (cAliasSA7)->A7_XFRENT)
+	End While
 Return
-
-/*---------------------------------------------------------------------*
-	Abre box para o usuario selecionar o arquivo que deseja importar
- *---------------------------------------------------------------------*/
-Static Function selArquivo()
-
-	Local cDirIni := GetTempPath()
-	Local cTipArq := "Arquivos texto (*.txt)"
-	Local cTitulo := "Selecao de arquivo para processamento"
-	Local lSalvar := .F.
-	Local cArqSel := ""
-
-	cArqSel := tFileDialog(cTipArq, cTitulo,, cDirIni, lSalvar)
-
-	If ! Empty(cArqSel)
-    	If FWAlertYesNo("ARQUIVO SELECIONADO = " + cArqSel, "CONFIRMA A ATUALIZACAO?")
-    		Return cArqSel
-		EndIf
-	EndIf
-return
 
 
 /*---------------------------------------------------------------------*
@@ -187,19 +143,67 @@ Static Function LimpaDados()
 	
 	Do While ! Eof() 
 
-	if ZA0->ZA0_CLIENT == cCliente
-		if ZA0_STATUS <> "9"
-			if ZA0->ZA0_DTCRIA <> dtProcesso .or. ;
-				ZA0->ZA0_HRCRIA <> hrProcesso
+		if ZA0->ZA0_CLIENT 	== cCliente 	.AND. ;
+			ZA0->ZA0_LOJA  	== cLoja 		.AND. ;
+			ZA0->ZA0_DTENTR	>= dInicio		.AND. ;
+			ZA0_STATUS     	<> "9" 
 
+			if ZA0->ZA0_DTCRIA  <> dtProcesso .or. ;
+				ZA0->ZA0_HRCRIA <> hrProcesso
 				RecLock("ZA0", .F.)
 				DbDelete()
 				ZA0->(MsUnlock())
 			endif
 		endif
-	endif
 
-	DbSkip()
-	
+		DbSkip()
    EndDo
 return
+
+
+
+/*--------------------------------------------------------------------------
+   Consistir os parametros informados pelo usuario
+/*-------------------------------------------------------------------------*/
+Static Function VerParam()
+	Local aPergs        := {}
+	Local aResps	    := {}
+	Local lRet 			:= .T.
+
+	AAdd(aPergs, {1, "Informe o cliente ", CriaVar("ZA0_CLIENT",.F.),,,"SA1",, 50, .F.})
+	AAdd(aPergs, {1, "Informe a loja "   , CriaVar("ZA0_LOJA"  ,.F.),,,"SA1",, 50, .F.})
+	AAdd(aPergs, {1, "Informe a data de entrega inicial ", CriaVar("ZA0_DTENTR",.F.),,,"ZA0",, 50, .F.})
+	AAdd(aPergs, {1, "Informe a data de entrega limite " , CriaVar("ZA0_DTENTR",.F.),,,"ZA0",, 50, .F.})
+
+	If ParamBox(aPergs, "Parametros", @aResps,,,,,,,, .T., .T.)
+		cCliente := aResps[1]
+		cLoja    := aResps[2]
+		dInicio	 := aResps[3]
+		dLimite  := aResps[4]
+	Else
+		lRet := .F.
+		return lRet
+	endif
+
+	SA1->(dbSetOrder(1))
+	SE4->(dbSetOrder(1))
+	DA1->(dbSetOrder(1))
+
+	// Verificar o cliente
+	if SA1->(! MsSeek(xFilial("SA1") + cCliente + cLoja))
+		lRet := .F.
+		FWAlertError("Cliente nao cadastrado: " + cCliente,"Cadastro de Clientes")
+	else
+		// Verificar condição de pagamento do cliente
+		If SE4->(! MsSeek(xFilial("SE4") + SA1->A1_COND))
+			lRet := .F.
+			FWAlertError("Cliente sem condicao de pagamento cadastrada: " + cCliente,"Condicao de Pagamento")
+		EndIf
+
+		// Verificar a tabela de precos do cliente
+		If SA1->A1_TABELA == ""
+			lRet := .F.
+			FWAlertError("Tabela de precos do cliente nao encontrada!", "Tabela de precos")
+		EndIf
+	EndIf
+return lRet

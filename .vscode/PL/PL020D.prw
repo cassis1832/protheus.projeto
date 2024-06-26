@@ -15,14 +15,9 @@
 
 User Function PL020D()
 	Local nQtde       	:= 0
-	Local nValor		:= 0
-	Local nLinha     	:= 0
-	Local aLinha      	:= {}
 
 	Private cAliasZA0
 
-	Private nOpcX       := 3            //Seleciona o tipo da operacao (3-Inclusao / 4-Alteracao / 5-Exclusao)
-	Private cDoc       	:= ""    	    // Numero do Pedido de Vendas (alteracao ou exclusao)
 	Private aCabec      := {}
 	Private aItens      := {}
 	Private aGravados   := {}
@@ -35,31 +30,28 @@ User Function PL020D()
 	Private cData       := ''
 	Private cNatureza   := ''
 	Private cHrEntr     := ''
+	Private cProjeto    := ''
+
+	Private nLinha     	:= 0
+	Private aLinha     	:= {}
 
 	Private lMsErroAuto 	:= .F.
 	Private lAutoErrNoFile 	:= .F.
-
-	chkFile("SC5")
-	chkFile("SC6")
 
 	if VerParam() == .F.
 		return
 	endif
 
-	cSql := "SELECT ZA0.*, A7_XNATUR, B1_DESC, B1_TS, B1_UM "
+	cSql := "SELECT ZA0.*, A7_XNATUR, B1_DESC, B1_TS, B1_UM, B1_XPROJ "
 	cSql += "  FROM  " + RetSQLName("ZA0") + " ZA0 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
-	cSql += "    ON B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
-	cSql += "   AND B1_COD 			=  ZA0_PRODUT "
-	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
+	cSql += "    ON B1_COD 			=  ZA0_PRODUT "
 
 	cSql += " INNER JOIN " + RetSQLName("SA7") + " SA7 "
-	cSql += "    ON A7_FILIAL 		=  '" + xFILIAL("SA7") + "'"
-	cSql += "   AND A7_CLIENTE 		=  ZA0_CLIENT "
+	cSql += "    ON A7_CLIENTE 		=  ZA0_CLIENT "
 	cSql += "   AND A7_LOJA 		=  ZA0_LOJA "
 	cSql += "   AND A7_PRODUTO 		=  ZA0_PRODUT "
-	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
 
 	cSql += " WHERE ZA0_CLIENT  	=  '" + cCliente + "' "
 	cSql += "   AND ZA0_LOJA    	=  '" + cLoja + "' "
@@ -67,8 +59,19 @@ User Function PL020D()
 	cSql += "   AND ZA0_TIPOPE  	=  'F' "
 	cSql += "   AND ZA0_STATUS  	=  '0' "
 	cSql += "   AND ZA0_QTDE    	>  ZA0_QTCONF "
+
+	cSql += "   AND B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
+	cSql += "   AND A7_FILIAL 		=  '" + xFILIAL("SA7") + "'"
+
 	cSql += "   AND ZA0.D_E_L_E_T_ 	<> '*' "
-	cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, ZA0_PRODUT "
+	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
+	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
+
+	if cCliente == "000001" .OR. cCliente == "000002"  // Kanjiko quebra por projeto
+		cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, B1_XPROJ, ZA0_PRODUT "
+	else
+		cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, ZA0_PRODUT "
+	endif
 
 	cAliasZA0 := MPSysOpenQuery(cSql)
 
@@ -79,37 +82,10 @@ User Function PL020D()
 
 	While (cAliasZA0)->(!EOF())
 		if Consistencia() == .T.
-			if (cAliasZA0)->ZA0_DTENTR != cData .or. ;
-					(cAliasZA0)->ZA0_HRENTR != cHrEntr .or. ;
-					(cAliasZA0)->A7_XNATUR  != cNatureza
 
-				if Len(aCabec) > 0 .And. Len(aItens) > 0
-					GravaPedido()
-				endif
-
-				cData       := (cAliasZA0)->ZA0_DTENTR
-				cHrEntr     := (cAliasZA0)->ZA0_HRENTR
-				cNatureza   := (cAliasZA0)->A7_XNATUR
-				nLinha 		:= 0
-
-				cDoc := GetSxeNum("SC5", "C5_NUM")
-				RollBAckSx8()
-
-				aCabec   := {}
-				aItens   := {}
-				aLinha   := {}
-
-				aadd(aCabec, {"C5_NUM"    , cDoc, Nil})
-				aadd(aCabec, {"C5_TIPO"	  , "N", Nil})
-				aadd(aCabec, {"C5_CLIENTE", cCliente, Nil})
-				aadd(aCabec, {"C5_LOJACLI", cLoja, Nil})
-				aadd(aCabec, {"C5_LOJAENT", cLoja, Nil})
-				aadd(aCabec, {"C5_CONDPAG", SA1->A1_COND, Nil})
-				aadd(aCabec, {"C5_NATUREZ", cNatureza, Nil})
-			EndIf
+			VerQuebra()
 
 			nQtde  := (cAliasZA0)->ZA0_QTDE - (cAliasZA0)->ZA0_QTCONF
-			nValor := (cAliasZA0)->ZA0_QTDE * DA1->DA1_PRCVEN
 			nLinha := nLinha + 1
 
 			aLinha := {}
@@ -140,9 +116,56 @@ User Function PL020D()
 		GravaPedido()
 	endif
 
-	FWAlertSuccess("Foram criados " + cValToChar(nPed) + " pedidos de vendas", "Geracao de Pedidos de Vendas")
+	FWAlertSuccess("FORAM CRIADOS " + cValToChar(nPed) + " PEDIDOS DE VENDAS", "Geracao de Pedidos de Vendas")
 Return(.T.)
 
+
+Static Function VerQuebra()
+	Local lQuebra	:= .F.
+	Local cDoc     	:= ""    	    // Numero do Pedido de Vendas (alteracao ou exclusao)
+
+	if cCliente == "000001" .OR. cCliente == "000002"  // Kanjiko quebra por projeto
+		if (cAliasZA0)->ZA0_DTENTR != cData .or. ;
+				(cAliasZA0)->ZA0_HRENTR != cHrEntr 		.or. ;
+				(cAliasZA0)->A7_XNATUR  != cNatureza 	.or. ;
+				(cAliasZA0)->B1_XPROJ   != cProjeto
+			lQuebra := .T.
+		EndIf
+	Else
+		if (cAliasZA0)->ZA0_DTENTR != cData .or. ;
+				(cAliasZA0)->ZA0_HRENTR != cHrEntr 		.or. ;
+				(cAliasZA0)->A7_XNATUR  != cNatureza
+			lQuebra := .T.
+		EndIf
+	EndIf
+
+	IF lQuebra == .T.
+		if Len(aCabec) > 0 .And. Len(aItens) > 0
+			GravaPedido()
+		endif
+
+		cData       := (cAliasZA0)->ZA0_DTENTR
+		cHrEntr     := (cAliasZA0)->ZA0_HRENTR
+		cNatureza   := (cAliasZA0)->A7_XNATUR
+		cProjeto    := (cAliasZA0)->B1_XPROJ
+		nLinha 		:= 0
+
+		cDoc := GetSxeNum("SC5", "C5_NUM")
+		RollBAckSx8()
+
+		aCabec   := {}
+		aItens   := {}
+		aLinha   := {}
+
+		aadd(aCabec, {"C5_NUM"    , cDoc, Nil})
+		aadd(aCabec, {"C5_TIPO"	  , "N", Nil})
+		aadd(aCabec, {"C5_CLIENTE", cCliente, Nil})
+		aadd(aCabec, {"C5_LOJACLI", cLoja, Nil})
+		aadd(aCabec, {"C5_LOJAENT", cLoja, Nil})
+		aadd(aCabec, {"C5_CONDPAG", SA1->A1_COND, Nil})
+		aadd(aCabec, {"C5_NATUREZ", cNatureza, Nil})
+	EndIf
+return
 
 /*--------------------------------------------------------------------------
    Consistir os parametros informados pelo usuario
@@ -194,6 +217,8 @@ return lRet
    Grava o pedido no sistema
 /*-------------------------------------------------------------------------*/
 Static Function GravaPedido()
+	Local nOpcX := 3            //Seleciona o tipo da operacao (3-Inclusao / 4-Alteracao / 5-Exclusao)
+
 	MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabec, aItens, nOpcX, .F.)
 
 	If !lMsErroAuto

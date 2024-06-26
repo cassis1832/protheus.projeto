@@ -19,7 +19,6 @@ User Function PL090()
 	Local aColunas 	:= {}
 	Local aPesquisa := {}
 	Local aIndex 	:= {}
-
 	Local oBrowse
 
 	Private aRotina 	:= {}
@@ -113,7 +112,7 @@ Menu de opcoes na funcao pl090
 /*/
 Static Function MenuDef()
 	Local aRotina := {}
-	//ADD OPTION aRotina TITLE "Visualizar" ACTION "VIEWDEF.PL090" OPERATION 1 ACCESS 0
+	ADD OPTION aRotina TITLE "Visualizar" ACTION "VIEWDEF.PL090" OPERATION 1 ACCESS 0
 Return aRotina
 
 
@@ -189,9 +188,9 @@ Static Function CargaTT()
 	Local cAlias, cSql
 
 	// Carregar pedidos de vendas
-	cSql := "SELECT C5_CLIENTE, C5_LOJACLI, C5_EMISSAO,
-	cSql += " 	C6_NUM, C6_ITEM, C6_PRODUTO, C6_ENTREG, C6_QTDVEN, C6_QTDENT, (C6_QTDVEN - C6_QTDENT) AS C6_SALDO, "
-	cSql += "	B1_DESC, A1_NREDUZ "
+	cSql := "SELECT C5_CLIENTE, C5_LOJACLI, C5_EMISSAO, C6_NUM, "
+	cSql += " 	C6_ITEM, C6_PRODUTO, C6_ENTREG, C6_QTDVEN, C6_QTDENT, "
+	cSql += "	(C6_QTDVEN - C6_QTDENT) AS C6_SALDO, B1_DESC, A1_NREDUZ "
 	cSql += "  FROM " + RetSQLName("SC6") + " SC6 "
 
 	cSql += " INNER JOIN " + RetSQLName("SC5") + " SC5 "
@@ -229,20 +228,21 @@ Static Function CargaTT()
 	cAlias := MPSysOpenQuery(cSql)
 
 	While (cAlias)->(!EOF())
-		cSql := "INSERT INTO " + cTableName + " (ID, TT_PRODUTO, TT_DESC, TT_NUM, TT_ITEM, TT_QTDVEN, TT_QTDENT, TT_SALDO, "
-		cSql += "		TT_ENTREG, TT_CLIENT, TT_EMISSAO, TT_NOME) VALUES ('"
-		cSql += FWUUIDv4() + "','"
-		cSql += (cAlias)->C6_PRODUTO + "','"
-		cSql += (cAlias)->B1_DESC + "','"
-		cSql += (cAlias)->C6_NUM + "','"
-		cSql += (cAlias)->C6_ITEM + "','"
+		cSql := "INSERT INTO " + cTableName + " ("
+		cSql += "	ID, TT_PRODUTO, TT_DESC, TT_NUM, TT_ITEM, TT_QTDVEN, TT_QTDENT, "
+		cSql += "	TT_SALDO, TT_ENTREG, TT_CLIENT, TT_EMISSAO, TT_NOME) VALUES ('"
+		cSql += FWUUIDv4() 			 			+ "','"
+		cSql += (cAlias)->C6_PRODUTO 			+ "','"
+		cSql += (cAlias)->B1_DESC    			+ "','"
+		cSql += (cAlias)->C6_NUM     			+ "','"
+		cSql += (cAlias)->C6_ITEM    			+ "','"
 		cSql += cValToChar((cAlias)->C6_QTDVEN) + "','"
 		cSql += cValToChar((cAlias)->C6_QTDENT) + "','"
 		cSql += cValToChar((cAlias)->C6_SALDO)  + "','"
-		cSql += (cAlias)->C6_ENTREG + "','"
-		cSql += (cAlias)->C5_CLIENTE + "','"
-		cSql += (cAlias)->C5_EMISSAO + "','"
-		cSql += (cAlias)->A1_NREDUZ + "')"
+		cSql += (cAlias)->C6_ENTREG  			+ "','"
+		cSql += (cAlias)->C5_CLIENTE 			+ "','"
+		cSql += (cAlias)->C5_EMISSAO 			+ "','"
+		cSql += (cAlias)->A1_NREDUZ  			+ "')"
 
 		if TCSqlExec(cSql) < 0
 			MsgInfo("Erro na execução da query:", "Atenção")
