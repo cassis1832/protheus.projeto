@@ -78,3 +78,8 @@ Static Function	Estrutura(aBom, cProduto, nQtPai)
 		(cAliasSG1)->(DbSkip())
 	EndDo
 return
+
+
+Static Function VerSaldoTerc()
+
+return

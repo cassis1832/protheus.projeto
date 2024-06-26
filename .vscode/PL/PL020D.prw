@@ -31,6 +31,7 @@ User Function PL020D()
 	Private cNatureza   := ''
 	Private cHrEntr     := ''
 	Private cProjeto    := ''
+	Private cProduto    := ''
 
 	Private nLinha     	:= 0
 	Private aLinha     	:= {}
@@ -67,10 +68,14 @@ User Function PL020D()
 	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
 	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
 
-	if cCliente == "000001" .OR. cCliente == "000002"  // Kanjiko quebra por projeto
+	if cCliente == "000001" .OR. cCliente == "000002" .OR. cCliente == "000003"  // Kanjiko e GKTB quebra por projeto
 		cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, B1_XPROJ, ZA0_PRODUT "
 	else
-		cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, ZA0_PRODUT "
+		if cCliente == "000004"  // Gestamp Betim quebra por item
+			cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_PRODUT "
+		else
+			cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, ZA0_PRODUT "
+		endif
 	endif
 
 	cAliasZA0 := MPSysOpenQuery(cSql)
@@ -124,19 +129,27 @@ Static Function VerQuebra()
 	Local lQuebra	:= .F.
 	Local cDoc     	:= ""    	    // Numero do Pedido de Vendas (alteracao ou exclusao)
 
-	if cCliente == "000001" .OR. cCliente == "000002"  // Kanjiko quebra por projeto
-		if (cAliasZA0)->ZA0_DTENTR != cData .or. ;
+	if cCliente == "000001" .OR. cCliente == "000002" .OR. cCliente == "000003" // Kanjiko e GKTB quebra por projeto
+		if (cAliasZA0)->ZA0_DTENTR != cData 			.or. ;
 				(cAliasZA0)->ZA0_HRENTR != cHrEntr 		.or. ;
 				(cAliasZA0)->A7_XNATUR  != cNatureza 	.or. ;
 				(cAliasZA0)->B1_XPROJ   != cProjeto
 			lQuebra := .T.
 		EndIf
 	Else
-		if (cAliasZA0)->ZA0_DTENTR != cData .or. ;
-				(cAliasZA0)->ZA0_HRENTR != cHrEntr 		.or. ;
-				(cAliasZA0)->A7_XNATUR  != cNatureza
-			lQuebra := .T.
-		EndIf
+		if cCliente == "000004"  // Gestamp Betim quebra por item
+			if (cAliasZA0)->ZA0_DTENTR != cData 			.or. ;
+					(cAliasZA0)->ZA0_PRODUT != cProduto 	.or. ;
+					(cAliasZA0)->A7_XNATUR  != cNatureza
+				lQuebra := .T.
+			EndIf
+		else
+			if (cAliasZA0)->ZA0_DTENTR != cData .or. ;
+					(cAliasZA0)->ZA0_HRENTR != cHrEntr 		.or. ;
+					(cAliasZA0)->A7_XNATUR  != cNatureza
+				lQuebra := .T.
+			EndIf
+		endif
 	EndIf
 
 	IF lQuebra == .T.
@@ -144,6 +157,7 @@ Static Function VerQuebra()
 			GravaPedido()
 		endif
 
+		cProduto    := (cAliasZA0)->ZA0_PRODUT
 		cData       := (cAliasZA0)->ZA0_DTENTR
 		cHrEntr     := (cAliasZA0)->ZA0_HRENTR
 		cNatureza   := (cAliasZA0)->A7_XNATUR
