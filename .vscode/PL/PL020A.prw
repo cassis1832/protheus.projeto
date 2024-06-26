@@ -7,7 +7,7 @@ Função
    Importação do arquivo texto contendo pedidos EDI
    Gravar tabela ZA0 - movimentos EDI importados 
    Esse programa chamado a partir do PL020 (manutenção do ZA0)
-
+ 
 @author Assis
 @since 08/04/2024
 @version 1.0
@@ -139,6 +139,7 @@ Static Function GravaDados()
 		ZA0->ZA0_TIPOPE := cTipoPe
 		ZA0->ZA0_QTDE 	:= Val(StrTran(cQtde,",","."))
 		ZA0->ZA0_DTENTR := dDtEntr
+		ZA0->ZA0_HRENTR := cHrEntr
 		ZA0->ZA0_ARQUIV := cArquivo
 		ZA0->ZA0_ORIGEM := "PL020A"
 		ZA0->ZA0_DTCRIA := dtProcesso
