@@ -111,7 +111,7 @@ User Function PL020D()
 			aadd(aGravados,(cAliasZA0)->R_E_C_N_O_)
 
 			//Gera devoluções com base na estrutura
-			u_PL020E(@aItens)
+			//u_PL020E(@aItens)
 		endif
 
 		(cAliasZA0)->(DbSkip())
