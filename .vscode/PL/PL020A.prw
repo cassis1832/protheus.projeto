@@ -17,14 +17,14 @@ Função
 /*/
 
 User Function PL020A()
-	Local aArea   := GetArea()
-	Local cFunBkp := FunName()
+	Local aArea   		:= GetArea()
+	Local cFunBkp 		:= FunName()
 
-	Private cArquivo := ''
-	Private cCliente := ''
-	Private cLoja	 := ''
-	Private dDtEntr  := Date()
-	Private aLinhas  := {}
+	Private cArquivo 	:= ''
+	Private cCliente 	:= ''
+	Private cLoja	 	:= ''
+	Private dDtEntr  	:= Date()
+	Private aLinhas  	:= {}
 	Private aLinha
 
 	Private dtProcesso := Date()
@@ -45,10 +45,10 @@ User Function PL020A()
 			oFile:Close()
 
 			LimpaDados()
+
+			FWAlertSuccess("IMPORTACAO EFETUADA COM SUCESSO! " + cCliente, "Importacao EDI")
 		EndIf
 	EndIf
-
-	FWAlertSuccess("IMPORTACAO EFETUADA COM SUCESSO! " + cCliente, "Importacao EDI")
 
 	SetFunName(cFunBkp)
 	RestArea(aArea)
