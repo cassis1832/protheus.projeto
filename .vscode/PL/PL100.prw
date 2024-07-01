@@ -20,14 +20,13 @@ User Function PL100()
 	Local cSql			:= ""
 	Local nQtde       	:= 0
 	Local aLinha     	:= {}
+	Local aItensFat   	:= {}	// Itens a faturar	(produto, qtde, ts, data, pedido, preco, acao, recno)
 
 	Private cAliasZA0
 
 	// Tabelas
-	Private aItensFat   := {}	// Itens a faturar					(produto, qtde, ts, data, pedido, preco, acao)
-	Private aLinGrav   	:= {}	// Linhas ZA0 gravadas no pedido
 
-	Private nPed        := 0
+	Private nPedidos    := 0
 	Private dLimite     := Date()
 
 	Private cCliente    := ''
@@ -36,7 +35,7 @@ User Function PL100()
 	Private cNatureza   := ''
 	Private cHrEntr     := ''
 	Private cGrupoPV    := ''
-	Private cProduto    := ''
+	Private cProduto   	:= ''
 
 	if VerParam() == .F.
 		return
@@ -45,25 +44,20 @@ User Function PL100()
 	// Ler os pedidos EDI
 	cSql := "SELECT ZA0.*, A7_XNATUR, B1_DESC, B1_TS, B1_UM, A7_XGRUPV"
 	cSql += "  FROM  " + RetSQLName("ZA0") + " ZA0 "
-
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1"
 	cSql += "    ON B1_COD 			=  ZA0_PRODUT "
-
 	cSql += " INNER JOIN " + RetSQLName("SA7") + " SA7 "
 	cSql += "    ON A7_CLIENTE 		=  ZA0_CLIENT"
 	cSql += "   AND A7_LOJA 		=  ZA0_LOJA"
 	cSql += "   AND A7_PRODUTO 		=  ZA0_PRODUT"
-
 	cSql += " WHERE ZA0_CLIENT  	=  '" + cCliente + "'"
 	cSql += "   AND ZA0_LOJA    	=  '" + cLoja + "'"
 	cSql += "   AND ZA0_DTENTR 		<= '" + Dtos(dLimite) + "'"
 	cSql += "   AND ZA0_TIPOPE  	=  'F' "
 	cSql += "   AND ZA0_STATUS  	=  '0' "
 	cSql += "   AND ZA0_QTDE    	>  ZA0_QTCONF "
-
 	cSql += "   AND B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
 	cSql += "   AND A7_FILIAL 		=  '" + xFILIAL("SA7") + "'"
-
 	cSql += "   AND ZA0.D_E_L_E_T_ 	<> '*' "
 	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
 	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
@@ -89,7 +83,7 @@ User Function PL100()
 		if Consistencia() == .T.
 
 			if VerQuebra() == .T.
-				u_PL100A(@aItensFat)
+				u_PL100A(aItensFat)
 
 				cProduto    := (cAliasZA0)->ZA0_PRODUT
 				cData       := (cAliasZA0)->ZA0_DTENTR
@@ -97,14 +91,14 @@ User Function PL100()
 				cNatureza   := (cAliasZA0)->A7_XNATUR
 				cGrupoPV    := (cAliasZA0)->A7_XGRUPV
 				aItensFat 	:= {}
-				aItensRet 	:= {}
 			endif
 
 			nQtde  := (cAliasZA0)->ZA0_QTDE - (cAliasZA0)->ZA0_QTCONF
 
-			// (produto, qtde, ts, data, pedido, preco, acao)
+			// (produto, qtde, ts, data, pedido, preco, acao, recno)
 			aLinha := {(cAliasZA0)->ZA0_PRODUT,	nQtde, (cAliasZA0)->B1_TS, ;
-				Stod((cAliasZA0)->ZA0_DTENTR), (cAliasZA0)->ZA0_NUMPED, DA1->DA1_PRCVEN, .T.}
+				Stod((cAliasZA0)->ZA0_DTENTR), (cAliasZA0)->ZA0_NUMPED, DA1->DA1_PRCVEN, .T., ;
+				(cAliasZA0)->R_E_C_N_O_}
 
 			aadd(aItensFat, aLinha)
 		endif
@@ -112,12 +106,12 @@ User Function PL100()
 		(cAliasZA0)->(DbSkip())
 	End While
 
-	u_PL100A(@aItensFat)
+	u_PL100A(aItensFat)
 
-	if nPed == 0
+	if nPedidos == 0
 		FWAlertSuccess("NAO FOI CRIADO NENHUM PEDIDO DE VENDA!", "Geracao de Pedidos de Vendas")
 	Else
-		FWAlertSuccess("FORAM CRIADOS " + cValToChar(nPed) + " PEDIDOS DE VENDAS", "Geracao de Pedidos de Vendas")
+		FWAlertSuccess("FORAM CRIADOS " + cValToChar(nPedidos) + " PEDIDOS DE VENDAS", "Geracao de Pedidos de Vendas")
 	EndIf
 
 	SetFunName(cFunBkp)

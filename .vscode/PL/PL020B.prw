@@ -51,19 +51,15 @@ Return
 Static Function TrataLinhas()
 	cSql := "SELECT SA7.*, B1_DESC, B1_TS, B1_UM "
 	cSql += "  FROM  " + RetSQLName("SA7") + " SA7 "
-
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
-	cSql += "    ON B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
-	cSql += "   AND B1_COD 			=  A7_PRODUTO "
-	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
-
-	cSql += " WHERE A7_FILIAL 		=  '" + xFILIAL("SA7") + "'"
-	cSql += "   AND A7_CLIENTE 		=  '" + cCliente + "'"
+	cSql += "    ON B1_COD 			=  A7_PRODUTO "
+	cSql += " WHERE A7_CLIENTE 		=  '" + cCliente + "'"
 	cSql += "   AND A7_LOJA 		=  '" + cLoja + "'" 
+	cSql += "   AND A7_FILIAL 		=  '" + xFILIAL("SA7") + "'"
+	cSql += "   AND B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
 	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
-
+	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
 	cSql += " ORDER BY A7_PRODUTO "
-
 	cAliasSA7 := MPSysOpenQuery(cSql)	
  
  	if (cAliasSA7)->(EOF())
