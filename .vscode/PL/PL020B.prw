@@ -24,6 +24,8 @@ User Function PL020B()
 	Private cLoja	 	:= ''
 	Private dInicio	 	:= date()
 	Private dLimite  	:= date()
+	Private cProdIni  	:= ''
+	Private cProdFim  	:= ''
 
 	Private cAliasSA7
 	Private dtProcesso 	:= Date()
@@ -55,6 +57,8 @@ Static Function TrataLinhas()
 	cSql += "    ON B1_COD 			=  A7_PRODUTO "
 	cSql += " WHERE A7_CLIENTE 		=  '" + cCliente + "'"
 	cSql += "   AND A7_LOJA 		=  '" + cLoja + "'" 
+	cSql += "   AND A7_PRODUTO 		>= '" + cProdIni + "'" 
+	cSql += "   AND A7_PRODUTO 		<= '" + cProdFim + "'" 
 	cSql += "   AND A7_FILIAL 		=  '" + xFILIAL("SA7") + "'"
 	cSql += "   AND B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
 	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
@@ -166,16 +170,20 @@ Static Function VerParam()
 	Local aResps	    := {}
 	Local lRet 			:= .T.
 
-	AAdd(aPergs, {1, "Informe o cliente ", CriaVar("ZA0_CLIENT",.F.),,,"SA1",, 50, .F.})
-	AAdd(aPergs, {1, "Informe a loja "   , CriaVar("ZA0_LOJA"  ,.F.),,,"SA1",, 50, .F.})
-	AAdd(aPergs, {1, "Informe a data de entrega inicial ", CriaVar("ZA0_DTENTR",.F.),,,"ZA0",, 50, .F.})
-	AAdd(aPergs, {1, "Informe a data de entrega limite " , CriaVar("ZA0_DTENTR",.F.),,,"ZA0",, 50, .F.})
+	AAdd(aPergs, {1, "Informe o cliente "					, CriaVar("ZA0_CLIENT",.F.),,,"SA1",, 50, .F.})
+	AAdd(aPergs, {1, "Informe a loja "   					, CriaVar("ZA0_LOJA"  ,.F.),,,"SA1",, 30, .F.})
+	AAdd(aPergs, {1, "Informe a data de entrega inicial "	, CriaVar("ZA0_DTENTR",.F.),"",".T.","",".T.", 70, .F.})
+	AAdd(aPergs, {1, "Informe a data de entrega limite " 	, CriaVar("ZA0_DTENTR",.F.),"",".T.","",".T.", 70, .F.})
+	AAdd(aPergs, {1, "Informe o item inicial "				, CriaVar("B1_COD",.F.),,,"SB1",, 70, .F.})
+	AAdd(aPergs, {1, "Informe o item final " 				, CriaVar("B1_COD",.F.),,,"SB1",, 70, .F.})
 
 	If ParamBox(aPergs, "Parametros", @aResps,,,,,,,, .T., .T.)
 		cCliente := aResps[1]
 		cLoja    := aResps[2]
 		dInicio	 := aResps[3]
 		dLimite  := aResps[4]
+		cProdIni := aResps[5]
+		cProdFim := aResps[6]
 	Else
 		lRet := .F.
 		return lRet
