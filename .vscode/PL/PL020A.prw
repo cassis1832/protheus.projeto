@@ -27,8 +27,8 @@ User Function PL020A()
 	Private aLinhas  	:= {}
 	Private aLinha
 
-	Private dtProcesso := Date()
-	Private hrProcesso := Time()
+	Private dtProcesso 	:= Date()
+	Private hrProcesso 	:= Time()
 
 	SetFunName("PL020A")
 	cArquivo := selArquivo()
@@ -188,8 +188,7 @@ Static Function LimpaDados()
 	
 	Do While ! Eof() 
 
-	if ZA0->ZA0_CLIENT == cCliente
-		if ZA0_STATUS <> "9"
+		if ZA0->ZA0_CLIENT == cCliente .AND. ZA0_STATUS <> "9"
 			if ZA0->ZA0_DTCRIA <> dtProcesso .or. ;
 				ZA0->ZA0_HRCRIA <> hrProcesso
 
@@ -198,9 +197,8 @@ Static Function LimpaDados()
 				ZA0->(MsUnlock())
 			endif
 		endif
-	endif
 
-	DbSkip()
-	
-   EndDo
-return
+		DbSkip()
+   	EndDo
+
+Return

@@ -17,17 +17,17 @@ Função
 /*/
 
 User Function PL020B()
-	Local aArea   := GetArea()
-	Local cFunBkp := FunName()
+	Local aArea   		:= GetArea()
+	Local cFunBkp 		:= FunName()
 
-	Private cCliente := ''
-	Private cLoja	 := ''
-	Private dInicio	 := date()
-	Private dLimite  := date()
+	Private cCliente 	:= ''
+	Private cLoja	 	:= ''
+	Private dInicio	 	:= date()
+	Private dLimite  	:= date()
 
 	Private cAliasSA7
-	Private dtProcesso := Date()
-	Private hrProcesso := Time()
+	Private dtProcesso 	:= Date()
+	Private hrProcesso 	:= Time()
 
 	SetFunName("PL020B")
 
@@ -39,7 +39,7 @@ User Function PL020B()
 
 	LimpaDados()
 
-	FWAlertSuccess("GERACAO EFETUADA COM SUCESSO! " + cCliente, "Importacao EDI")
+	FWAlertSuccess("GERACAO EFETUADA COM SUCESSO PARA O CLIENTE " + cCliente, "Importacao EDI")
 
 	SetFunName(cFunBkp)
 	RestArea(aArea)

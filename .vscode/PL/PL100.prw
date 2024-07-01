@@ -6,7 +6,7 @@
     MATA410 - EXECAUTO
     Ler ZA0 por cliente/data/natureza/hora de entrega/item
 	@type  Function
-	@author aSSIS
+	@author ASSIS
 	@since 05/06/2024
 	@version 1.0
 	@param param_name, param_type, param_descr

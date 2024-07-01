@@ -23,24 +23,13 @@ Função Manutenção de pedidos EDI do cliente.
     O programa deleta todas as linhas de demandas do código = "AUTO", e gera novos.
     Agrupa as demandas pelo campo B1_XDIAEO (dias entre ordens)
 
-4- Geração de pedidos de vendas (PL020D) - em pausa
-    Via Execauto do MATA410
-    Só trata os registros com status = 0
-    Uma vez gerado o pedido, o programa altera o status = 9 (registro inativo)
-    O campos C5_NATUREZ está no item X cliente
-    O SA7 - item X cliente - foram criados 1 campo (natureza)
-
-5- Geração dos retornos de beneficiamento - em pausa
-    O sistema não permite a criação da linha do pedido sem os valores unitários e as notas a serem devolvidas.
-    Portando a geração dos retornos tem que ser feita no momento do faturamento.
-
-6- Antes de faturar é preciso preparar o embarque
+4- Antes de faturar é preciso preparar o embarque
     Verificar se tem estoque para os pedidos da data 
     Preparar os pedidos das embalagens necessárias
     Alterar os pedidos a faturar no dia com a explosão dos retornos
     Emitir um relatório de separação
 
-7- Automatizar o faturamento
+5- Automatizar o faturamento
     Emitir as notas necessárias dos pedidos
     Emitir as notas necessárias das embalagens
     Emitir as etiquetas necessárias
