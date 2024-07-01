@@ -129,16 +129,16 @@ Static Function MVCMODELPOS(oModel)
 					EndIf
 				EndIf
 			EndIf
-		EndIf
 
-		oField := oModel:GetModel("FORMZA0")
+			oField := oModel:GetModel("FORMZA0")
 
-		if lOk == .F.
-			xRet := oField:LoadValue("ZA0_STATUS","1")
-		else
-			xRet := oField:LoadValue("ZA0_STATUS","0")
+			if lOk == .F.
+				xRet := oField:LoadValue("ZA0_STATUS","1")
+			else
+				xRet := oField:LoadValue("ZA0_STATUS","0")
+			EndIf
 		EndIf
-	endif
+	EndIf
 
 	RestArea(aArea)
 Return lOk
