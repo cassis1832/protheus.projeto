@@ -19,11 +19,11 @@ User Function PL100B(aItensFat)
 	//------------------------------------------------------------------------------
 	// Remove os componentes que não são de terceiros
 	//------------------------------------------------------------------------------
-	For nX := 1 To Len(aItensRet)
-		if aItensRet[nX][4] <> "1" // permite agregar custo
-			aDel(aItensRet, nX)
-		endif
-	Next nX
+	// For nX := 1 To Len(aItensRet)
+	// 	if aItensRet[nX][4] <> "1" // permite agregar custo
+	// 		aDel(aItensRet, nX)
+	// 	endif
+	// Next nX
 Return(aItensRet)
 
 

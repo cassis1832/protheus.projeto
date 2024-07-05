@@ -52,7 +52,7 @@ Static Function	TrataSaldoTerc()
 	For nIndFat := 1 To Len(aItensFat)	
 		// Percorre os retornos necessarios do item
 		For nIndRet := 1 To Len(aItensRet)
-			if nIndFat == aItensRet[nIndRet][1]
+			if nIndFat == aItensRet[nIndRet][1] .And. aItensRet[nIndRet][4] == "1" 
 				BuscaSaldoDisp(aItensRet[nIndRet])
 			endif
 		Next nIndRet
@@ -142,7 +142,7 @@ Static Function GravaPedido()
 			aadd(aLinhas, aLinha)
 
 			For nIndRet := 1 To Len(aItensRet)	
-				if nIndFat == aItensRet[nIndRet][1] 
+				if nIndFat == aItensRet[nIndRet][1] .And. aItensRet[nIndRet][4] == "1" 
 					VerRemessa(aItensRet[nIndRet])
 				endif
 			next nIndRet

@@ -54,28 +54,28 @@ Static Function ObterDados()
 
 
 	// Carregar pedidos de vendas
-	cSql := "SELECT C6_PRODUTO, C6_ENTREG, C6_QTDVEN, B1_LOCPAD, B1_DESC "
+	cSql := "SELECT C6_PRODUTO, C6_ENTREG, C6_QTDVEN, C6_QTDENT, B1_LOCPAD, B1_DESC "
 	cSql += "  FROM " + RetSQLName("SC6") + " SC6 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cSql += "    ON B1_FILIAL  		= '" + xFilial("SB1") + "'"
-	cSql += "   AND B1_COD     		= C6_PRODUTO "
-	cSql += "   AND B1_MRP     		= 'S' "
+	cSql += "   AND B1_COD     		=  C6_PRODUTO "
+	cSql += "   AND B1_MRP     		=  'S' "
 
 	cSql += " INNER JOIN " + RetSQLName("SC5") + " SC5 "
 	cSql += "    ON C5_FILIAL  		= '" + xFilial("SC5") + "'"
-	cSql += "   AND C5_NUM      	= C6_NUM "
-	cSql += "   AND C5_NOTA        	= '' "
+	cSql += "   AND C5_NUM      	=  C6_NUM "
+	cSql += "   AND C5_NOTA        	=  '' "
 	cSql += "   AND C5_LIBEROK 		<> 'E' "
 
 	cSql += " INNER JOIN " + RetSQLName("SF4") + " SF4 "
-	cSql += "    ON F4_FILIAL 		= '" + xFilial("SF4") + "'"
-	cSql += "   AND F4_CODIGO      	= C6_TES "
+	cSql += "    ON F4_FILIAL 		=  '" + xFilial("SF4") + "'"
+	cSql += "   AND F4_CODIGO      	=  C6_TES "
 	cSql += "   AND F4_QTDZERO    	<> '1' "
 
 	cSql += " WHERE C6_FILIAL      	= '" + xFilial("SC6") + "'"
-	cSql += "   AND C6_ENTREG 	   <= '" + DtOs(dData) + "'"
-	cSql += "   AND C6_QTDENT      	< C6_QTDVEN "
+	cSql += "   AND C6_ENTREG 	    <= '" + DtOs(dData) + "'"
+	cSql += "   AND C6_QTDENT      	<  C6_QTDVEN "
 	cSql += "   AND C6_BLQ 		  	<> 'R' "
 	cSql += "   AND SC5.D_E_L_E_T_  <> '*' "
 	cSql += "   AND SC6.D_E_L_E_T_  <> '*' "

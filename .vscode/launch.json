@@ -48,6 +48,12 @@
 		},
 		{
 			"label": "U_zQGASSIS"
+		},
+		{
+			"label": "SPPROGR"
+		},
+		{
+			"label": "u_SPPROGR"
 		}
 	],
 	"lastProgramExecuted": "sigapcp",

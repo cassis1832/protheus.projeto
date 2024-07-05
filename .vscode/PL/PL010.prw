@@ -22,15 +22,16 @@ Static oFont16b := TFont():New( "Arial",, -16, .T.,.T.)
 User Function PL010()
 	Local aPergs	    := {}
 	Local aResps	    := {}
-	Local cOrdemDe	    := 0
-	Local cOrdemAte	    := 0
+	Local cOrdem	    := ""
 	Local lContinua	    := .T.
 	Local cOp		    := ""
 	Local nRecs		    := 0
 
 	Private oPrinter    := nil
 	Private cQuery 	    := ""
+	Private lOp 	    := .T.  		   	// Deseja imprimir a ordem de produção
 	Private lOper 	    := .T.  		   	// Todas as operacões juntas
+	Private lEtiq 	    := .T.  		   	// Deseja imprimir etiquetas
 	Private nLin 	    := 0
 	PRivate cDir        := "c:\temp\"  		// Local do relatorio
 	Private cFilePrint  := ""
@@ -40,55 +41,70 @@ User Function PL010()
 	Private cAliasCmp	:= ""			   	// Componentes da OP
 	Private cAliasOper  := ""			   	// Operacões da OP
 
-	AAdd(aPergs, {1, "Ordem Inicial", CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
-	AAdd(aPergs, {1, "Ordem Final"  , CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
-	AAdd(aPergs ,{4, "Operacoes"   	,.T.,"Todas as operacoes juntas" ,90,"",.F.})
+	AAdd(aPergs, {1, "Numero da Ordem de Producao"	, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
+	AAdd(aPergs ,{4, "Operacoes"   					,.T.,"Todas as operacoes juntas" ,90,"",.F.})
+	AAdd(aPergs, {4, "Imprimir a Ordem de Produção"	,.T.,"Deseja imprimir a OP" ,90,"",.F.})
+	AAdd(aPergs ,{4, "Imprimir Etiquetas"			,.T.,"Deseja imprimir etiquetas" ,90,"",.F.})
 
 	If ParamBox(aPergs, "Parametros do relatorio", @aResps,,,,,,,, .T., .T.)
-		cOrdemDe    := aResps[1]
-		cOrdemAte	:= aResps[2]
-		lOper		:= aResps[3]
+		cOrdem    	:= aResps[1]
+		lOper		:= aResps[2]
+		lOP			:= aResps[3]
+		lEtiq		:= aResps[4]
 	Else
 		lContinua   := .F.
 		return
 	endif
 
+	if lOp == .F. .AND. lEtiq == .F.
+		return
+	endif
+
+	if len(cOrdem) == 6
+		cOrdem := cOrdem + "01001"
+	endif
+
 	// LER OP E ITEM
-	cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, "     + CRLF
-	cQuery += "	 C2_QUANT, CAST(C2_DATPRI AS DATE) C2_DATPRI, "	    + CRLF
-	cQuery += "	 CAST(C2_DATPRF AS DATE) C2_DATPRF, " 			    + CRLF
-	cQuery += "	 B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ "     + CRLF
-	cQuery += " FROM " +	RetSQLName("SC2") + " SC2 " 			+ CRLF
-	cQuery += "INNER JOIN " + RetSQLName("SB1") + " SB1 " 		    + CRLF
-	cQuery += "	  ON C2_PRODUTO = B1_COD " 					        + CRLF
-	cQuery += "WHERE C2_FILIAL = '" + xFilial("SC2") + "' " 	    + CRLF
-	cQuery += "	 AND SC2.D_E_L_E_T_ = ' ' " 					    + CRLF
-	cQuery += "	 AND SB1.D_E_L_E_T_ = ' ' " 					    + CRLF
+	cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, "
+	cQuery += "	 	  C2_QUANT, CAST(C2_DATPRI AS DATE) C2_DATPRI, "
+	cQuery += "	 	  CAST(C2_DATPRF AS DATE) C2_DATPRF, "
+	cQuery += "	  	  B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ "
+	cQuery += "  FROM " + RetSQLName("SC2") + " SC2 "
 
-	If !Empty(cOrdemDe) .Or. !Empty(cOrdemAte)
-		cQuery += " AND C2_NUM BETWEEN '" + cOrdemDe  + "' AND '" + cOrdemAte + "' " + CRLF
-	EndIf
+	cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+	cQuery += "	   ON B1_COD 		 = C2_PRODUTO"
 
-	cQuery += "	ORDER BY C2_NUM, C2_ITEM, C2_SEQUEN " + CRLF
-
+	cQuery += " WHERE C2_NUM 		 = '" + SUBSTR(cOrdem, 1, 6) + "'"
+	cQuery += "   AND C2_ITEM 		 = '" + SUBSTR(cOrdem, 7, 2) + "'"
+	cQuery += "   AND C2_SEQUEN 	 = '" + SUBSTR(cOrdem, 9, 3) + "'"
+	cQuery += "   AND C2_FILIAL 	 = '" + xFilial("SC2") + "' "
+	cQuery += "	  AND SC2.D_E_L_E_T_ = ' ' "
+	cQuery += "	  AND SB1.D_E_L_E_T_ = ' ' "
 	cAliasOrd := MPSysOpenQuery(cQuery)
 
-	While (cAliasOrd)->(!EOF())
+	if (cAliasOrd)->(EOF())
+		FWAlertError("ORDEM DE PRODUCAO NAO ENCONTRADA!", "ERRO")
+		return
+	endif
+
+	if lOp == .T.
 
 		cOp := (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN
 
 		// Ler os empenhos da OP
-		cQuery := "SELECT D4_COD, D4_OP, D4_DATA, D4_QTDEORI, " + CRLF
-		cQuery += "	 D4_QUANT, D4_LOTECTL, "					+ CRLF
-		cQuery += "	 B1_COD, B1_DESC, B1_UM " 					+ CRLF
-		cQuery += " FROM " + RetSQLName("SD4") + " SD4 " 		+ CRLF
-		cQuery += "INNER JOIN " + RetSQLName("SB1") + " SB1 " 	+ CRLF
-		cQuery += "	  ON D4_COD = B1_COD " 						+ CRLF
-		cQuery += "WHERE SD4.D_E_L_E_T_ = ' ' " 				+ CRLF
-		cQuery += "	 AND SB1.D_E_L_E_T_ = ' ' " 				+ CRLF
-		cQuery += "  AND D4_FILIAL = '" + xFilial("SC5") + "' " + CRLF
-		cQuery += "  AND D4_OP = '" + cOp + "' " 				+ CRLF
-		cQuery += " ORDER BY D4_COD" 				 			+ CRLF
+		cQuery := "SELECT D4_COD, D4_OP, D4_DATA, D4_QTDEORI, "
+		cQuery += "	 	  D4_QUANT, D4_LOTECTL, "
+		cQuery += "	 	  B1_COD, B1_DESC, B1_UM "
+		cQuery += "  FROM " + RetSQLName("SD4") + " SD4 "
+
+		cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+		cQuery += "	   ON D4_COD 		 = B1_COD "
+
+		cQuery += " WHERE D4_OP = '" + cOp + "' "
+		cQuery += "   AND D4_FILIAL 	 = '" + xFilial("SD4") + "' "
+		cQuery += "   AND SD4.D_E_L_E_T_ = ' ' "
+		cQuery += "   AND SB1.D_E_L_E_T_ = ' ' "
+		cQuery += " ORDER BY D4_COD"
 		cAliasCmp := MPSysOpenQuery(cQuery)
 
 		nRecs = 0
@@ -105,16 +121,15 @@ User Function PL010()
 		(cAliasCmp)->(dbGoTop())
 
 		// Ler as operacões do item
-		cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, " 		    + CRLF
-		cQuery += "	G2_DESCRI, G2_MAOOBRA, G2_SETUP, "					+ CRLF
-		cQuery += "	G2_LOTEPAD, G2_TEMPAD, G2_CTRAB, "					+ CRLF
-		cQuery += "	G2_TEMPEND "										+ CRLF
-		cQuery += "FROM " + RetSQLName("SG2") + " SG2 " 				+ CRLF
-		cQuery += "WHERE SG2.D_E_L_E_T_ = ' ' " 						+ CRLF
-		cQuery += "  AND G2_FILIAL  = '" + xFilial("SC5") + "' " 	    + CRLF
-		cQuery += "  AND G2_CODIGO  = '01'" 						 	+ CRLF
-		cQuery += "  AND G2_PRODUTO = '" + (cAliasOrd)->B1_COD + "' "   + CRLF
-		cQuery += " ORDER BY G2_OPERAC" 			 					+ CRLF
+		cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, G2_DESCRI, G2_MAOOBRA, G2_SETUP, "
+		cQuery += "		  G2_LOTEPAD, G2_TEMPAD, G2_CTRAB, G2_TEMPEND "
+		cQuery += "  FROM " + RetSQLName("SG2") + " SG2 "
+
+		cQuery += " WHERE G2_CODIGO  	 = '01'"
+		cQuery += "   AND G2_PRODUTO 	 = '" + (cAliasOrd)->B1_COD + "' "
+		cQuery += "   AND G2_FILIAL  	 = '" + xFilial("SG2") + "' "
+		cQuery += "   AND SG2.D_E_L_E_T_ = ' ' "
+		cQuery += " ORDER BY G2_OPERAC"
 		cAliasOper := MPSysOpenQuery(cQuery)
 
 		nRecs = 0
@@ -160,9 +175,12 @@ User Function PL010()
 				(cAliasOper)->(DbSkip())
 			enddo
 		endif
+	Endif
 
-		(cAliasOrd)->(DbSkip())
-	EndDo
+	// Impressao das etiquetas de processo
+	if lEtiq == .T.
+		u_PL110(cOrdem)
+	endif
 
 return
 
@@ -378,7 +396,7 @@ Return
 
 
 //-----------------------------------------------------------------------------
-//	Imprime o espa�o para registro das paradas
+//	Imprime o espaCo para registro das paradas
 //-----------------------------------------------------------------------------
 Static Function printParada()
 	oPrinter:StartPage()

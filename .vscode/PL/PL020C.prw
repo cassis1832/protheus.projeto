@@ -16,19 +16,28 @@
 User Function PL020C()
 	Local aArea   := GetArea()
 	Local cFunBkp := FunName()
+	Local oSay := NIL // CAIXA DE DIÁLOGO GERADA
 
+	SetFunName("PL020C")
+
+	FwMsgRun(NIL, {|oSay| Processa(oSay)}, "Processando pedidos", "Gerando demandas...")
+
+	FWAlertSuccess("DEMANDAS GERADAS COM SUCESSO!", "Geracao de Demandas para o MRP")
+
+	SetFunName(cFunBkp)
+	RestArea(aArea)
+Return
+
+Static Function Processa(oSay)
 	Private cAliasTT
 	Private cTableName
 	Private oTempTable
 
-	Private nSequencia  := 0
 	Private	cProd       := ""
 	Private nQtde       := 0
 	Private cLocal      := ""
 	Private cDoc        := ""
 	Private dDtIni
-
-	SetFunName("PL020C")
 
 	oTempTable := FWTemporaryTable():New()
 
@@ -50,33 +59,35 @@ User Function PL020C()
 	cAliasTT    := oTempTable:GetAlias()
 	cTableName  := oTempTable:GetRealName()
 
-	CriaEDI()
-	CriaPV()
+	TrataEDI()
+
+	TrataPV()
+
 	GravaDemandas()
 
 	oTempTable:Delete()
 
-	FWAlertSuccess("Demandas geradas com sucesso!", "Geracao de Demandas para o MRP")
-
-	SetFunName(cFunBkp)
-	RestArea(aArea)
 Return
 
 /*---------------------------------------------------------------------*
 	Grava tabela temporaria com base nos pedidos EDI
  *---------------------------------------------------------------------*/
-Static Function CriaEDI()
+Static Function TrataEDI()
     Local dData, cAlias
 
-	strSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, B1_LOCPAD, B1_XDIAEO, ZA0_QTDE, ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO "
-	strSql += " FROM ZA0010, SB1010 "                     
-	strSql += " WHERE ZA0_STATUS = '0' "          
-	strSql += " AND ZA0_FILIAL   = B1_FILIAL "    
-	strSql += " AND ZA0_PRODUT   = B1_COD "       
-	strSql += " AND ZA0010.D_E_L_E_T_ <> '*' "          
-	strSql += " AND SB1010.D_E_L_E_T_ <> '*' "          
-	strSql += " ORDER BY ZA0_CLIENT, ZA0_LOJA, ZA0_PRODUT " 
-	cAlias := MPSysOpenQuery(strSql)
+	cSQL := "SELECT ZA0_DTENTR, ZA0_PRODUT, B1_LOCPAD, B1_XDIAEO, ZA0_QTDE, "
+	cSQL += " 	    ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO "
+	cSQL += "  FROM " + RetSQLName("ZA0") + " ZA0 "
+	cSQL += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+	cSQL += "    ON B1_COD 			=  ZA0_PRODUT "       
+	cSQL += " WHERE ZA0_STATUS 		=  '0' "          
+	cSQL += "   AND ZA0_FILIAL   	=  '" + xFilial("ZA0") + "'"
+	cSQL += "   AND B1_FILIAL    	=  '" + xFilial("SB1") + "'"
+	cSQL += "   AND ZA0.D_E_L_E_T_	<> '*' "          
+	cSQL += "   AND SB1.D_E_L_E_T_ 	<> '*' "          
+	cSQL += " ORDER BY ZA0_CLIENT, ZA0_LOJA, ZA0_PRODUT " 
+	cAlias := MPSysOpenQuery(cSQL)
+
 
 	While (cAlias)->(!EOF())
         dData := DaySub(Stod((cAlias)->ZA0_DTENTR), 1)
@@ -88,11 +99,16 @@ Static Function CriaEDI()
             dData := DaySub(dData, 1)
         Endif
 
-        cSql := "INSERT INTO " + cTableName + " (ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO) VALUES "
-        cSql += "('" + FWUUIDv4() + "','" + (cAlias)->ZA0_PRODUT + "'"
-        cSql += ",'" + (cAlias)->B1_LOCPAD + "','" + cValToChar((cAlias)->ZA0_SALDO) + "'" 
-        cSql += ",'" + dtoc( dData) + "','" + (cAlias)->ZA0_NUMPED + "'" 
-        cSql += ",'" + cValToChar((cAlias)->B1_XDIAEO) + "')"
+        cSql := "INSERT INTO " + cTableName + " " 
+		cSql += "(ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO) "
+		cSql += "VALUES ('"
+        cSql += FWUUIDv4() 						+ "','" 
+		cSql += (cAlias)->ZA0_PRODUT 			+ "','"
+        cSql += (cAlias)->B1_LOCPAD 			+ "','" 
+		cSql += cValToChar((cAlias)->ZA0_SALDO) + "','" 
+        cSql += dtoc( dData) 					+ "','" 
+		cSql += (cAlias)->ZA0_NUMPED 			+ "','" 
+        cSql += cValToChar((cAlias)->B1_XDIAEO) + "')"
 
         if TCSqlExec(cSql) < 0
            MsgInfo("Erro na execução da query:", "Atenção")
@@ -107,27 +123,31 @@ Return
 /*---------------------------------------------------------------------*
 	Grava tabela temporária com base nos pedidos de vendas
  *---------------------------------------------------------------------*/
-Static Function CriaPV()
+Static Function TrataPV()
     Local dData, cAlias
 
-    strSql := "SELECT B1_COD, C6_LOCAL, C6_ENTREG, C6_QTDVEN, C6_NUM, B1_XDIAEO, (C6_QTDVEN - C6_QTDENT) AS C6_SALDO "
-    strSql += " FROM SC5010, SC6010, SB1010, SF4010 "  
-    strSql += " WHERE C5_NOTA      = '' "         
-    strSql += " AND C5_LIBEROK    <> 'E' "       
-    strSql += " AND C5_FILIAL      = C6_FILIAL " 
-    strSql += " AND C5_NUM         = C6_NUM "    
-    strSql += " AND C6_QTDENT      < C6_QTDVEN " 
-    strSql += " AND SC6010.C6_BLQ <> 'R' "       
-    strSql += " AND C6_FILIAL      = B1_FILIAL "  
-    strSql += " AND C6_PRODUTO     = B1_COD "     
-    strSql += " AND C5_FILIAL      = F4_FILIAL "  
-    strSql += " AND F4_CODIGO      = C6_TES "     
-    strSql += " AND F4_QTDZERO    <> '1' "       
-    strSql += " AND SC5010.D_E_L_E_T_   <> '*' "       
-    strSql += " AND SC6010.D_E_L_E_T_   <> '*' "       
-    strSql += " AND SF4010.D_E_L_E_T_   <> '*' "       
-    strSql += " AND SB1010.D_E_L_E_T_   <> '*' "       
-    cAlias := MPSysOpenQuery(strSql)
+    cSQL := "SELECT B1_COD, C6_LOCAL, C6_ENTREG, C6_QTDVEN, C6_NUM, B1_XDIAEO, (C6_QTDVEN - C6_QTDENT) AS C6_SALDO "
+	cSQL += "  FROM " + RetSQLName("SC5") + " SC5 "
+	cSQL += " INNER JOIN " + RetSQLName("SC6") + " SC6 "
+    cSQL += "    ON C6_NUM         	=  C5_NUM "    
+    cSQL += "   AND C6_QTDENT      	<  C6_QTDVEN " 
+    cSQL += "   AND C6_BLQ 			<> 'R' "       
+	cSQL += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+    cSQL += "    ON B1_COD			=  C6_PRODUTO "     
+	cSQL += " INNER JOIN " + RetSQLName("SF4") + " SF4 "
+    cSQL += "    ON F4_CODIGO      	=  C6_TES "
+    cSQL += "   AND F4_QTDZERO    	<> '1' "       
+    cSQL += " WHERE C5_NOTA      	=  '' "         
+    cSQL += "   AND C5_LIBEROK    	<> 'E' "       
+    cSQL += "   AND C5_FILIAL      	=  '" + xFilial("SC5") + "'"
+    cSQL += "   AND C6_FILIAL      	=  '" + xFilial("SC6") + "'"
+    cSQL += "   AND B1_FILIAL      	=  '" + xFilial("SB1") + "'"
+    cSQL += "   AND F4_FILIAL      	=  '" + xFilial("SF4") + "'"
+    cSQL += "   AND SC5.D_E_L_E_T_  <> '*' "       
+    cSQL += "   AND SC6.D_E_L_E_T_ 	<> '*' "       
+    cSQL += "   AND SB1.D_E_L_E_T_  <> '*' "       
+    cSQL += "   AND SF4.D_E_L_E_T_  <> '*' "       
+    cAlias := MPSysOpenQuery(cSQL)
 
 	While (cAlias)->(!EOF())
 
@@ -162,16 +182,18 @@ Return
  *---------------------------------------------------------------------*/
 Static Function GravaDemandas()
     Local cAlias
+		
+	Private nSequencia  := 0
 
 	// Limpar as demandas existentes - manuais - "AUTO"
 	LimpaDemandas()
 
     cAlias := GetNextAlias()
 
-	strSql := "SELECT * FROM  "  + cTableName
-	strSql += " ORDER BY TT_PROD, TT_DATA "
+	cSQL := "SELECT * FROM  "  + cTableName
+	cSQL += " ORDER BY TT_PROD, TT_DATA "
 
-    DBUseArea(.T., "TOPCONN", TCGenQry(,,strSql), cAlias, .T., .T.)
+    DBUseArea(.T., "TOPCONN", TCGenQry(,,cSQL), cAlias, .T., .T.)
 
     while !(cAlias)->(Eof())
 
@@ -213,6 +235,10 @@ return
  *---------------------------------------------------------------------*/
 Static Function GravaReg()
 
+		if nQtde <= 0
+			return
+		endif
+		
 		nSequencia := nSequencia + 1
 
 		DbSelectArea("SVR")
@@ -239,7 +265,7 @@ Static Function GravaReg()
 		T4J->T4J_DOC 	:= SVR->VR_DOC
 		T4J->T4J_QUANT 	:= SVR->VR_QUANT
 		T4J->T4J_LOCAL  := SVR->VR_LOCAL
-		T4J->T4J_IDREG  := SVR->VR_FILIAL + SVR->VR_CODIGO + str(SVR->VR_SEQUEN)
+		T4J->T4J_IDREG  := SVR->VR_FILIAL + SVR->VR_CODIGO + cValToChar(nSequencia)
 		T4J->T4J_CODE   := SVR->VR_CODIGO
 		T4J->T4J_PROC	:= '2'
 		T4J->(MsUnlock())

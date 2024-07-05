@@ -71,7 +71,7 @@ Static Function ObterCompras()
 
 		Aadd(aLinhas,{(cAlias)->C1_DATPRF + "1", 1, "SC", ;
 			(cAlias)->C1_NUM + (cAlias)->C1_ITEM, ;
-			DtoC(sToD((cAlias)->C2_DATPRF)),(cAlias)->C2_QUANT, 0})
+			DtoC(sToD((cAlias)->C1_DATPRF)),(cAlias)->C1_QUANT, 0})
 
 		(cAlias)->(DbSkip())
 	enddo
@@ -86,10 +86,10 @@ Static Function ObterProducao()
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_DATRF, "
 	cSql += "	C2_QUANT, C2_DATPRI, C2_DATPRF, C2_QUJE, C2_TPOP"
 	cSql += " FROM " +	RetSQLName("SC2") + " SC2 "
-	cSql += "WHERE C2_FILIAL    = '" + xFilial("SC2") + "' "
-	cSql += "  AND C2_PRODUTO   = '" + cItem + "'"
-	cSql += "  AND C2_QUANT     > C2_QUJE "
-	cSql += "  AND SC2.D_E_L_E_T_ = ' ' "
+	cSql += "WHERE C2_FILIAL    	= '" + xFilial("SC2") + "' "
+	cSql += "  AND C2_PRODUTO   	= '" + cItem + "'"
+	cSql += "  AND C2_QUANT     	> C2_QUJE "
+	cSql += "  AND SC2.D_E_L_E_T_ 	= ' ' "
 	cSql += "ORDER BY C2_DATPRF "
 	cAliasOrd := MPSysOpenQuery(cSql)
 
@@ -120,12 +120,12 @@ Static Function ObterPedidos()
 
 	// Carregar pedidos EDI
 	cSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, ZA0_QTDE, ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO "
-	cSql += "  FROM ZA0010 "
-	cSql += " WHERE ZA0_STATUS          = '0' "
-	cSql += "   AND ZA0_FILIAL          = '" + xFilial("ZA0") + "'"
-	cSql += "   AND ZA0_PRODUT          = '" + cItem +  "'"
-	cSql += "   AND ZA0_QTCONF          < ZA0_QTDE "
-	cSql += "   AND ZA0010.D_E_L_E_T_  <> '*' "
+	cSql += "  FROM " +	RetSQLName("ZA0") + " ZA0 "
+	cSql += " WHERE ZA0_STATUS          =  '0' "
+	cSql += "   AND ZA0_FILIAL          =  '" + xFilial("ZA0") + "'"
+	cSql += "   AND ZA0_PRODUT          =  '" + cItem +  "'"
+	cSql += "   AND ZA0_QTCONF          <  ZA0_QTDE "
+	cSql += "   AND ZA0.D_E_L_E_T_  	<> '*' "
 	cSql += " ORDER BY ZA0_DTENTR "
 	cAliasZA0 := MPSysOpenQuery(cSql)
 
@@ -138,21 +138,27 @@ Static Function ObterPedidos()
 
 	// Carregar pedidos de vendas
 	cSql := "SELECT C6_PRODUTO, C6_ENTREG, C6_QTDVEN, C6_QTDENT, (C6_QTDVEN - C6_QTDENT) AS C6_SALDO, C6_NUM "
-	cSql += "  FROM SC5010, SC6010, SF4010 "
-	cSql += " WHERE C6_FILIAL           = '" + xFilial("SC6") + "'"
-	cSql += "   AND C5_FILIAL           = '" + xFilial("SC5") + "'"
-	cSql += "   AND F4_FILIAL           = '" + xFilial("SF4") + "'"
-	cSql += "   AND C6_PRODUTO          = '" + cItem + "'"
-	cSql += "   AND C5_NOTA             = '' "
-	cSql += "   AND C5_LIBEROK          <> 'E' "
-	cSql += "   AND C5_NUM              =  C6_NUM "
-	cSql += "   AND C6_QTDENT           <  C6_QTDVEN "
-	cSql += "   AND C6_BLQ       		<> 'R' "
-	cSql += "   AND F4_CODIGO           =  C6_TES "
-	cSql += "   AND F4_QTDZERO          <> '1' "
-	cSql += "   AND SC5010.D_E_L_E_T_   <> '*' "
-	cSql += "   AND SC6010.D_E_L_E_T_   <> '*' "
-	cSql += "   AND SF4010.D_E_L_E_T_   <> '*' "
+	cSql += "  FROM " +	RetSQLName("SC5") + " SC5 "
+
+	cSql += " INNER JOIN " + RetSQLName("SC6") + " SC6 "
+	cSql += "    ON C5_NUM          =  C6_NUM "
+	cSql += "   AND C6_PRODUTO      = '" + cItem + "'"
+	cSql += "   AND C6_QTDENT       <  C6_QTDVEN "
+	cSql += "   AND C6_BLQ       	<> 'R' "
+
+	cSql += " INNER JOIN " + RetSQLName("SF4") + " SF4 "
+	cSql += "    ON F4_CODIGO       =  C6_TES "
+	cSql += "   AND F4_QTDZERO      <> '1' "
+
+	cSql += " WHERE C5_NOTA         = '' "
+	cSql += "   AND C5_LIBEROK      <> 'E' "
+
+	cSql += "   AND C5_FILIAL       = '" + xFilial("SC5") + "'"
+	cSql += "   AND C6_FILIAL       = '" + xFilial("SC6") + "'"
+	cSql += "   AND F4_FILIAL       = '" + xFilial("SF4") + "'"
+	cSql += "   AND SC5.D_E_L_E_T_  <> '*' "
+	cSql += "   AND SC6.D_E_L_E_T_  <> '*' "
+	cSql += "   AND SF4.D_E_L_E_T_  <> '*' "
 	cSql += " ORDER BY C6_ENTREG "
 	cAliasSC6 := MPSysOpenQuery(cSql)
 

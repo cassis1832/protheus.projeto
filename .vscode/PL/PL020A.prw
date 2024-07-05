@@ -20,7 +20,8 @@ User Function PL020A()
 	Local aArea   		:= GetArea()
 	Local cFunBkp 		:= FunName()
 
-	Private cArquivo 	:= ''
+	Local cArquivo 		:= ''
+
 	Private cCliente 	:= ''
 	Private cLoja	 	:= ''
 	Private dDtEntr  	:= Date()
@@ -33,13 +34,13 @@ User Function PL020A()
 	SetFunName("PL020A")
 	cArquivo := selArquivo()
 
-	if cArquivo != ''
+	if cArquivo != Nil .And. cArquivo != ''
 		oFile := FWFileReader():New(cArquivo)
 
 		If (oFile:Open())
 			If ! (oFile:EoF())
 				aLinhas := oFile:GetAllLines()
-				TrataLinhas()
+				TrataLinhas(cArquivo)
 			EndIf
 
 			oFile:Close()
@@ -57,8 +58,7 @@ Return
 /*---------------------------------------------------------------------*
 	Trata todas as linhas que estão na variavel aLinhas
  *---------------------------------------------------------------------*/
-Static Function TrataLinhas()
-
+Static Function TrataLinhas(cArquivo)
   	Local lErro, nLin 	   		
 	Local nTotLinhas := Len(aLinhas)
 
@@ -159,7 +159,6 @@ Return
 	Abre box para o usuario selecionar o arquivo que deseja importar
  *---------------------------------------------------------------------*/
 Static Function selArquivo()
-
 	Local cDirIni := GetTempPath()
 	Local cTipArq := "Arquivos texto (*.txt)"
 	Local cTitulo := "Selecao de arquivo para processamento"
@@ -173,7 +172,7 @@ Static Function selArquivo()
     		Return cArqSel
 		EndIf
 	EndIf
-return
+return Nil
 
 
 /*---------------------------------------------------------------------*
