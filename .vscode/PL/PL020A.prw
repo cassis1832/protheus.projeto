@@ -12,8 +12,6 @@ Função
 @since 08/04/2024
 @version 1.0
 	@return Nil, Função não tem retorno
-	@example
-	u_PL030()
 /*/
 
 User Function PL020A()
@@ -97,7 +95,7 @@ Static Function GravaDados()
 	dDtEntr  := ctod(aLinha[4])
     cHrEntr  := aLinha[5]
 	cQtde 	 := aLinha[6]
-    cTipoPe  := "F"
+    cTipoPe  := aLinha[10]
 
 	// Consistir o codigo do cliente e item do cliente
 	SA7->(DBSetOrder(3))  // Filial/cliente/loja/codcli
