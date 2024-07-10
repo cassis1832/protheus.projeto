@@ -41,15 +41,15 @@ User Function PL010()
 	Private cAliasCmp	:= ""			   	// Componentes da OP
 	Private cAliasOper  := ""			   	// Operacões da OP
 
-	AAdd(aPergs, {1, "Numero da Ordem de Producao"	, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
+	AAdd(aPergs, {1, "Numero da Ordem de Producao"	, Space(11),,,"SC2",, 50, .T.})
+	AAdd(aPergs, {4, "Imprimir a Ordem de Producao"	,.T.,"Deseja imprimir a OP" ,90,"",.F.})
 	AAdd(aPergs ,{4, "Operacoes"   					,.T.,"Todas as operacoes juntas" ,90,"",.F.})
-	AAdd(aPergs, {4, "Imprimir a Ordem de Produção"	,.T.,"Deseja imprimir a OP" ,90,"",.F.})
 	AAdd(aPergs ,{4, "Imprimir Etiquetas"			,.T.,"Deseja imprimir etiquetas" ,90,"",.F.})
 
-	If ParamBox(aPergs, "Parametros do relatorio", @aResps,,,,,,,, .T., .T.)
+	If ParamBox(aPergs, "Emissao da Ordem de Producao", @aResps,,,,,,,, .T., .T.)
 		cOrdem    	:= aResps[1]
-		lOper		:= aResps[2]
-		lOP			:= aResps[3]
+		lOP			:= aResps[2]
+		lOper		:= aResps[3]
 		lEtiq		:= aResps[4]
 	Else
 		lContinua   := .F.
@@ -70,14 +70,13 @@ User Function PL010()
 	cQuery += "	 	  CAST(C2_DATPRF AS DATE) C2_DATPRF, "
 	cQuery += "	  	  B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ "
 	cQuery += "  FROM " + RetSQLName("SC2") + " SC2 "
-
 	cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cQuery += "	   ON B1_COD 		 = C2_PRODUTO"
-
 	cQuery += " WHERE C2_NUM 		 = '" + SUBSTR(cOrdem, 1, 6) + "'"
 	cQuery += "   AND C2_ITEM 		 = '" + SUBSTR(cOrdem, 7, 2) + "'"
 	cQuery += "   AND C2_SEQUEN 	 = '" + SUBSTR(cOrdem, 9, 3) + "'"
 	cQuery += "   AND C2_FILIAL 	 = '" + xFilial("SC2") + "' "
+	cQuery += "   AND B1_FILIAL 	 = '" + xFilial("SB1") + "' "
 	cQuery += "	  AND SC2.D_E_L_E_T_ = ' ' "
 	cQuery += "	  AND SB1.D_E_L_E_T_ = ' ' "
 	cAliasOrd := MPSysOpenQuery(cQuery)
@@ -96,10 +95,8 @@ User Function PL010()
 		cQuery += "	 	  D4_QUANT, D4_LOTECTL, "
 		cQuery += "	 	  B1_COD, B1_DESC, B1_UM "
 		cQuery += "  FROM " + RetSQLName("SD4") + " SD4 "
-
 		cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 		cQuery += "	   ON D4_COD 		 = B1_COD "
-
 		cQuery += " WHERE D4_OP = '" + cOp + "' "
 		cQuery += "   AND D4_FILIAL 	 = '" + xFilial("SD4") + "' "
 		cQuery += "   AND SD4.D_E_L_E_T_ = ' ' "
@@ -175,7 +172,12 @@ User Function PL010()
 				(cAliasOper)->(DbSkip())
 			enddo
 		endif
+
+		(cAliasOper)->(DBCLOSEAREA())
+		(cAliasCmp)->(DBCLOSEAREA())
 	Endif
+
+	(cAliasOrd)->(DBCLOSEAREA())
 
 	// Impressao das etiquetas de processo
 	if lEtiq == .T.

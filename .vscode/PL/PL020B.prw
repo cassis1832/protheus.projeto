@@ -4,7 +4,7 @@
 
 /*/{Protheus.doc} PL020B
 Função 
-   Gerar pedidos EDI para a Gestamp
+   Gerar pedidos EDI para a Gestamp - clientes 4/5/6/7
    Gravar tabela ZA0 
    Esse programa chamado a partir do PL020 (manutenção do ZA0)
 
@@ -186,6 +186,11 @@ Static Function VerParam()
 	Else
 		lRet := .F.
 		return lRet
+	endif
+
+	if cCliente != "000004" .and. cCliente != "000005" .and. cCliente != "000006" .and. cCliente != "000007"
+		lRet := .F.
+		FWAlertError("CLIENTE NAO GESTAMP!")
 	endif
 
 	SA1->(dbSetOrder(1))

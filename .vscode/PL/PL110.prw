@@ -9,37 +9,56 @@
 	@version 1.0
 /*/
 //-------------------------------------------------------------------
-User Function PL110(cOrdem)
+User Function PL110(cOp)
 	Local aArea     := GetArea()
 
 	Local aPergs    := {}
 	Local aResps	:= {}
 	Local cSql 	    := ""
 
+	Local cOrdem	:= cOp
 	Local nNumEtq 	:= 0
 	Local nQtdeEmb	:= 0
 
 	Private cAliasOrd
 
-	aAdd(aPergs, {1, "Numero da Ordem"			, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
-	aAdd(aPergs, {1, "Numero de Etiquetas"		, nNumEtq, "@E 999", "Positivo()", "", ".T.", 60,  .F.})
-	aAdd(aPergs, {1, "Quantidade por Etiqueta"	, nQtdeEmb, "@E 99,999", "Positivo()", "", ".T.", 60,  .F.})
+	if cOrdem == nil .or. cOrdem == ""
+		aAdd(aPergs, {1, "Numero da Ordem"			, Space(11),,,"SC2",, 60, .T.})
+		aAdd(aPergs, {1, "Numero de Etiquetas"		, nNumEtq, "@E 999", "Positivo()", "", ".T.", 40,  .T.})
+		aAdd(aPergs, {1, "Quantidade por Etiqueta"	, nQtdeEmb, "@E 99,999", "Positivo()", "", ".T.", 40,  .T.})
 
-	If ParamBox(aPergs, "Parametros", @aResps,,,,,,,, .T., .T.)
-		cOrdem    := aResps[1]
-		nNumEtq   := aResps[2]
-		nQtdeEmb  := aResps[3]
-	Else
-		return
+		If ParamBox(aPergs, "Emissao de Etiquetas", @aResps,,,,,,,, .T., .T.)
+			cOrdem    := aResps[1]
+			nNumEtq   := aResps[2]
+			nQtdeEmb  := aResps[3]
+		Else
+			return
+		endif
+	else
+		aAdd(aPergs, {1, "Numero de Etiquetas"		, nNumEtq, "@E 999", "Positivo()", "", ".T.", 60,  .T.})
+		aAdd(aPergs, {1, "Quantidade por Etiqueta"	, nQtdeEmb, "@E 99,999", "Positivo()", "", ".T.", 60,  .T.})
+
+		If ParamBox(aPergs, "Emissao de Etiquetas", @aResps,,,,,,,, .T., .T.)
+			nNumEtq   := aResps[1]
+			nQtdeEmb  := aResps[2]
+		Else
+			return
+		endif
+	endif
+
+	if len(cOrdem) == 6
+		cOrdem := cOrdem + "01001"
 	endif
 
 	// LER OP E ITEM
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_QUANT, C2_DATPRF,"
-	cSql += "       B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ, B1_XLINPRD, B1_XPROX "
+	cSql += "       B1_COD, B1_DESC, B1_UM, B1_XITEM, B1_XCLIENT, B1_XPROJ, B1_XLINPRD, B1_XPROX "
 	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cSql += "    ON B1_COD 			= C2_PRODUTO "
-	cSql += " WHERE C2_NUM 			= '" + cOrdem + "'"
+	cSql += " WHERE C2_NUM 			= '" + Substr(cOrdem,1,6) + "'"
+	cSql += "   AND C2_ITEM			= '" + Substr(cOrdem,7,2) + "'"
+	cSql += "   AND C2_SEQUEN		= '" + Substr(cOrdem,9,3) + "'"
 	cSql += "   AND C2_FILIAL 		= '" + xFilial("SC2") + "' "
 	cSql += "   AND B1_FILIAL 		= '" + xFilial("SB1") + "' "
 	cSql += "	AND SC2.D_E_L_E_T_ 	= ' ' "
@@ -47,10 +66,12 @@ User Function PL110(cOrdem)
 	cAliasOrd := MPSysOpenQuery(cSql)
 
 	if (cAliasOrd)->(EOF())
-		Alert("Ordem de Produção não encontrada")
+		Alert("ORDEM DE PRODUCAO NAO ENCONTRADA!")
 	else
 		etqproci(nNumEtq, nQtdeEmb)
 	endif
+
+	(cAliasOrd)->(DBCLOSEAREA())
 
 	RestArea(aArea)
 RETURN
@@ -70,7 +91,7 @@ Static Function etqproci(nNumEtq, nQtdeEmb)
 	Local cNumOp	:= (cAliasOrd)->C2_NUM
 	Local cData		:= cValToChar(Stod((cAliasOrd)->C2_DATPRF))
 	Local cItem     := (cAliasOrd)->B1_COD
-	Local cDescr    := (cAliasOrd)->B1_DESC
+	Local cDescr    := (cAliasOrd)->B1_XITEM
 	Local cCliente  := Substr((cAliasOrd)->B1_XCLIENT,1,16)
 	Local cOpAtual	:= (cAliasOrd)->B1_XLINPRD
 	Local cOpProx	:= (cAliasOrd)->B1_XPROX
