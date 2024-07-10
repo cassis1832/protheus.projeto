@@ -59,11 +59,11 @@ Static Function ObterCompras()
 	Local cAlias
 
 	cSql := "SELECT C1_NUM, C1_ITEM, C1_PRODUTO, C1_QUANT, C1_DATPRF "
-	cSql += " FROM " +	RetSQLName("SC1") + " SC1 "
-	cSql += "WHERE C1_FILIAL  = '" + xFilial("SC1") + "' "
-	cSql += "  AND C1_PRODUTO = '" + cItem + "'"
-	cSql += "  AND SC1.D_E_L_E_T_ = ' ' "
-	cSql += "ORDER BY C1_DATPRF "
+	cSql += "  FROM " +	RetSQLName("SC1") + " SC1 "
+	cSql += " WHERE C1_FILIAL  = '" + xFilial("SC1") + "' "
+	cSql += "   AND C1_PRODUTO = '" + cItem + "'"
+	cSql += "   AND SC1.D_E_L_E_T_ = ' ' "
+	cSql += " ORDER BY C1_DATPRF "
 
 	cAlias := MPSysOpenQuery(cSql)
 
@@ -71,10 +71,12 @@ Static Function ObterCompras()
 
 		Aadd(aLinhas,{(cAlias)->C1_DATPRF + "1", 1, "SC", ;
 			(cAlias)->C1_NUM + (cAlias)->C1_ITEM, ;
-			DtoC(sToD((cAlias)->C1_DATPRF)),(cAlias)->C1_QUANT, 0})
+			DtoC(sToD((cAlias)->C1_DATPRF)),(cAlias)->C1_QUANT, 0, ""})
 
 		(cAlias)->(DbSkip())
 	enddo
+
+	(cAlias)->(DBCLOSEAREA())
 return
 
 
@@ -84,13 +86,13 @@ Static Function ObterProducao()
 	Local bTrata
 
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_DATRF, "
-	cSql += "	C2_QUANT, C2_DATPRI, C2_DATPRF, C2_QUJE, C2_TPOP"
-	cSql += " FROM " +	RetSQLName("SC2") + " SC2 "
-	cSql += "WHERE C2_FILIAL    	= '" + xFilial("SC2") + "' "
-	cSql += "  AND C2_PRODUTO   	= '" + cItem + "'"
-	cSql += "  AND C2_QUANT     	> C2_QUJE "
-	cSql += "  AND SC2.D_E_L_E_T_ 	= ' ' "
-	cSql += "ORDER BY C2_DATPRF "
+	cSql += "	   C2_QUANT, C2_DATPRI, C2_DATPRF, C2_QUJE, C2_TPOP"
+	cSql += "  FROM " +	RetSQLName("SC2") + " SC2 "
+	cSql += " WHERE C2_FILIAL    	= '" + xFilial("SC2") + "' "
+	cSql += "   AND C2_PRODUTO   	= '" + cItem + "'"
+	cSql += "   AND C2_QUANT     	> C2_QUJE "
+	cSql += "   AND SC2.D_E_L_E_T_ 	= ' ' "
+	cSql += " ORDER BY C2_DATPRF "
 	cAliasOrd := MPSysOpenQuery(cSql)
 
 	While (cAliasOrd)->(!EOF())
@@ -107,19 +109,20 @@ Static Function ObterProducao()
 		if bTrata == .T.
 			Aadd(aLinhas,{(cAliasOrd)->C2_DATPRF + "1", 1, "OP", ;
 				(cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN, ;
-				DtoC(sToD((cAliasOrd)->C2_DATPRF)),(cAliasOrd)->C2_QUANT - (cAliasOrd)->C2_QUJE, 0})
+				DtoC(sToD((cAliasOrd)->C2_DATPRF)),(cAliasOrd)->C2_QUANT - (cAliasOrd)->C2_QUJE, 0, (cAliasOrd)->C2_TPOP})
 		endif
 
 		(cAliasOrd)->(DbSkip())
 	enddo
 
+	(cAliasOrd)->(DBCLOSEAREA())
 return
 
 Static Function ObterPedidos()
 	Local cSql := ""
 
 	// Carregar pedidos EDI
-	cSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, ZA0_QTDE, ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO "
+	cSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, ZA0_QTDE, ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO, ZA0_TIPOPE "
 	cSql += "  FROM " +	RetSQLName("ZA0") + " ZA0 "
 	cSql += " WHERE ZA0_STATUS          =  '0' "
 	cSql += "   AND ZA0_FILIAL          =  '" + xFilial("ZA0") + "'"
@@ -132,7 +135,7 @@ Static Function ObterPedidos()
 	While (cAliasZA0)->(!EOF())
 		Aadd(aLinhas,{(cAliasZA0)->ZA0_DTENTR + "2", 2, "EDI", ;
 			(cAliasZA0)->ZA0_NUMPED, ;
-			DtoC(sToD((cAliasZA0)->ZA0_DTENTR)),(cAliasZA0)->ZA0_SALDO, 0})
+			DtoC(sToD((cAliasZA0)->ZA0_DTENTR)),(cAliasZA0)->ZA0_SALDO, 0, (cAliasZA0)->ZA0_TIPOPE})
 		(cAliasZA0)->(DbSkip())
 	End While
 
@@ -165,9 +168,11 @@ Static Function ObterPedidos()
 	While (cAliasSC6)->(!EOF())
 		Aadd(aLinhas,{(cAliasSC6)->C6_ENTREG + "2", 2,"PV",	(cAliasSC6)->C6_NUM, ;
 			DtoC(sToD((cAliasSC6)->C6_ENTREG)),     ;
-			(cAliasSC6)->C6_SALDO, 0})
+			(cAliasSC6)->C6_SALDO, 0, ""})
 		(cAliasSC6)->(DbSkip())
 	End While
+
+	(cAliasSC6)->(DBCLOSEAREA())
 return
 
 Static Function	CalculaSaldos()
@@ -202,7 +207,7 @@ Static Function fMontaTela()
 
 	//Tamanho da janela
 	Private aSize := MsAdvSize(.T.)
-	Private nJanLarg := aSize[5] * 0.3
+	Private nJanLarg := aSize[5] * 0.35
 	Private nJanAltu := aSize[6] * 0.8
 
 	//Fontes
@@ -268,8 +273,9 @@ Return
 Static Function RetColumns()
 	Local aColumns := {}
 	aAdd(aColumns, {"Data",   {|oBrw| aLinhas[oBrw:At(), 5] }, "D", "@!", 1,  8, 0, .F.})
-	aAdd(aColumns, {"Tipo",   {|oBrw| aLinhas[oBrw:At(), 3] }, "C", "@!", 1,  4, 0, .F.})
+	aAdd(aColumns, {"Tipo",   {|oBrw| aLinhas[oBrw:At(), 3] }, "C", "@!", 1,  3, 0, .F.})
 	aAdd(aColumns, {"Numero", {|oBrw| aLinhas[oBrw:At(), 4] }, "C", "@!", 0,  5, 2, .F.})
+	aAdd(aColumns, {"Sit.",   {|oBrw| aLinhas[oBrw:At(), 8] }, "C", "@!", 0,  3, 2, .F.})
 	aAdd(aColumns, {"Qtde.",  {|oBrw| aLinhas[oBrw:At(), 6] }, "N", "@!", 0,  4, 2, .F.})
 	aAdd(aColumns, {"Saldo",  {|oBrw| aLinhas[oBrw:At(), 7] }, "N", "@!", 0,  4, 2, .F.})
 Return aColumns
