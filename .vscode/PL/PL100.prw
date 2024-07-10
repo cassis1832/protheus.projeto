@@ -17,15 +17,6 @@ User Function PL100()
 	Local aArea   		:= GetArea()
 	Local cFunBkp 		:= FunName()
 
-	Local cSql			:= ""
-	Local nQtde       	:= 0
-	Local aLinha     	:= {}
-	Local aItensFat   	:= {}	// Itens a faturar	(produto, qtde, ts, data, pedido, preco, acao, recno)
-
-	Private cAliasZA0
-
-	// Tabelas
-
 	Private nPedidos    := 0
 	Private dLimite     := Date()
 
@@ -40,6 +31,27 @@ User Function PL100()
 	if VerParam() == .F.
 		return
 	endif
+
+	FwMsgRun(NIL, {|oSay| Processa(oSay)}, "Processando pedidos", "Gerando pedidos de vendas...")
+
+	if nPedidos == 0
+		FWAlertSuccess("NAO FOI CRIADO NENHUM PEDIDO DE VENDA!", "Geracao de Pedidos de Vendas")
+	Else
+		FWAlertSuccess("FORAM CRIADOS " + cValToChar(nPedidos) + " PEDIDOS DE VENDAS", "Geracao de Pedidos de Vendas")
+	EndIf
+
+	SetFunName(cFunBkp)
+	RestArea(aArea)
+Return(.T.)
+
+
+Static Function Processa(oSay)
+	Local cSql			:= ""
+	Local nQtde       	:= 0
+	Local aLinha     	:= {}
+	Local aItensFat   	:= {}	// Itens a faturar	(produto, qtde, ts, data, pedido, preco, acao, recno)
+
+	Private cAliasZA0
 
 	// Ler os pedidos EDI
 	cSql := "SELECT ZA0.*, A7_XNATUR, B1_DESC, B1_TS, B1_UM, A7_XGRUPV"
@@ -62,20 +74,17 @@ User Function PL100()
 	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
 	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
 
-	if cCliente == "000001" .OR. cCliente == "000002" .OR. cCliente == "000003"  // Kanjiko e GKTB quebra por projeto
-		cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, A7_XGRUPV, ZA0_PRODUT "
+	if cCliente == "000004"  // Gestamp Betim quebra por item
+		cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_PRODUT "
 	else
-		if cCliente == "000004"  // Gestamp Betim quebra por item
-			cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_PRODUT "
-		else
-			cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, ZA0_PRODUT "
-		endif
+		cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, A7_XGRUPV, ZA0_PRODUT "
 	endif
 
 	cAliasZA0 := MPSysOpenQuery(cSql)
 
 	if (cAliasZA0)->(EOF())
 		FWAlertWarning("NAO FOI ENCONTRADO NENHUM PEDIDO PARA SER GERADO! ","Geracao de pedidos de venda")
+		(cAliasZA0)->(DBCLOSEAREA())
 		return .T.
 	endif
 
@@ -108,15 +117,8 @@ User Function PL100()
 
 	u_PL100A(aItensFat)
 
-	if nPedidos == 0
-		FWAlertSuccess("NAO FOI CRIADO NENHUM PEDIDO DE VENDA!", "Geracao de Pedidos de Vendas")
-	Else
-		FWAlertSuccess("FORAM CRIADOS " + cValToChar(nPedidos) + " PEDIDOS DE VENDAS", "Geracao de Pedidos de Vendas")
-	EndIf
-
-	SetFunName(cFunBkp)
-	RestArea(aArea)
-Return(.T.)
+	(cAliasZA0)->(DBCLOSEAREA())
+return
 
 
 /*------------------------------------------------------------------------------
@@ -125,28 +127,18 @@ Return(.T.)
 Static Function VerQuebra()
 	Local lQuebra	:= .F.
 
-	if cCliente == "000001" .OR. cCliente == "000002" .OR. cCliente == "000003" // Kanjiko e GKTB quebra por projeto
-		if (cAliasZA0)->ZA0_DTENTR != cData 			.or. ;
-				(cAliasZA0)->ZA0_HRENTR  != cHrEntr 	.or. ;
-				(cAliasZA0)->A7_XNATUR   != cNatureza 	.or. ;
-				(cAliasZA0)->A7_XGRUPV   != cGrupoPV
-			lQuebra := .T.
-		EndIf
-	Else
+	if (cAliasZA0)->ZA0_DTENTR != cData 		.or. ;
+		(cAliasZA0)->ZA0_HRENTR != cHrEntr 		.or. ;
+		(cAliasZA0)->A7_XNATUR  != cNatureza	.or. ;
+		(cAliasZA0)->A7_XGRUPV  != cGrupoPV
+		lQuebra := .T.
+	else
 		if cCliente == "000004"  // Gestamp Betim quebra por item
-			if (cAliasZA0)->ZA0_DTENTR != cData 			.or. ;
-					(cAliasZA0)->ZA0_PRODUT != cProduto 	.or. ;
-					(cAliasZA0)->A7_XNATUR  != cNatureza
+			IF (cAliasZA0)->ZA0_PRODUT != cProduto
 				lQuebra := .T.
-			EndIf
-		else
-			if (cAliasZA0)->ZA0_DTENTR != cData .or. ;
-					(cAliasZA0)->ZA0_HRENTR != cHrEntr 		.or. ;
-					(cAliasZA0)->A7_XNATUR  != cNatureza
-				lQuebra := .T.
-			EndIf
+			endif
 		endif
-	EndIf
+	endif
 
 return lQuebra
 
@@ -170,6 +162,11 @@ Static Function VerParam()
 	Else
 		lRet := .F.
 		return lRet
+	endif
+
+	if dLimite > DaySum(date(),3)
+		FWAlertError("EM PERIODO DE HOMOLOGACAO NAO GERAR PEDIDOS PARA MAIS DE 3 DIAS")
+		lRet := .f.
 	endif
 
 	SA1->(dbSetOrder(1))

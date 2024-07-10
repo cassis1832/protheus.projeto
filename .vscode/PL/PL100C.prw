@@ -59,6 +59,7 @@ User Function PL100C(aItens)
 		EndDo
 	next nInd
 
+	(cAlias)->(DBCLOSEAREA())
 Return aSaldoTer
 
 
@@ -81,6 +82,8 @@ Static Function LerNota(cDoc, cProduto, cIdent)
 	if (cAlias)->(!EOF())
 		cItem 	:= (cAlias)->D1_ITEM
 	endif
+
+	(cAlias)->(DBCLOSEAREA())
 Return cItem
 
 
@@ -114,4 +117,6 @@ Static Function LerAlocados(cProduto, cNfOri, cSerieOri, cItemOri)
 		nAlocado := nAlocado + (cAlias)->C6_QTDVEN
 		(cAlias)->(DbSkip())
 	End
+
+	(cAlias)->(DBCLOSEAREA())
 return nAlocado

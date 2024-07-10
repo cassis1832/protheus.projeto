@@ -53,4 +53,6 @@ Static Function	Estrutura(aItensRet, nX, cProduto, nQtPai)
 
 		(cAliasSG1)->(DbSkip())
 	EndDo
+
+	(cAliasSG1)->(DBCLOSEAREA())
 return

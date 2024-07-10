@@ -14,16 +14,16 @@ Função: Ordens de Produção Abertas
 Static cTitulo := "Ordens de Producao Abertas"
 
 User Function PL070()
-	Local aArea := FWGetArea()
-	Local aCampos := {}
-	Local aColunas := {}
+	Local aArea 	:= FWGetArea()
+	Local aCampos 	:= {}
+	Local aColunas 	:= {}
 	Local aPesquisa := {}
-	Local aIndex := {}
+	Local aIndex 	:= {}
 	Local oBrowse
 
-	Private aRotina := {}
-	Private cTableName := ""
-	Private cAliasTT := GetNextAlias()
+	Private aRotina 	:= {}
+	Private cTableName 	:= ""
+	Private cAliasTT 	:= GetNextAlias()
 
 	//Definicao do menu
 	aRotina := MenuDef()
@@ -35,9 +35,10 @@ User Function PL070()
 	aAdd(aCampos, {"TT_PROD"	,"C", 15, 0})
 	aAdd(aCampos, {"TT_DESC"	,"C", 60, 0})
 	aAdd(aCampos, {"TT_OP"		,"C", 11, 0})
-	aAdd(aCampos, {"TT_EMISSAO"	,"C", 10, 0})
-	aAdd(aCampos, {"TT_INI"		,"C", 10, 0})
-	aAdd(aCampos, {"TT_FIM"		,"C", 10, 0})
+	aAdd(aCampos, {"TT_EMISSAO"	,"D", 10, 0})
+	aAdd(aCampos, {"TT_INI"		,"D", 10, 0})
+	aAdd(aCampos, {"TT_FIM"		,"D", 10, 0})
+	aAdd(aCampos, {"TT_FIM2"	,"C", 08, 0})
 	aAdd(aCampos, {"TT_QUANT"	,"N", 14, 3})
 	aAdd(aCampos, {"TT_QUJE"	,"N", 14, 3})
 	aAdd(aCampos, {"TT_SALDO"	,"N", 14, 3})
@@ -46,9 +47,9 @@ User Function PL070()
 	//Cria a temporária
 	oTempTable := FWTemporaryTable():New(cAliasTT)
 	oTempTable:SetFields(aCampos)
-	oTempTable:AddIndex("1", {"TT_FIM"	, "TT_PROD"} )
+	oTempTable:AddIndex("1", {"TT_FIM2"	, "TT_PROD"} )
 	oTempTable:AddIndex("2", {"TT_PROD"	, "TT_OP"} )
-	oTempTable:AddIndex("3", {"TT_OP"	, "TT_FIM"} )
+	oTempTable:AddIndex("3", {"TT_OP"	, "TT_FIM2"} )
 	oTempTable:Create()
 
 	cTableName  := oTempTable:GetRealName()
@@ -86,7 +87,7 @@ User Function PL070()
 	aAdd(aPesquisa, {"OP"		, {{"", "C", 11, 0, "OP"	, "@!", "TT_OP"}} } )
 	aAdd(aPesquisa, {"Linha"	, {{"", "C",  1, 0, "Linha" , "@!", "TT_XLINPRD"}} } )
 
-	aAdd(aIndex, {"TT_XLINPRD", "TT_FIM", "TT_OP"} )
+	aAdd(aIndex, {"TT_XLINPRD", "TT_FIM2", "TT_OP"} )
 
 	//Criando o browse da temporária
 	oBrowse := FWMBrowse():New()
@@ -210,15 +211,16 @@ Static Function CargaTT()
 
 	While (cAlias)->(!EOF())
 		cSql := "INSERT INTO " + cTableName + " (TT_PROD, TT_DESC, TT_OP, TT_QUANT, TT_QUJE, TT_SALDO, "
-		cSql += "		TT_INI, TT_FIM, TT_XLINPRD, TT_XCLIENT, TT_TPOP, TT_EMISSAO) VALUES ('"
+		cSql += "		TT_INI, TT_FIM, TT_XLINPRD, TT_XCLIENT, TT_TPOP, TT_EMISSAO, TT_FIM2) VALUES ('"
 		cSql += (cAlias)->C2_PRODUTO + "','" + (cAlias)->B1_DESC + "','"
 		cSql += (cAlias)->C2_NUM + (cAlias)->C2_ITEM + (cAlias)->C2_SEQUEN + "','"
 		cSql += cValToChar((cAlias)->C2_QUANT) + "','"
 		cSql += cValToChar((cAlias)->C2_QUJE) + "','"
 		cSql += cValToChar((cAlias)->C2_QUANT - (cAlias)->C2_QUJE) + "','"
-		cSql += DtOc((cAlias)->C2_DATPRI) + "','" + DtOc((cAlias)->C2_DATPRF) + "','"
+		cSql += (cAlias)->C2_DATPRI + "','" + (cAlias)->C2_DATPRF + "','"
 		cSql += (cAlias)->B1_XLINPRD + "','" + (cAlias)->B1_XCLIENT + "','"
-		cSql += (cAlias)->C2_TPOP + "','" + DtOc((cAlias)->C2_EMISSAO) + "')"
+		cSql += (cAlias)->C2_TPOP + "','" + (cAlias)->C2_EMISSAO
+		cSql += Dtos((cAlias)->C2_DATPRF) + "')"
 
 		if TCSqlExec(cSql) < 0
 			MsgInfo("Erro na execução da query:", "Atenção")

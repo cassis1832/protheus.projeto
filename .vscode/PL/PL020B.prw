@@ -37,9 +37,9 @@ User Function PL020B()
 		return
 	endif
 
-	TrataLinhas()
+	FwMsgRun(NIL, {|oSay| TrataLinhas(oSay)}, "Processando pedidos", "Gerando pedidos EDI...")
 
-	LimpaDados()
+	FwMsgRun(NIL, {|oSay| LimpaDados(oSay)}, "Excluindo pedidos antigos", "Excluindo pedidos EDI antigos...")
 
 	FWAlertSuccess("GERACAO EFETUADA COM SUCESSO PARA O CLIENTE " + cCliente, "Importacao EDI")
 
@@ -47,10 +47,11 @@ User Function PL020B()
 	RestArea(aArea)
 Return
 
+
 /*---------------------------------------------------------------------*
 	Obtem os itens do cliente da tabela itemXcliente
  *---------------------------------------------------------------------*/
-Static Function TrataLinhas()
+Static Function TrataLinhas(oSay)
 	cSql := "SELECT SA7.*, B1_DESC, B1_TS, B1_UM "
 	cSql += "  FROM  " + RetSQLName("SA7") + " SA7 "
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
@@ -89,10 +90,10 @@ Static Function GravaDados()
 
 	While dData <= dLimite
 
-		if Dow(dData) = 1
+		if Dow(dData) = 1 	// domingo
 			dData := daySum(dData, 1)
 		endif
-		if Dow(dData) = 7
+		if Dow(dData) = 7 	// sábado
 			dData := daySum(dData, 2)
 		endif
 
@@ -134,7 +135,7 @@ Return
 /*---------------------------------------------------------------------*
   Deleta da tabela ZA0 todos os registros que não foram atualizados
  *---------------------------------------------------------------------*/
-Static Function LimpaDados()
+Static Function LimpaDados(oSay)
 
    	dbSelectArea("ZA0")
    	ZA0->(DBSetOrder(3))  
@@ -145,7 +146,6 @@ Static Function LimpaDados()
 
 		if ZA0->ZA0_CLIENT 	== cCliente 	.AND. ;
 			ZA0->ZA0_LOJA  	== cLoja 		.AND. ;
-			ZA0->ZA0_DTENTR	>= dInicio		.AND. ;
 			ZA0_STATUS     	<> "9" 
 
 			if ZA0->ZA0_DTCRIA  <> dtProcesso .or. ;
@@ -159,7 +159,6 @@ Static Function LimpaDados()
 		DbSkip()
    EndDo
 return
-
 
 
 /*--------------------------------------------------------------------------

@@ -20,13 +20,12 @@ User Function PL020A()
 	Local aArea   		:= GetArea()
 	Local cFunBkp 		:= FunName()
 
-	Local cArquivo 		:= ''
-
 	Private cCliente 	:= ''
 	Private cLoja	 	:= ''
 	Private dDtEntr  	:= Date()
 	Private aLinhas  	:= {}
 	Private aLinha
+	Private cArquivo 	:= ''
 
 	Private dtProcesso 	:= Date()
 	Private hrProcesso 	:= Time()
@@ -40,7 +39,7 @@ User Function PL020A()
 		If (oFile:Open())
 			If ! (oFile:EoF())
 				aLinhas := oFile:GetAllLines()
-				TrataLinhas(cArquivo)
+				TrataLinhas()
 			EndIf
 
 			oFile:Close()
@@ -58,7 +57,7 @@ Return
 /*---------------------------------------------------------------------*
 	Trata todas as linhas que estão na variavel aLinhas
  *---------------------------------------------------------------------*/
-Static Function TrataLinhas(cArquivo)
+Static Function TrataLinhas()
   	Local lErro, nLin 	   		
 	Local nTotLinhas := Len(aLinhas)
 
