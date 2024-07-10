@@ -9,7 +9,7 @@
 	@version 1.0
 /*/
 //-------------------------------------------------------------------
-User Function PL120(cOrdem, cProduto)
+User Function PL120(cOp)
 	Local aArea     := GetArea()
 
 	Local aPergs    := {}
@@ -17,28 +17,48 @@ User Function PL120(cOrdem, cProduto)
 	Local cSql 	    := ""
 
 	Private cAliasOrd, cAliasItem
+	Private cOrdem		:= cOp
+	Private cProduto	:= ""
 	Private nNumEtq 	:= 0
 	Private nQtdeEmb	:= 0
 
-	aAdd(aPergs, {1, "Numero da Ordem"			, CriaVar("C2_NUM",.F.),,,"SC2",, 50, .F.})
-	aAdd(aPergs, {1, "Codigo do Item"			, CriaVar("C2_PRODUTO",.F.),,,"SB1",, 50, .F.})
-	aAdd(aPergs, {1, "Numero de Etiquetas"		, nNumEtq, "@E 999", "Positivo()", "", ".T.", 60,  .F.})
-	aAdd(aPergs, {1, "Quantidade por Etiqueta"	, nQtdeEmb, "@E 99,999", "Positivo()", "", ".T.", 60,  .F.})
+	if cOrdem == nil .or. cOrdem == ""
+		aAdd(aPergs, {1, "Numero da Ordem"			, Space(11),,,"SC2",, 60, .F.})
+		aAdd(aPergs, {1, "Codigo do Item"			, CriaVar("C2_PRODUTO",.F.),,,"SB1",, 60, .F.})
+		aAdd(aPergs, {1, "Numero de Etiquetas"		, nNumEtq, "@E 999", "Positivo()", "", ".T.", 40,  .F.})
+		aAdd(aPergs, {1, "Quantidade por Etiqueta"	, nQtdeEmb, "@E 99,999", "Positivo()", "", ".T.", 40,  .F.})
 
-	If ParamBox(aPergs, "Parametros", @aResps,,,,,,,, .T., .T.)
-		cOrdem    := aResps[1]
-		cProduto  := aResps[2]
-		nNumEtq   := aResps[3]
-		nQtdeEmb  := aResps[4]
-	Else
-		return
+		If ParamBox(aPergs, "Parametros", @aResps,,,,,,,, .T., .T.)
+			cOrdem    := aResps[1]
+			cProduto  := aResps[2]
+			nNumEtq   := aResps[3]
+			nQtdeEmb  := aResps[4]
+		Else
+			return
+		endif
+	else
+		aAdd(aPergs, {1, "Numero de Etiquetas"		, nNumEtq, "@E 999", "Positivo()", "", ".T.", 40,  .F.})
+		aAdd(aPergs, {1, "Quantidade por Etiqueta"	, nQtdeEmb, "@E 99,999", "Positivo()", "", ".T.", 40,  .F.})
+
+		If ParamBox(aPergs, "Parametros", @aResps,,,,,,,, .T., .T.)
+			nNumEtq   := aResps[1]
+			nQtdeEmb  := aResps[2]
+		Else
+			return
+		endif
+	endif
+
+	if len(cOrdem) == 6
+		cOrdem := cOrdem + "01001"
 	endif
 
 	// LER OP E ITEM
 	if allTrim(cOrdem) != "" .AND. cOrdem != nil .AND. cOrdem != "0"
 		cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_QUANT, C2_DATPRF "
 		cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
-		cSql += " WHERE C2_NUM 			= '" + cOrdem + "'"
+		cSql += " WHERE C2_NUM 			= '" + Substr(cOrdem,1,6) + "'"
+		cSql += "   AND C2_ITEM			= '" + Substr(cOrdem,7,2) + "'"
+		cSql += "   AND C2_SEQUEN		= '" + Substr(cOrdem,9,3) + "'"
 		cSql += "   AND C2_FILIAL 		= '" + xFilial("SC2") + "' "
 		cSql += "	AND SC2.D_E_L_E_T_ 	= ' ' "
 		cAliasOrd := MPSysOpenQuery(cSql)
@@ -49,6 +69,8 @@ User Function PL120(cOrdem, cProduto)
 		endif
 
 		cProduto := (cAliasOrd)->C2_PRODUTO
+
+		(cAliasOrd)->(DBCLOSEAREA())
 	endif
 
 	cSql := "SELECT B1_COD, B1_XPROJ, A7_CODCLI  "
@@ -56,6 +78,8 @@ User Function PL120(cOrdem, cProduto)
 	cSql += " INNER JOIN " + RetSQLName("SA7") + " SA7 "
 	cSql += "    ON A7_PRODUTO      = B1_COD "
 	cSql += " WHERE B1_COD 			= '" + cProduto + "'"
+	cSql += "   AND A7_CLIENTE 		>='" + "000001" + "' "
+	cSql += "   AND A7_CLIENTE 		<='" + "000002" + "' "
 	cSql += "   AND B1_FILIAL 		= '" + xFilial("SB1") + "' "
 	cSql += "   AND A7_FILIAL 		= '" + xFilial("SA7") + "' "
 	cSql += "	AND SB1.D_E_L_E_T_ 	= ' ' "
@@ -63,11 +87,13 @@ User Function PL120(cOrdem, cProduto)
 	cAliasItem := MPSysOpenQuery(cSql)
 
 	if (cAliasItem)->(EOF())
-		Alert("ITEM NAO ENCONTRADO")
+		Alert("ITEM NAO ENCONTRADO OU NAO PERTENCE A KANJIKO!")
 		return
 	endif
 
 	etiqueta()
+
+	(cAliasItem)->(DBCLOSEAREA())
 
 	RestArea(aArea)
 RETURN
