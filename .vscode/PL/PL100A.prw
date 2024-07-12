@@ -106,7 +106,7 @@ Static Function BuscaSaldoDisp(aItemRet)
 	
 	if nQtdeNec > 0 		// Saldo insuficiente
 		nIndFat := aItemRet[1]
-		aItensFat[nIndFat][6] := .F.
+		aItensFat[nIndFat][7] := .F.
 	endif
 Return
 
