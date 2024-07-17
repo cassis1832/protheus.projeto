@@ -9,7 +9,7 @@
 User Function zAssisB()
 	Local aArea     := FWGetArea()
 
-	If ! FWAlertNoYes("Atualização do SB1 - MRP e Validade do lote ", "Continuar?")
+	If ! FWAlertNoYes("Atualização do SB1 - MRP e Validade do lote 12/07/2024", "Continuar?")
 		Return
 	EndIf
 
@@ -30,8 +30,12 @@ User Function zAssisB()
 					SubString(B1_COD, 1, 1) == "2" .Or. ;
 					SubString(B1_COD, 1, 1) == "3" .Or. ;
 					SubString(B1_COD, 1, 1) == "4"
-				SB1->B1_MRP := "S"
+				SB1->B1_MRP 	:= "S"
 				SB1->B1_PRVALID := 365
+
+				if SB1->B1_LE > 1
+					SB1->B1_LE := 1
+				endif
 			else
 				SB1->B1_MRP := "N"
 			endif

@@ -83,8 +83,4 @@ Return oView
 
 User Function PL060Consulta()
     bRes = U_PL060A(B1_COD)
-
-  	if bRes != .T.   
-		FWAlertWarning("NAO EXISTEM DADOS PARA MOSTRAR! ", "PLANO POR ITEM")
-	endif
 return

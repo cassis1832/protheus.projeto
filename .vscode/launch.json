@@ -54,8 +54,12 @@
 		},
 		{
 			"label": "u_SPPROGR"
+		},
+		{
+			"args": [],
+			"label": "U_ImportaTxt"
 		}
 	],
-	"lastProgramExecuted": "sigapcp",
+	"lastProgramExecuted": "U_ImportaTxt",
 	"lastProgramArguments": []
 }

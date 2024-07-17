@@ -141,24 +141,24 @@ Static Function ObterPedidos()
 
 	// Carregar pedidos de vendas
 	cSql := "SELECT C6_PRODUTO, C6_ENTREG, C6_QTDVEN, C6_QTDENT, (C6_QTDVEN - C6_QTDENT) AS C6_SALDO, C6_NUM "
-	cSql += "  FROM " +	RetSQLName("SC5") + " SC5 "
+	cSql += "  FROM " + RetSQLName("SC6") + " SC6 "
 
-	cSql += " INNER JOIN " + RetSQLName("SC6") + " SC6 "
-	cSql += "    ON C5_NUM          =  C6_NUM "
+	cSql += " INNER JOIN " +	RetSQLName("SC5") + " SC5 "
+	cSql += "    ON C5_FILIAL       = '" + xFilial("SC5") + "'"
+	cSql += "   AND C5_NUM          =  C6_NUM "
+	cSql += "   AND C5_NOTA         = '' "
+	cSql += "   AND C5_LIBEROK      <> 'E' "
+
+	cSql += " INNER JOIN " + RetSQLName("SF4") + " SF4 "
+	cSql += "    ON F4_FILIAL       = '" + xFilial("SF4") + "'"
+	cSql += "   AND F4_CODIGO       =  C6_TES "
+	cSql += "   AND F4_QTDZERO      <> '1' "
+
+	cSql += " WHERE C6_FILIAL       = '" + xFilial("SC6") + "'"
 	cSql += "   AND C6_PRODUTO      = '" + cItem + "'"
 	cSql += "   AND C6_QTDENT       <  C6_QTDVEN "
 	cSql += "   AND C6_BLQ       	<> 'R' "
 
-	cSql += " INNER JOIN " + RetSQLName("SF4") + " SF4 "
-	cSql += "    ON F4_CODIGO       =  C6_TES "
-	cSql += "   AND F4_QTDZERO      <> '1' "
-
-	cSql += " WHERE C5_NOTA         = '' "
-	cSql += "   AND C5_LIBEROK      <> 'E' "
-
-	cSql += "   AND C5_FILIAL       = '" + xFilial("SC5") + "'"
-	cSql += "   AND C6_FILIAL       = '" + xFilial("SC6") + "'"
-	cSql += "   AND F4_FILIAL       = '" + xFilial("SF4") + "'"
 	cSql += "   AND SC5.D_E_L_E_T_  <> '*' "
 	cSql += "   AND SC6.D_E_L_E_T_  <> '*' "
 	cSql += "   AND SF4.D_E_L_E_T_  <> '*' "

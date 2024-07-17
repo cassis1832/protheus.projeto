@@ -22,10 +22,9 @@ Static oFont16b := TFont():New( "Arial",, -16, .T.,.T.)
 User Function PL010()
 	Local aPergs	    := {}
 	Local aResps	    := {}
-	Local cOrdem	    := ""
-	Local lContinua	    := .T.
-	Local cOp		    := ""
-	Local nRecs		    := 0
+
+	Private cOrdemIni   := ""
+	Private cOrdemFim   := ""
 
 	Private oPrinter    := nil
 	Private cQuery 	    := ""
@@ -41,18 +40,19 @@ User Function PL010()
 	Private cAliasCmp	:= ""			   	// Componentes da OP
 	Private cAliasOper  := ""			   	// Operacões da OP
 
-	AAdd(aPergs, {1, "Numero da Ordem de Producao"	, Space(11),,,"SC2",, 50, .T.})
+	AAdd(aPergs, {1, "Numero da Ordem Inicial"		, Space(11),,,"SC2",, 60, .T.})
+	AAdd(aPergs, {1, "Numero da Ordem Final"		, Space(11),,,"SC2",, 60, .T.})
 	AAdd(aPergs, {4, "Imprimir a Ordem de Producao"	,.T.,"Deseja imprimir a OP" ,90,"",.F.})
 	AAdd(aPergs ,{4, "Operacoes"   					,.T.,"Todas as operacoes juntas" ,90,"",.F.})
 	AAdd(aPergs ,{4, "Imprimir Etiquetas"			,.T.,"Deseja imprimir etiquetas" ,90,"",.F.})
 
 	If ParamBox(aPergs, "Emissao da Ordem de Producao", @aResps,,,,,,,, .T., .T.)
-		cOrdem    	:= aResps[1]
-		lOP			:= aResps[2]
-		lOper		:= aResps[3]
-		lEtiq		:= aResps[4]
+		cOrdemIni  	:= aResps[1]
+		cOrdemFim  	:= aResps[2]
+		lOP			:= aResps[3]
+		lOper		:= aResps[4]
+		lEtiq		:= aResps[5]
 	Else
-		lContinua   := .F.
 		return
 	endif
 
@@ -60,34 +60,51 @@ User Function PL010()
 		return
 	endif
 
-	if len(cOrdem) == 6
-		cOrdem := cOrdem + "01001"
+	if len(allTrim(cOrdemIni)) == 6
+		cOrdemIni := allTrim(cOrdemIni) + "01001"
 	endif
-
-	// LER OP E ITEM
-	cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, "
-	cQuery += "	 	  C2_QUANT, CAST(C2_DATPRI AS DATE) C2_DATPRI, "
-	cQuery += "	 	  CAST(C2_DATPRF AS DATE) C2_DATPRF, "
-	cQuery += "	  	  B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ "
-	cQuery += "  FROM " + RetSQLName("SC2") + " SC2 "
-	cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
-	cQuery += "	   ON B1_COD 		 = C2_PRODUTO"
-	cQuery += " WHERE C2_NUM 		 = '" + SUBSTR(cOrdem, 1, 6) + "'"
-	cQuery += "   AND C2_ITEM 		 = '" + SUBSTR(cOrdem, 7, 2) + "'"
-	cQuery += "   AND C2_SEQUEN 	 = '" + SUBSTR(cOrdem, 9, 3) + "'"
-	cQuery += "   AND C2_FILIAL 	 = '" + xFilial("SC2") + "' "
-	cQuery += "   AND B1_FILIAL 	 = '" + xFilial("SB1") + "' "
-	cQuery += "	  AND SC2.D_E_L_E_T_ = ' ' "
-	cQuery += "	  AND SB1.D_E_L_E_T_ = ' ' "
-	cAliasOrd := MPSysOpenQuery(cQuery)
-
-	if (cAliasOrd)->(EOF())
-		FWAlertError("ORDEM DE PRODUCAO NAO ENCONTRADA!", "ERRO")
-		return
+	if len(allTrim(cOrdemFim)) == 6
+		cOrdemFim := allTrim(cOrdemFim) + "01001"
 	endif
 
 	if lOp == .T.
+		// LER OPS E ITEM
+		cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, "
+		cQuery += "	 	  C2_QUANT, CAST(C2_DATPRI AS DATE) C2_DATPRI, "
+		cQuery += "	 	  CAST(C2_DATPRF AS DATE) C2_DATPRF, "
+		cQuery += "	  	  B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ "
+		cQuery += "  FROM " + RetSQLName("SC2") + " SC2 "
+		cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+		cQuery += "	   ON B1_COD 		 =  C2_PRODUTO"
+		cQuery += "   AND B1_FILIAL 	 = '" + xFilial("SB1") + "' "
+		cQuery += " WHERE C2_NUM + C2_ITEM + C2_SEQUEN >='" + cOrdemIni + "'"
+		cQuery += "   AND C2_NUM + C2_ITEM + C2_SEQUEN <='" + cOrdemFim + "'"
+		cQuery += "   AND C2_FILIAL 	 = '" + xFilial("SC2") + "' "
+		cQuery += "	  AND SC2.D_E_L_E_T_ = ' ' "
+		cQuery += "	  AND SB1.D_E_L_E_T_ = ' ' "
+		cQuery += "	ORDER BY C2_NUM, C2_ITEM, C2_SEQUEN "
+		cAliasOrd := MPSysOpenQuery(cQuery)
 
+		if (cAliasOrd)->(EOF())
+			FWAlertError("ORDEM DE PRODUCAO NAO ENCONTRADA!", "ERRO")
+			return
+		endif
+
+		FwMsgRun(NIL, {|oSay| printOP(oSay)}, "Imprimindo ordens", "Impressao de OP...")
+	Endif
+
+	// Impressao das etiquetas de processo
+	if lEtiq == .T.
+		u_PL110(cOrdem)
+	endif
+
+return
+
+
+Static Function printOP(oSay)
+	Local cOp		    := ""
+
+	While (cAliasOrd)->(! EOF())
 		cOp := (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN
 
 		// Ler os empenhos da OP
@@ -97,31 +114,18 @@ User Function PL010()
 		cQuery += "  FROM " + RetSQLName("SD4") + " SD4 "
 		cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 		cQuery += "	   ON D4_COD 		 = B1_COD "
-		cQuery += " WHERE D4_OP = '" + cOp + "' "
+		cQuery += " WHERE D4_OP 		 = '" + cOp + "' "
 		cQuery += "   AND D4_FILIAL 	 = '" + xFilial("SD4") + "' "
+		cQuery += "   AND B1_FILIAL 	 = '" + xFilial("SB1") + "' "
 		cQuery += "   AND SD4.D_E_L_E_T_ = ' ' "
 		cQuery += "   AND SB1.D_E_L_E_T_ = ' ' "
 		cQuery += " ORDER BY D4_COD"
 		cAliasCmp := MPSysOpenQuery(cQuery)
 
-		nRecs = 0
-		While (cAliasCmp)->(!EOF())
-			nRecs += 1
-			(cAliasCmp)->(DbSkip())
-		EndDo
-
-		if nRecs = 0
-			FWAlertError("ITEM NAO POSSUI ESTRUTURA!", "ERRO")
-			return
-		endif
-
-		(cAliasCmp)->(dbGoTop())
-
 		// Ler as operacões do item
 		cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, G2_DESCRI, G2_MAOOBRA, G2_SETUP, "
 		cQuery += "		  G2_LOTEPAD, G2_TEMPAD, G2_CTRAB, G2_TEMPEND "
 		cQuery += "  FROM " + RetSQLName("SG2") + " SG2 "
-
 		cQuery += " WHERE G2_CODIGO  	 = '01'"
 		cQuery += "   AND G2_PRODUTO 	 = '" + (cAliasOrd)->B1_COD + "' "
 		cQuery += "   AND G2_FILIAL  	 = '" + xFilial("SG2") + "' "
@@ -129,25 +133,10 @@ User Function PL010()
 		cQuery += " ORDER BY G2_OPERAC"
 		cAliasOper := MPSysOpenQuery(cQuery)
 
-		nRecs = 0
-		While (cAliasOper)->(!EOF())
-			nRecs += 1
-			(cAliasOper)->(DbSkip())
-		EndDo
-
-		if nRecs = 0
-			If ! FWAlertYesNo("ITEM NAO POSSUI OPERACOES!", "Confirma a impressao?")
-				return
-			EndIf
-		EndIf
-
-		(cAliasOper)->(dbGoTop())
-
 		lComp = .F.
 
 		if lOper	// Imprime todas as operacões da ordem na mesma página
-			cFilePrint	:= "OP" + cValToChar((cAliasOrd)->C2_NUM)
-			cFilePrint	+= cValToChar((cAliasOrd)->C2_ITEM)
+			cFilePrint	:= "OP" + cValToChar((cAliasOrd)->C2_NUM) + cValToChar((cAliasOrd)->C2_ITEM)
 			cFilePrint	+= cValToChar((cAliasOrd)->C2_SEQUEN)
 			cFilePrint	+= DToS(Date()) + StrTran(Time(),":","") + ".pdf"
 
@@ -173,19 +162,14 @@ User Function PL010()
 			enddo
 		endif
 
-		(cAliasOper)->(DBCLOSEAREA())
-		(cAliasCmp)->(DBCLOSEAREA())
-	Endif
+		(cAliasOrd)->(DbSkip())
+	enddo
 
+	(cAliasOper)->(DBCLOSEAREA())
+	(cAliasCmp)->(DBCLOSEAREA())
 	(cAliasOrd)->(DBCLOSEAREA())
 
-	// Impressao das etiquetas de processo
-	if lEtiq == .T.
-		u_PL110(cOrdem)
-	endif
-
 return
-
 
 //-----------------------------------------------------------------------------
 //	Imprime o cabecalho da OP
@@ -215,19 +199,19 @@ Static Function printCabec()
 	oPrinter:Say(nLin, 15, "Cod. Item:" ,oFont10)
 	oPrinter:Say(nLin, 75, (cAliasOrd)->B1_COD, oFont12b)
 	oPrinter:Say(nLin, 150, "Descricao:",oFont10)
-	oPrinter:Say(nLin, 210, (cAliasOrd)->B1_DESC, oFont11)
+	oPrinter:Say(nLin, 210, SUBSTR((cAliasOrd)->B1_DESC,1,55), oFont10)
 
 	nLin +=20
 	oPrinter:Say(nLin, 15, "Data Inicio:",oFont10)
-	oPrinter:Say(nLin, 75, DTOC((cAliasOrd)->C2_DATPRI), oFont11)
+	oPrinter:Say(nLin, 75, DTOC((cAliasOrd)->C2_DATPRI), oFont11b)
 	oPrinter:Say(nLin, 150, "Data Termino:",oFont10)
-	oPrinter:Say(nLin, 220, DTOC((cAliasOrd)->C2_DATPRF), oFont11)
+	oPrinter:Say(nLin, 220, DTOC((cAliasOrd)->C2_DATPRF), oFont11b)
 	oPrinter:Say(nLin, 400, "Quantidade:",oFont10)
 
 	if (cAliasOrd)->C2_QUANT - int((cAliasOrd)->C2_QUANT) == 0
-		oPrinter:Say(nLin, 450, TRANSFORM((cAliasOrd)->C2_QUANT, "@E 999,999") + " " + (cAliasOrd)->B1_UM, oFont11b)
+		oPrinter:Say(nLin, 450, TRANSFORM((cAliasOrd)->C2_QUANT, "@E 999,999") + " " + (cAliasOrd)->B1_UM, oFont12b)
 	else
-		oPrinter:Say(nLin, 450, TRANSFORM((cAliasOrd)->C2_QUANT, "@E 999,999.999") + " " + (cAliasOrd)->B1_UM, oFont11b)
+		oPrinter:Say(nLin, 450, TRANSFORM((cAliasOrd)->C2_QUANT, "@E 999,999.999") + " " + (cAliasOrd)->B1_UM, oFont12b)
 	endif
 
 	nLin +=20
@@ -258,8 +242,8 @@ Static Function printCompon()
 	nLin +=45
 	oPrinter:Say(nLin, 15, "Cod. Item",oFont09)
 	oPrinter:Say(nLin, 70, "Descricao",oFont09)
-	oPrinter:Say(nLin, 340, "Quantidade",oFont09)
-	oPrinter:Say(nLin, 420, "Lote",oFont09)
+	oPrinter:Say(nLin, 390, "Quantidade",oFont09)
+	oPrinter:Say(nLin, 470, "Lote",oFont09)
 	oPrinter:Say(nLin, 500, "Lote Real",oFont09)
 
 	While (cAliasCmp)->(!EOF())
@@ -267,8 +251,8 @@ Static Function printCompon()
 		oPrinter:Say(nLin, 15, (cAliasCmp)->B1_COD, oFont10)
 		oPrinter:Say(nLin, 70, SUBSTR((cAliasCmp)->B1_DESC, 1, 55), oFont09)
 
-		oPrinter:Say(nLin, 340, TRANSFORM((cAliasCmp)->D4_QTDEORI, "@E 999,999.999") + " " + (cAliasCmp)->B1_UM,oFont10)
-		oPrinter:Say(nLin, 430, (cAliasCmp)->D4_LOTECTL,oFont10)
+		oPrinter:Say(nLin, 380, TRANSFORM((cAliasCmp)->D4_QTDEORI, "@E 999,999.999") + " " + (cAliasCmp)->B1_UM,oFont10)
+		oPrinter:Say(nLin, 460, (cAliasCmp)->D4_LOTECTL,oFont10)
 		(cAliasCmp)->(DbSkip())
 	EndDo
 

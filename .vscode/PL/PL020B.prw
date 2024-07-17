@@ -11,16 +11,14 @@ Função
 @author Assis
 @since 24/06/2024
 @version 1.0
-	@return Nil, Função não tem retorno
-	@example
-	u_PL030()
 /*/
 
 User Function PL020B()
 	Local aArea   		:= GetArea()
 	Local cFunBkp 		:= FunName()
 
-	Private cCliente 	:= ''
+	Private cClienteIni	:= ''
+	Private cClienteFim	:= ''
 	Private cLoja	 	:= ''
 	Private dInicio	 	:= date()
 	Private dLimite  	:= date()
@@ -41,7 +39,7 @@ User Function PL020B()
 
 	FwMsgRun(NIL, {|oSay| LimpaDados(oSay)}, "Excluindo pedidos antigos", "Excluindo pedidos EDI antigos...")
 
-	FWAlertSuccess("GERACAO EFETUADA COM SUCESSO PARA O CLIENTE " + cCliente, "Importacao EDI")
+	FWAlertSuccess("GERACAO EFETUADA COM SUCESSO!", "Importacao EDI")
 
 	SetFunName(cFunBkp)
 	RestArea(aArea)
@@ -56,7 +54,8 @@ Static Function TrataLinhas(oSay)
 	cSql += "  FROM  " + RetSQLName("SA7") + " SA7 "
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cSql += "    ON B1_COD 			=  A7_PRODUTO "
-	cSql += " WHERE A7_CLIENTE 		=  '" + cCliente + "'"
+	cSql += " WHERE A7_CLIENTE 		>= '" + cClienteIni + "'"
+	cSql += "   AND A7_CLIENTE 		<= '" + cClienteFim + "'"
 	cSql += "   AND A7_LOJA 		=  '" + cLoja + "'" 
 	cSql += "   AND A7_PRODUTO 		>= '" + cProdIni + "'" 
 	cSql += "   AND A7_PRODUTO 		<= '" + cProdFim + "'" 
@@ -64,7 +63,7 @@ Static Function TrataLinhas(oSay)
 	cSql += "   AND B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
 	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
 	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
-	cSql += " ORDER BY A7_PRODUTO "
+	cSql += " ORDER BY A7_CLIENTE, A7_PRODUTO "
 	cAliasSA7 := MPSysOpenQuery(cSql)	
  
  	if (cAliasSA7)->(EOF())
@@ -100,7 +99,7 @@ Static Function GravaDados()
 		dbSelectArea("ZA0")
 		DBSetOrder(2)  // Filial/cliente/loja/item/data
 
-		if (MsSeek(xFilial("ZA0") + cCliente + cLoja + (cAliasSA7)->A7_PRODUTO + dtos(dData))) .AND. ZA0->ZA0_STATUS != "9"
+		if (MsSeek(xFilial("ZA0") + (cAliasSA7)->A7_CLIENTE + (cAliasSA7)->A7_LOJA + (cAliasSA7)->A7_PRODUTO + dtos(dData))) .AND. ZA0->ZA0_STATUS != "9"
 			RecLock("ZA0", .F.)
 			ZA0->ZA0_DTCRIA   := dtProcesso
 			ZA0->ZA0_HRCRIA   := hrProcesso
@@ -111,8 +110,8 @@ Static Function GravaDados()
 			RecLock("ZA0", .T.)	
 			ZA0->ZA0_FILIAL	:= xFilial("ZA0")	
 			ZA0->ZA0_CODPED := GETSXENUM("ZA0", "ZA0_CODPED", 1)                                                                                                  
-			ZA0->ZA0_CLIENT := cCliente
-			ZA0->ZA0_LOJA 	:= cLoja
+			ZA0->ZA0_CLIENT := (cAliasSA7)->A7_CLIENTE
+			ZA0->ZA0_LOJA 	:= (cAliasSA7)->A7_LOJA
 			ZA0->ZA0_PRODUT := (cAliasSA7)->A7_PRODUTO
 			ZA0->ZA0_ITCLI 	:= (cAliasSA7)->A7_CODCLI
 			ZA0->ZA0_TIPOPE := "F"
@@ -140,12 +139,12 @@ Static Function LimpaDados(oSay)
    	dbSelectArea("ZA0")
    	ZA0->(DBSetOrder(3))  
    
-   	DBSeek(xFilial("ZA0") + cCliente + cLoja)
+   	DBSeek(xFilial("ZA0") + cClienteIni)
 	
 	Do While ! Eof() 
 
-		if ZA0->ZA0_CLIENT 	== cCliente 	.AND. ;
-			ZA0->ZA0_LOJA  	== cLoja 		.AND. ;
+		if ZA0->ZA0_CLIENT 	>= cClienteIni 	.AND. ;
+		 	ZA0->ZA0_CLIENT <= cClienteFim 	.AND. ;
 			ZA0_STATUS     	<> "9" 
 
 			if ZA0->ZA0_DTCRIA  <> dtProcesso .or. ;
@@ -169,7 +168,8 @@ Static Function VerParam()
 	Local aResps	    := {}
 	Local lRet 			:= .T.
 
-	AAdd(aPergs, {1, "Informe o cliente "					, CriaVar("ZA0_CLIENT",.F.),,,"SA1",, 50, .F.})
+	AAdd(aPergs, {1, "Informe o cliente inicial "			, CriaVar("ZA0_CLIENT",.F.),,,"SA1",, 50, .F.})
+	AAdd(aPergs, {1, "Informe o cliente final "				, CriaVar("ZA0_CLIENT",.F.),,,"SA1",, 50, .F.})
 	AAdd(aPergs, {1, "Informe a loja "   					, CriaVar("ZA0_LOJA"  ,.F.),,,"SA1",, 30, .F.})
 	AAdd(aPergs, {1, "Informe a data de entrega inicial "	, CriaVar("ZA0_DTENTR",.F.),"",".T.","",".T.", 70, .F.})
 	AAdd(aPergs, {1, "Informe a data de entrega limite " 	, CriaVar("ZA0_DTENTR",.F.),"",".T.","",".T.", 70, .F.})
@@ -177,41 +177,27 @@ Static Function VerParam()
 	AAdd(aPergs, {1, "Informe o item final " 				, CriaVar("B1_COD",.F.),,,"SB1",, 70, .F.})
 
 	If ParamBox(aPergs, "Parametros", @aResps,,,,,,,, .T., .T.)
-		cCliente := aResps[1]
-		cLoja    := aResps[2]
-		dInicio	 := aResps[3]
-		dLimite  := aResps[4]
-		cProdIni := aResps[5]
-		cProdFim := aResps[6]
+	AAdd(aPergs, {1, "Informe o cliente inicial "			, CriaVar("ZA0_CLIENT",.F.),,,"SA1",, 50, .F.})
+		cClienteIni := aResps[1]
+		cClienteFim := aResps[2]
+		cLoja    	:= aResps[3]
+		dInicio	 	:= aResps[4]
+		dLimite  	:= aResps[5]
+		cProdIni 	:= aResps[6]
+		cProdFim 	:= aResps[7]
 	Else
 		lRet := .F.
 		return lRet
 	endif
 
-	if cCliente != "000004" .and. cCliente != "000005" .and. cCliente != "000006" .and. cCliente != "000007"
+	if cClienteIni != "000004" .and. cClienteIni != "000005" .and. cClienteIni != "000006" .and. cClienteIni != "000007"
 		lRet := .F.
 		FWAlertError("CLIENTE NAO GESTAMP!")
 	endif
 
-	SA1->(dbSetOrder(1))
-	SE4->(dbSetOrder(1))
-	DA1->(dbSetOrder(1))
-
-	// Verificar o cliente
-	if SA1->(! MsSeek(xFilial("SA1") + cCliente + cLoja))
+	if cClienteFim != "000004" .and. cClienteFim != "000005" .and. cClienteFim != "000006" .and. cClienteFim != "000007"
 		lRet := .F.
-		FWAlertError("Cliente nao cadastrado: " + cCliente,"Cadastro de Clientes")
-	else
-		// Verificar condição de pagamento do cliente
-		If SE4->(! MsSeek(xFilial("SE4") + SA1->A1_COND))
-			lRet := .F.
-			FWAlertError("Cliente sem condicao de pagamento cadastrada: " + cCliente,"Condicao de Pagamento")
-		EndIf
+		FWAlertError("CLIENTE NAO GESTAMP!")
+	endif
 
-		// Verificar a tabela de precos do cliente
-		If SA1->A1_TABELA == ""
-			lRet := .F.
-			FWAlertError("Tabela de precos do cliente nao encontrada!", "Tabela de precos")
-		EndIf
-	EndIf
 return lRet

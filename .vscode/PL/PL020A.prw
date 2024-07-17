@@ -95,7 +95,7 @@ Static Function GravaDados()
 	dDtEntr  := ctod(aLinha[4])
     cHrEntr  := aLinha[5]
 	cQtde 	 := aLinha[6]
-    cTipoPe  := aLinha[10]
+    cTipoPe  := aLinha[7]
 
 	// Consistir o codigo do cliente e item do cliente
 	SA7->(DBSetOrder(3))  // Filial/cliente/loja/codcli
