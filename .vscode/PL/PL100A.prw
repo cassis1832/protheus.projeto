@@ -121,6 +121,7 @@ Static Function GravaPedido()
 	Local aLinha  	:= {}
 	Local aCabec    := {}			// Cabecalho do pedido - MATA410
 	Local cDoc		:= ""
+	Local dDtEntr	:= ""
 
 	Private nLinha 			:= 0
 	Private aLinhas			:= {}	// Linhas do pedido - MATA410
@@ -146,6 +147,8 @@ Static Function GravaPedido()
 					VerRemessa(aItensRet[nIndRet])
 				endif
 			next nIndRet
+
+			dDtEntr  := aItensFat[nIndFat][4]
 		endif
 	next nIndFat
 
@@ -161,6 +164,7 @@ Static Function GravaPedido()
 		aadd(aCabec, {"C5_LOJAENT", cLoja		, Nil})
 		aadd(aCabec, {"C5_CONDPAG", SA1->A1_COND, Nil})
 		aadd(aCabec, {"C5_NATUREZ", cNatureza	, Nil})
+		aadd(aCabec, {"C5_FECENT" , dDtEntr		, Nil})
 
 		MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabec, aLinhas, nOpcX, .F.)
 

@@ -112,35 +112,30 @@ Static Function GravaDados()
 
     if (MsSeek(xFilial("ZA0") + cCliente + cLoja + cProduto + dtos(dDtEntr))) 
         RecLock("ZA0", .F.)
-        ZA0->ZA0_ARQUIV   := cArquivo
-        ZA0->ZA0_DTCRIA   := dtProcesso
-        ZA0->ZA0_HRCRIA   := hrProcesso
-        ZA0->ZA0_TIPOPE   := cTipoPe
-
-        if ZA0->ZA0_STATUS == "0" .or. ZA0->ZA0_STATUS == "1" 
-            ZA0->ZA0_QTDE := Val(StrTran(cQtde,",","."))
-        else
-            if ZA0->ZA0_QTDE < Val(StrTran(cQtde,",","."))
-                ZA0->ZA0_QTDE := Val(StrTran(cQtde,",","."))
-            Endif
-        Endif
+        ZA0->ZA0_ARQUIV   	:= cArquivo
+        ZA0->ZA0_DTCRIA   	:= dtProcesso
+        ZA0->ZA0_HRCRIA   	:= hrProcesso
+        ZA0->ZA0_TIPOPE   	:= cTipoPe
+        ZA0->ZA0_QTDE    	:= Val(StrTran(cQtde,",","."))
+		ZA0->ZA0_TIPOPE   	:= "F"
+		ZA0->ZA0_STATUS		:= "0"
     else
 		// Inclusão
 		RecLock("ZA0", .T.)	
-		ZA0->ZA0_FILIAL	:= xFilial("ZA0")	
-		ZA0->ZA0_CODPED := GETSXENUM("ZA0", "ZA0_CODPED", 1)                                                                                                  
-		ZA0->ZA0_CLIENT := cCliente
-		ZA0->ZA0_LOJA 	:= cLoja
-		ZA0->ZA0_PRODUT := cProduto
-		ZA0->ZA0_ITCLI 	:= cCodCli
-		ZA0->ZA0_TIPOPE := cTipoPe
-		ZA0->ZA0_QTDE 	:= Val(StrTran(cQtde,",","."))
-		ZA0->ZA0_DTENTR := dDtEntr
-		ZA0->ZA0_HRENTR := cHrEntr
-		ZA0->ZA0_ARQUIV := cArquivo
-		ZA0->ZA0_ORIGEM := "PL020A"
-		ZA0->ZA0_DTCRIA := dtProcesso
-		ZA0->ZA0_HRCRIA := hrProcesso
+		ZA0->ZA0_FILIAL		:= xFilial("ZA0")	
+		ZA0->ZA0_CODPED 	:= GETSXENUM("ZA0", "ZA0_CODPED", 1)                                                                                                  
+		ZA0->ZA0_CLIENT 	:= cCliente
+		ZA0->ZA0_LOJA 		:= cLoja
+		ZA0->ZA0_PRODUT 	:= cProduto
+		ZA0->ZA0_ITCLI 		:= cCodCli
+		ZA0->ZA0_TIPOPE 	:= "F"
+		ZA0->ZA0_QTDE 		:= Val(StrTran(cQtde,",","."))
+		ZA0->ZA0_DTENTR 	:= dDtEntr
+		ZA0->ZA0_HRENTR 	:= cHrEntr
+		ZA0->ZA0_ARQUIV 	:= cArquivo
+		ZA0->ZA0_ORIGEM 	:= "PL020A"
+		ZA0->ZA0_DTCRIA 	:= dtProcesso
+		ZA0->ZA0_HRCRIA 	:= hrProcesso
 		if (lErro)
 			ZA0->ZA0_STATUS := "1"
 		else
