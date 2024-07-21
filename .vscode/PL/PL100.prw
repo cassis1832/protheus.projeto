@@ -5,13 +5,11 @@
     PL100 - GERAÇÃO DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
     MATA410 - EXECAUTO
     Ler ZA0 por cliente/data/natureza/hora de entrega/item
+	16/07 - criação de dialog para mensagens
 	@type  Function
 	@author ASSIS
 	@since 05/06/2024
-	@version 1.0
-	@param param_name, param_type, param_descr
-	@return return_var, return_type, return_description
-    /*/
+/*/
 
 User Function PL100()
 	Local aArea   		:= GetArea()
@@ -27,12 +25,19 @@ User Function PL100()
 	Private cHrEntr     := ''
 	Private cGrupoPV    := ''
 	Private cProduto   	:= ''
+	Private aMensagens	:= {}
 
 	if VerParam() == .F.
 		return
 	endif
 
 	FwMsgRun(NIL, {|oSay| Processa(oSay)}, "Processando pedidos", "Gerando pedidos de vendas...")
+
+	aadd(aMensagens, {"itemteimteimte","sdkflj sldkfhg slkdfhg lskjfhg "})
+
+	if len(aMensagens) > 0
+		MostraMensagens(aMensagens)
+	endif
 
 	if nPedidos == 0
 		FWAlertSuccess("NAO FOI CRIADO NENHUM PEDIDO DE VENDA!", "Geracao de Pedidos de Vendas")
@@ -203,13 +208,11 @@ Static Function Consistencia()
     // Verificar a TES do item
     if (cAliasZA0)->B1_TS == ''
         lOk1:= .F.
-        FWAlertError("TES INVALIDA DO ITEM = " + ZA0->ZA0_PRODUT, ;
-        "Cadastro Produto")
+		aadd(aMensagens, {ZA0->ZA0_PRODUT, "TES DO ITEM INVALIDA"})
     Else
         if (cAliasZA0)->A7_XNATUR == ''
             lOk1:= .F.
-            FWAlertError("Falta natureza na relacao Item X Cliente (" + ZA0->ZA0_PRODUT + "/" + ZA0->ZA0_CLIENT + ")!", ;
-            "Cadastro Produto/Cliente")
+			aadd(aMensagens, {ZA0->ZA0_PRODUT + "/" + ZA0->ZA0_CLIENT, "Falta natureza na relacao Item X Cliente"})
         EndIf
     EndIf
 
@@ -219,10 +222,50 @@ Static Function Consistencia()
 		If DA1->(! MsSeek(xFilial("DA1") + SA1->A1_TABELA + (cAliasZA0)->ZA0_PRODUT, .T.))
 			if DA1->DA1_CODPRO == (cAliasZA0)->ZA0_PRODUT .AND. DA1->DA1_CODTAB == SA1->A1_TABELA
                 lOk1 := .F.
-                FWAlertError("Tabela de precos nao encontrada para o item = " + (cAliasZA0)->ZA0_PRODUT, ;
-                "Tabela de precos")
+				aadd(aMensagens, {ZA0->ZA0_PRODUT, "Tabela de precos nao encontrada para o item"})
             EndIf
         EndIf
     endif
 
 return lOk1
+
+
+Static Function MostraMensagens(aMensagens)
+	Local nX			:=0
+
+	Private oDlg       	:= Nil
+	Private oFwBrowse  	:= Nil
+	Private aColumns   	:= {}
+
+	oDlg:= FwDialogModal():New()
+	oDlg:SetEscClose(.T.)
+	oDlg:SetTitle('Mensagens da Abertura de Pedidos')
+
+	oDlg:SetPos(000, 000)
+	oDlg:SetSize(400, 700)
+
+	oDlg:CreateDialog()
+	oDlg:AddCloseButton(Nil, 'Fechar')
+
+	oPnl:=oDlg:GetPanelMain()
+
+	oFwBrowse := FWBrowse():New()
+	oFwBrowse:SetDataArrayoBrowse()  
+	oFwBrowse:AddStatusColumns( { || BrwStatus() }, { || BrwLegend() } )
+	oFwBrowse:SetArray(aMensagens)
+
+	aAdd(aColumns, {"Dado", 	{|oBrw| aMensagens[oBrw:At(), 1] }, "C", "@!", 1, 30, 0, .F.})
+	aAdd(aColumns, {"Mensagem", {|oBrw| aMensagens[oBrw:At(), 2] }, "C", "@!", 1, 60, 0, .F.})
+
+	//Cria as colunas do array
+	For nX := 1 To Len(aColumns)
+		oFwBrowse:AddColumn( aColumns[nX] )
+	Next
+
+	oFwBrowse:SetOwner(oPnl)
+	oFwBrowse:SetDoubleClick( {|| fDupClique() } )
+	oFwBrowse:SetDescription( "Mensagens da Abertura de Ordens" )
+
+	oFwBrowse:Activate()
+	oDlg:Activate()
+return
