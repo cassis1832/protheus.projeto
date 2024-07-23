@@ -16,7 +16,7 @@
 User Function PL020C()
 	Local aArea   := GetArea()
 	Local cFunBkp := FunName()
-	Local oSay := NIL // CAIXA DE DIÁLOGO GERADA
+	Local oSay := NIL
 
 	SetFunName("PL020C")
 
@@ -33,27 +33,21 @@ Static Function Processa(oSay)
 	Private cTableName
 	Private oTempTable
 
-	Private	cProd       := ""
-	Private nQtde       := 0
-	Private cLocal      := ""
-	Private cDoc        := ""
-	Private dDtIni
-
 	oTempTable := FWTemporaryTable():New()
 
 	//Adiciona no array das colunas as que serão incluidas (Nome do Campo, Tipo do Campo, Tamanho, Decimais)
 	aFields := {}
 	aAdd(aFields, {"ID",      "C", 36, 0})
 	aAdd(aFields, {"TT_PROD", "C", 15, 0})
-	aAdd(aFields, {"TT_DATA", "C", 10, 0})
+	aAdd(aFields, {"TT_DATA", "D",  8, 0})
 	aAdd(aFields, {"TT_QUANT","N",  8, 2})
 	aAdd(aFields, {"TT_LOCAL","C",  2, 0})
 	aAdd(aFields, {"TT_DOC",  "C", 10, 0})
 	aAdd(aFields, {"TT_DIAEO","N",  3, 0})
+	aAdd(aFields, {"TT_ORIG", "C",  3, 0})
 
 	oTempTable:SetFields( aFields )
 	oTempTable:AddIndex("1", {"ID"} )
-	oTempTable:AddIndex("2", {"TT_PROD", "TT_DATA"} )
 	oTempTable:Create()
 
 	cAliasTT    := oTempTable:GetAlias()
@@ -100,15 +94,16 @@ Static Function TrataEDI()
         Endif
 
         cSql := "INSERT INTO " + cTableName + " " 
-		cSql += "(ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO) "
+		cSql += "(ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO, TT_ORIG) "
 		cSql += "VALUES ('"
         cSql += FWUUIDv4() 						+ "','" 
 		cSql += (cAlias)->ZA0_PRODUT 			+ "','"
         cSql += (cAlias)->B1_LOCPAD 			+ "','" 
 		cSql += cValToChar((cAlias)->ZA0_SALDO) + "','" 
-        cSql += dtoc( dData) 					+ "','" 
+        cSql += dtos(dData) 					+ "','" 
 		cSql += (cAlias)->ZA0_NUMPED 			+ "','" 
-        cSql += cValToChar((cAlias)->B1_XDIAEO) + "')"
+        cSql += cValToChar((cAlias)->B1_XDIAEO) + "','"
+        cSql += "ZA0" + "')"
 
         if TCSqlExec(cSql) < 0
            MsgInfo("Erro na execução da query:", "Atenção")
@@ -116,7 +111,6 @@ Static Function TrataEDI()
         endif
 
 		(cAlias)->(DbSkip())
-
   	End While
 Return
 
@@ -160,11 +154,12 @@ Static Function TrataPV()
             dData := DaySub(dData, 1)
         Endif
 
-        cSql := "INSERT INTO " + cTableName + " (ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO) VALUES "
+        cSql := "INSERT INTO " + cTableName + " (ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO, TT_ORIG) VALUES "
         cSql += "('" + FWUUIDv4() + "','" + (cAlias)->B1_COD + "'"
         cSql += ",'" + (cAlias)->C6_LOCAL + "','" + cValToChar((cAlias)->C6_SALDO) + "'" 
-        cSql += ",'" + dtoc(dData) + "','" + (cAlias)->C6_NUM + "'" 
-        cSql += ",'" + cValToChar((cAlias)->B1_XDIAEO) + "')"
+        cSql += ",'" + dtos(dData) + "','" + (cAlias)->C6_NUM + "'" 
+        cSql += ",'" + cValToChar((cAlias)->B1_XDIAEO) + "'"
+        cSql += ",'" + "SC6" + "')"
 
         if TCSqlExec(cSql) < 0
            MsgInfo("Erro na execução da query:", "Atenção")
@@ -182,7 +177,13 @@ Return
  *---------------------------------------------------------------------*/
 Static Function GravaDemandas()
     Local cAlias
-		
+	Local dDtFim
+
+	Private dDtIni
+	Private	cProd       := ""
+	Private cLocal      := ""
+	Private cDoc        := ""
+	Private nQtde       := 0
 	Private nSequencia  := 0
 
 	// Limpar as demandas existentes - manuais - "AUTO"
@@ -192,32 +193,30 @@ Static Function GravaDemandas()
 
 	cSQL := "SELECT * FROM  "  + cTableName
 	cSQL += " ORDER BY TT_PROD, TT_DATA "
-
     DBUseArea(.T., "TOPCONN", TCGenQry(,,cSQL), cAlias, .T., .T.)
 
     while !(cAlias)->(Eof())
-
         if cProd != (cAlias)->TT_PROD
             if cProd != ""
                 GravaReg()
             endif
-
             cProd  := (cAlias)->TT_PROD
-            dDtIni := CToD((cAlias)->TT_DATA)
-            dDtFim := DaySum(CToD((cAlias)->TT_DATA), (cAlias)->TT_DIAEO)
+            dDtIni := stod((cAlias)->TT_DATA)
+            dDtFim := DaySum(dDtIni, (cAlias)->TT_DIAEO)
             cDoc   := (cAlias)->TT_DOC
-            cLocal :=  (cAlias)->TT_LOCAL
-            nQtde  := 0
-        endif
-
-        if dDtFim >= CToD((cAlias)->TT_DATA)
-            nQtde := nQtde + (cAlias)->TT_QUANT
-        else
-            GravaReg()
-            dDtIni := CToD((cAlias)->TT_DATA)
-            dDtFim := DaySum(CToD((cAlias)->TT_DATA), (cAlias)->TT_DIAEO)
-            cDoc   := (cAlias)->TT_DOC
-            nQtde  := 0
+            cLocal := (cAlias)->TT_LOCAL
+            nQtde  := (cAlias)->TT_QUANT
+		else
+			if dDtFim >= stod((cAlias)->TT_DATA)
+				nQtde := nQtde + (cAlias)->TT_QUANT
+			else
+				GravaReg()
+				dDtIni := stod((cAlias)->TT_DATA)
+				dDtFim := DaySum(dDtIni, (cAlias)->TT_DIAEO)
+				cDoc   := (cAlias)->TT_DOC
+	            cLocal := (cAlias)->TT_LOCAL
+				nQtde  := (cAlias)->TT_QUANT
+			endif
         endif
 
         (cAlias)->(DBSkip())
@@ -246,8 +245,7 @@ Static Function GravaReg()
 		SVR->VR_FILIAL	:= xFilial("SVR")
 		SVR->VR_CODIGO  := "AUTO"
 		SVR->VR_SEQUEN  := nSequencia
-		SVR->VR_PROD 	:= cProd
-		SVR->VR_QUANT 	:= nQtde
+		SVR->VR_PROD 	:= cProdb
 		SVR->VR_DATA 	:= dDtIni
 		SVR->VR_LOCAL  	:= cLocal
 		SVR->VR_DOC 	:= cDoc
@@ -258,7 +256,7 @@ Static Function GravaReg()
 
 		DbSelectArea("T4J")
 		RecLock("T4J", .T.)
-		T4J->T4J_FILIAL	:= SVR->VR_FILIAL
+		T4J->T4J_FILIAL	:= xFilial("T4J") 
 		T4J->T4J_DATA 	:= SVR->VR_DATA
 		T4J->T4J_PROD 	:= SVR->VR_PROD
 		T4J->T4J_ORIGEM := SVR->VR_TIPO
