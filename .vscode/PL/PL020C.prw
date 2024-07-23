@@ -69,12 +69,15 @@ Return
 Static Function TrataEDI()
     Local dData, cAlias
 
+	dData := DaySum(Date(), 90)
+
 	cSQL := "SELECT ZA0_DTENTR, ZA0_PRODUT, B1_LOCPAD, B1_XDIAEO, ZA0_QTDE, "
 	cSQL += " 	    ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO "
 	cSQL += "  FROM " + RetSQLName("ZA0") + " ZA0 "
 	cSQL += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cSQL += "    ON B1_COD 			=  ZA0_PRODUT "       
 	cSQL += " WHERE ZA0_STATUS 		=  '0' "          
+	cSql += "   AND ZA0_DTENTR 		<= '" + Dtos(dData) + "'"
 	cSQL += "   AND ZA0_FILIAL   	=  '" + xFilial("ZA0") + "'"
 	cSQL += "   AND B1_FILIAL    	=  '" + xFilial("SB1") + "'"
 	cSQL += "   AND ZA0.D_E_L_E_T_	<> '*' "          
@@ -245,7 +248,7 @@ Static Function GravaReg()
 		SVR->VR_FILIAL	:= xFilial("SVR")
 		SVR->VR_CODIGO  := "AUTO"
 		SVR->VR_SEQUEN  := nSequencia
-		SVR->VR_PROD 	:= cProdb
+		SVR->VR_PROD 	:= cProd
 		SVR->VR_DATA 	:= dDtIni
 		SVR->VR_LOCAL  	:= cLocal
 		SVR->VR_DOC 	:= cDoc
