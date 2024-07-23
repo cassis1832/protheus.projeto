@@ -72,7 +72,7 @@ Return
 	Busca o item a retornar na tabela de saldos de terceiros
  	Se não tiver saldo suficiente dá mensagem e marca que não pode faturar o item
 	Se tiver saldo soma a quant. necessária no campo work
-	aSaldoTerc  Saldos de terceiros		(produto, docto, serie, emissao, preco, saldo, usada, work)
+	aSaldoTerc  Saldos de terceiros	(produto, docto, serie, emissao, preco, saldo, usada, work)
 /*-----------------------------------------------------------------------------*/
 Static Function BuscaSaldoDisp(aItemRet)
 	Local nIndTerc		:= 0
@@ -80,6 +80,8 @@ Static Function BuscaSaldoDisp(aItemRet)
 	Local nSaldoDisp	:= 0
 	Local nQtdeNec		:= 0
 	Local nQtdeUsar		:= 0
+	Local cInfor		:= ""
+	Local cMens			:= ""
 
 	nQtdeNec := aItemRet[3]
 
@@ -103,10 +105,15 @@ Static Function BuscaSaldoDisp(aItemRet)
 			endif
 		endif
 	Next nIndTerc
-	
+
+
 	if nQtdeNec > 0 		// Saldo insuficiente
 		nIndFat := aItemRet[1]
 		aItensFat[nIndFat][7] := .F.
+
+		cInfor := "Item a faturar = " + aItensFat[aItemRet[1]][1]
+		cMens  := "Falta saldo de terceiros para retornar o item = " + cValToChar(aItemRet[2])
+		aadd(aMensagens, {cInfor, cMens})
 	endif
 Return
 
@@ -232,6 +239,8 @@ return
 /*-------------------------------------------------------------------------*/
 Static Function AtualizaGravados(cDoc)
 	Local nInd :=0
+
+	aadd(aMensagens, { cValToChar(cDoc),"Pedido gravado com sucesso"})
 
 	For nInd := 1 to Len(aItensFat) Step 1
 		if aItensFat[nInd][7] == .T.

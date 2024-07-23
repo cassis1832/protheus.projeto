@@ -33,8 +33,6 @@ User Function PL100()
 
 	FwMsgRun(NIL, {|oSay| Processa(oSay)}, "Processando pedidos", "Gerando pedidos de vendas...")
 
-	aadd(aMensagens, {"itemteimteimte","sdkflj sldkfhg slkdfhg lskjfhg "})
-
 	if len(aMensagens) > 0
 		MostraMensagens(aMensagens)
 	endif
@@ -42,7 +40,7 @@ User Function PL100()
 	if nPedidos == 0
 		FWAlertSuccess("NAO FOI CRIADO NENHUM PEDIDO DE VENDA!", "Geracao de Pedidos de Vendas")
 	Else
-		FWAlertSuccess("FORAM CRIADOS " + cValToChar(nPedidos) + " PEDIDOS DE VENDAS", "Geracao de Pedidos de Vendas")
+		FWAlertSuccess("PEDIDOS CRIADOS COM SUCESSO", "Geracao de Pedidos de Vendas")
 	EndIf
 
 	SetFunName(cFunBkp)
@@ -242,7 +240,7 @@ Static Function MostraMensagens(aMensagens)
 	oDlg:SetTitle('Mensagens da Abertura de Pedidos')
 
 	oDlg:SetPos(000, 000)
-	oDlg:SetSize(400, 700)
+	oDlg:SetSize(300, 500)
 
 	oDlg:CreateDialog()
 	oDlg:AddCloseButton(Nil, 'Fechar')
@@ -251,11 +249,10 @@ Static Function MostraMensagens(aMensagens)
 
 	oFwBrowse := FWBrowse():New()
 	oFwBrowse:SetDataArrayoBrowse()  
-	oFwBrowse:AddStatusColumns( { || BrwStatus() }, { || BrwLegend() } )
 	oFwBrowse:SetArray(aMensagens)
 
-	aAdd(aColumns, {"Dado", 	{|oBrw| aMensagens[oBrw:At(), 1] }, "C", "@!", 1, 30, 0, .F.})
-	aAdd(aColumns, {"Mensagem", {|oBrw| aMensagens[oBrw:At(), 2] }, "C", "@!", 1, 60, 0, .F.})
+	aAdd(aColumns, {"Informação",	{|oBrw| aMensagens[oBrw:At(), 1] }, "C", "@!", 1, 30, 0, .F.})
+	aAdd(aColumns, {"Mensagem",		{|oBrw| aMensagens[oBrw:At(), 2] }, "C", "@!", 1, 60, 0, .F.})
 
 	//Cria as colunas do array
 	For nX := 1 To Len(aColumns)
