@@ -250,6 +250,7 @@ Static Function GravaReg()
 		SVR->VR_SEQUEN  := nSequencia
 		SVR->VR_PROD 	:= cProd
 		SVR->VR_DATA 	:= dDtIni
+		SVR->VR_QUANT	:= nQtde
 		SVR->VR_LOCAL  	:= cLocal
 		SVR->VR_DOC 	:= cDoc
 		SVR->VR_TIPO   	:= "9"

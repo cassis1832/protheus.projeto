@@ -51,7 +51,7 @@ Return
  *---------------------------------------------------------------------*/
 Static Function TrataLinhas(oSay)
 	Local cSql 			:= ""
-	Local cCliente		:= ""
+	Local cProd			:= ""
 
 	Private aDiasSem	:= {}
 	
@@ -78,9 +78,9 @@ Static Function TrataLinhas(oSay)
 
 	While (cAliasSA7)->(!EOF()) 
 
-		if cCliente != (cAliasSA7)->A7_CLIENTE
+		if cProd != (cAliasSA7)->A7_PRODUTO
+		    cProd 	 := (cAliasSA7)->A7_PRODUTO
 			aDiasSem := CargaDias((cAliasSA7)->B1_XDIASEM)
-			cCliente := (cAliasSA7)->A7_CLIENTE
 		endif
 
 		if (cAliasSA7)->A7_XQTENT != 0
@@ -244,30 +244,30 @@ Static Function CargaDias(xDiaSem)
 	Local aDias2 	:= {}
 
 	if AllTrim(xDiaSem) == ""
-		aDias := {2,3,4,5,6}
+		aDias := {"2","3","4","5","6"}
 	else
 		aDias := StrTokArr(AllTrim(xDiaSem), ';')
 	endif
 
-	if aSCAN(aDIAS, {|X| AllTrim(Upper(X))=='1'}) != 0
+	if aSCAN(aDIAS, {|X| AllTrim(X)=='1'}) != 0
 	 	AAdd(aDias2, 1)
 	endif
-	if aSCAN(aDIAS, {|X| AllTrim(Upper(X))=='2'}) != 0
+	if aSCAN(aDIAS, {|X| AllTrim(X)=='2'}) != 0
 	 	AAdd(aDias2, 2)
 	endif
-	if aSCAN(aDIAS, {|X| AllTrim(Upper(X))=='3'}) != 0
+	if aSCAN(aDIAS, {|X| AllTrim(X)=='3'}) != 0
 	 	AAdd(aDias2, 3)
 	endif
-	if aSCAN(aDIAS, {|X| AllTrim(Upper(X))=='4'}) != 0
+	if aSCAN(aDIAS, {|X| AllTrim(X)=='4'}) != 0
 	 	AAdd(aDias2, 4)
 	endif
-	if aSCAN(aDIAS, {|X| AllTrim(Upper(X))=='5'}) != 0
+	if aSCAN(aDIAS, {|X| AllTrim(X)=='5'}) != 0
 	 	AAdd(aDias2, 5)
 	endif
-	if aSCAN(aDIAS, {|X| AllTrim(Upper(X))=='6'}) != 0
+	if aSCAN(aDIAS, {|X| AllTrim(X)=='6'}) != 0
 	 	AAdd(aDias2, 6)
 	endif
-	if aSCAN(aDIAS, {|X| AllTrim(Upper(X))=='7'}) != 0
+	if aSCAN(aDIAS, {|X| AllTrim(X)=='7'}) != 0
 	 	AAdd(aDias2, 7)
 	endif
 return aDias2
