@@ -11,6 +11,8 @@ Consulta geral do planejamento
 /*/
 //-------------------------------------------------------------------
 User Function PL030A(cCliente1, cLoja1)
+	Local aArea   		:= GetArea()
+	Local cFunBkp 		:= FunName()
 
 	Private cCliente 	:= cCliente1
 	Private cLoja 	 	:= cLoja1
@@ -30,6 +32,9 @@ User Function PL030A(cCliente1, cLoja1)
 	CalculaSaldos()
 
 	fWBrowse1()
+
+	SetFunName(cFunBkp)
+	RestArea(aArea)
 Return
 
 Static Function ObterDados()

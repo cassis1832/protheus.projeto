@@ -72,7 +72,7 @@ Static Function TrataEDI()
 	dData := DaySum(Date(), 90)
 
 	cSQL := "SELECT ZA0_DTENTR, ZA0_PRODUT, B1_LOCPAD, B1_XDIAEO, ZA0_QTDE, "
-	cSQL += " 	    ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO "
+	cSQL += " 	    ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO, ZA0_TIPOPE "
 	cSQL += "  FROM " + RetSQLName("ZA0") + " ZA0 "
 	cSQL += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cSQL += "    ON B1_COD 			=  ZA0_PRODUT "       
@@ -85,16 +85,24 @@ Static Function TrataEDI()
 	cSQL += " ORDER BY ZA0_CLIENT, ZA0_LOJA, ZA0_PRODUT " 
 	cAlias := MPSysOpenQuery(cSQL)
 
-
 	While (cAlias)->(!EOF())
-        dData := DaySub(Stod((cAlias)->ZA0_DTENTR), 1)
-
-        if Dow(dData) = 1
-            dData := DaySub(dData, 2)
-        Endif
-        if Dow(dData) = 7
-            dData := DaySub(dData, 1)
-        Endif
+		if (cAlias)->ZA0_TIPOPE == "V"
+        	dData := (cAlias)->ZA0_DTENTR
+			if Dow(dData) = 1
+				dData := DaySum(dData, 1)
+			Endif
+			if Dow(dData) = 7
+				dData := DaySum(dData, 2)
+			Endif
+		else
+        	dData := DaySub(Stod((cAlias)->ZA0_DTENTR), 1)
+			if Dow(dData) = 1
+				dData := DaySub(dData, 2)
+			Endif
+			if Dow(dData) = 7
+				dData := DaySub(dData, 1)
+			Endif
+		endif
 
         cSql := "INSERT INTO " + cTableName + " " 
 		cSql += "(ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO, TT_ORIG) "
@@ -131,6 +139,7 @@ Static Function TrataPV()
     cSQL += "   AND C6_BLQ 			<> 'R' "       
 	cSQL += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
     cSQL += "    ON B1_COD			=  C6_PRODUTO "     
+    cSQL += "   AND B1_MRP			=  'S' "     
 	cSQL += " INNER JOIN " + RetSQLName("SF4") + " SF4 "
     cSQL += "    ON F4_CODIGO      	=  C6_TES "
     cSQL += "   AND F4_QTDZERO    	<> '1' "       
@@ -147,9 +156,7 @@ Static Function TrataPV()
     cAlias := MPSysOpenQuery(cSQL)
 
 	While (cAlias)->(!EOF())
-
         dData := DaySub(Stod((cAlias)->C6_ENTREG), 1)
-
         if Dow(dData) = 1
             dData := DaySub(dData, 2)
         Endif

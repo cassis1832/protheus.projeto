@@ -7,7 +7,8 @@ Função
    Gerar pedidos EDI para a Gestamp - clientes 4/5/6/7
    Gravar tabela ZA0 
    Esse programa chamado a partir do PL020 (manutenção do ZA0)
-	18/07 - Tratamento de entrega pelo dia da semana
+	18/07/2024 - Tratamento de entrega pelo dia da semana
+	24/07/2024 - Criacao do tipope = V
 @author Assis
 @since 24/06/2024
 @version 1.0
@@ -55,7 +56,7 @@ Static Function TrataLinhas(oSay)
 
 	Private aDiasSem	:= {}
 	
-	cSql := "SELECT SA7.*, B1_DESC, B1_TS, B1_UM, B1_XDIASEM "
+	cSql := "SELECT SA7.*, B1_DESC, B1_TS, B1_UM "
 	cSql += "  FROM  " + RetSQLName("SA7") + " SA7 "
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cSql += "    ON B1_COD 			=  A7_PRODUTO "
@@ -80,7 +81,7 @@ Static Function TrataLinhas(oSay)
 
 		if cProd != (cAliasSA7)->A7_PRODUTO
 		    cProd 	 := (cAliasSA7)->A7_PRODUTO
-			aDiasSem := CargaDias((cAliasSA7)->B1_XDIASEM)
+			aDiasSem := CargaDias((cAliasSA7)->A7_XDIASEM)
 		endif
 
 		if (cAliasSA7)->A7_XQTENT != 0
@@ -105,7 +106,7 @@ Static Function GravaDados()
 		if dData <= daySum(Date(), 7)
 			cTipoPe := "F"
 		else
-			cTipoPe := "P"
+			cTipoPe := "V"
 		endif
 
 		dbSelectArea("ZA0")

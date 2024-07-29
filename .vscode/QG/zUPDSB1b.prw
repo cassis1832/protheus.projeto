@@ -6,14 +6,14 @@
 //	Altera SB1
 //	Atualiza indicador de MRP
 //------------------------------------------------------------------------------
-User Function zAssisB()
+User Function zUPDSB1b()
 	Local aArea     := FWGetArea()
 
 	If ! FWAlertNoYes("Atualização do SB1 - MRP e Validade do lote 12/07/2024", "Continuar?")
 		Return
 	EndIf
 
-	SetFunName("zUPDSB1a")
+	SetFunName("zUPDSB1b")
 
 	dbSelectArea("SB1")
 	SB1->(DBSetOrder(1))

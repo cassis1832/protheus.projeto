@@ -6,7 +6,7 @@
 //	Altera SB1
 //	Atualiza indicador de MRP
 //------------------------------------------------------------------------------
-User Function zAssis()
+User Function zUPDSB1()
 	Local aArea     := FWGetArea()
 	Local aPergs	    := {}
 	Local aResps	    := {}
@@ -16,7 +16,7 @@ User Function zAssis()
 		Return
 	EndIf
 
-	SetFunName("zAssis")
+	SetFunName("zUPDSB1")
 
 	AAdd(aPergs, {1, "Informe o cliente", CriaVar("A1_COD",.F.),,,"SA1",, 6, .F.})
 

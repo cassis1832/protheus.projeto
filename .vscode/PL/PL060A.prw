@@ -12,6 +12,9 @@ Função: Consulta de planejamento por item - RPAD
 /*/
 
 User Function PL060A(pItem)
+	Local aArea   		:= GetArea()
+	Local cFunBkp 		:= FunName()
+
 	Private cItem 		:= pItem
 	Private nSaldoIni 	:= 0
 	Private nSaldoAtu 	:= 0
@@ -51,6 +54,9 @@ User Function PL060A(pItem)
 	CalculaSaldos()
 
 	fMontaTela()
+
+	SetFunName(cFunBkp)
+	RestArea(aArea)
 Return .T.
 
 
