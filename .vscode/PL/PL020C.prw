@@ -87,7 +87,7 @@ Static Function TrataEDI()
 
 	While (cAlias)->(!EOF())
 		if (cAlias)->ZA0_TIPOPE == "V"
-        	dData := (cAlias)->ZA0_DTENTR
+        	dData := Stod((cAlias)->ZA0_DTENTR)
 			if Dow(dData) = 1
 				dData := DaySum(dData, 1)
 			Endif
