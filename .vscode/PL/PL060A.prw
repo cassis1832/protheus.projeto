@@ -64,10 +64,11 @@ Static Function ObterCompras()
 	Local cSql
 	Local cAlias
 
-	cSql := "SELECT C1_NUM, C1_ITEM, C1_PRODUTO, C1_QUANT, C1_DATPRF "
+	cSql := "SELECT C1_NUM, C1_ITEM, C1_PRODUTO, C1_QUANT - C1_QUJE as C1_QUANT, C1_DATPRF "
 	cSql += "  FROM " +	RetSQLName("SC1") + " SC1 "
 	cSql += " WHERE C1_FILIAL  = '" + xFilial("SC1") + "' "
 	cSql += "   AND C1_PRODUTO = '" + cItem + "'"
+	cSql += "   AND C1_QUANT   > C1_QUJE "
 	cSql += "   AND SC1.D_E_L_E_T_ = ' ' "
 	cSql += " ORDER BY C1_DATPRF "
 

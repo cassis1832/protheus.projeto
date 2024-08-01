@@ -20,7 +20,7 @@ Static oFont12 	:= TFont():New( "Arial",, -12, .T.)
 Static oFont12b := TFont():New( "Arial",, -12, .T.,.T.)
 Static oFont16b := TFont():New( "Arial",, -16, .T.,.T.)
 
-User Function PL010A(cOrdem, lOpera)
+User Function PL010A(cOrdem, lOpera, lReimp)
 	Local aArea   		:= GetArea()
 	Local cFunBkp 		:= FunName()
 
@@ -54,21 +54,19 @@ User Function PL010A(cOrdem, lOpera)
 	cQuery += "   AND C2_TPOP 	 	 <> 'P'"
 	cQuery += "   AND C2_FILIAL 	 =  '" + xFilial("SC2") + "' "
 	cQuery += "	  AND SC2.D_E_L_E_T_ =  ' ' "
+
+	if lReimp == .T.
+		cQuery += "   AND C2_XPRINT	 =  'S'"
+	Else
+		cQuery += "   AND C2_XPRINT	 <>  'S'"
+	Endif
+
 	cQuery += "	ORDER BY C2_NUM, C2_ITEM, C2_SEQUEN "
 	cAliasOrd := MPSysOpenQuery(cQuery)
 
-	if (cAliasOrd)->(EOF())
-		FWAlertError("ORDEM DE PRODUCAO NAO ENCONTRADA!", "ERRO")
-		return
+	if ! (cAliasOrd)->(EOF())
+		FwMsgRun(NIL, {|oSay| printOP(oSay)}, "Imprimindo a ordem = " + cOrdem, "Impressao de OP...")
 	endif
-
-	if (cAliasOrd)->C2_XPRINT == "S"
-		If ! FWAlertYesNo("ORDEM DE PRODUCAO " + cOrdem + " JA FOI IMPRESSA", "CONFIRMA A REIMPRESSAO?")
-			Return
-		EndIf
-	Endif
-
-	FwMsgRun(NIL, {|oSay| printOP(oSay)}, "Imprimindo a ordem = " + cOrdem, "Impressao de OP...")
 
 	SetFunName(cFunBkp)
 	RestArea(aArea)

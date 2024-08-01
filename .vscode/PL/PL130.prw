@@ -50,7 +50,7 @@ Static Function MontaBrowse()
 	Aadd(aWBrowse1,{.f.,0," "," "," "," "," "," "," "})
 
 	@ 050, 005 LISTBOX oWBrowse1 Fields ;
-		HEADER " ","Num. Ordem","Produto","Descricao","Cliente","Dt.Inicio","Dt.Termino","Quantidade" ;
+		HEADER " ","Ordem","Item","Sequencia","Produto","Descricao","Cliente","Dt.Inicio","Dt.Termino","Quantidade" ;
 		SIZE 490, 200 OF oDlg PIXEL ColSizes 50,50
 
 	oWBrowse1:SetArray(aWBrowse1)
@@ -61,19 +61,25 @@ Static Function MontaBrowse()
 			aWBrowse1[oWBrowse1:nAt,4],;
 			aWBrowse1[oWBrowse1:nAt,5],;
 			aWBrowse1[oWBrowse1:nAt,6],;
-			aWBrowse1[oWBrowse1:nAt,7]};
+			aWBrowse1[oWBrowse1:nAt,7],;
+			aWBrowse1[oWBrowse1:nAt,8],;
+			aWBrowse1[oWBrowse1:nAt,9]};
 			}
 		oWBrowse1:bLDblClick := {|| ETQMTRE(), oWBrowse1:DrawSelect()}
 		Return
 
 
+//-------------------------------------------------------------------
+//	Botão filtrar
+//-------------------------------------------------------------------
 STATIC FUNCTION Filtrar(dDtIni, dDtFim)
+
 	Local cTrb      := "TRBXDF"
 
 	aWBrowse1 := {}
 
 	IF EMPTY(dDtIni) .or. EMPTY(dDtFim)
-		Aadd(aWBrowse1,{.f.,0," "," "," "," "," "," "," "})
+		Aadd(aWBrowse1,{.f.,0," "," "," "," "," "," "," "," "})
 	else
 		IIF(SELECT(cTrb)>0,(cTrb)->(DBCLOSEAREA()),NIL)
 
@@ -83,8 +89,12 @@ STATIC FUNCTION Filtrar(dDtIni, dDtFim)
 				INNER JOIN %TABLE:SB1% B 
 				   ON B.B1_FILIAL = %EXP:FWXFILIAL("SB1")%
 				  AND A.C2_PRODUTO = B.B1_COD
-				WHERE A.C2_DATPRI >= %EXP:dDtIni%
+				  AND B.D_E_L_E_T_ = ' '
+				WHERE A.C2_FILIAL  = %EXP:FWXFILIAL("SC2")%
+				  AND A.C2_DATPRI >= %EXP:dDtIni%
 				  AND A.C2_DATPRI <= %EXP:dDtFim%
+				  AND A.C2_TPOP   <> "P"
+				  AND A.D_E_L_E_T_ = ' '
 		ENDSQL
 
 		DBSELECTAREA(cTrb)
@@ -94,7 +104,7 @@ STATIC FUNCTION Filtrar(dDtIni, dDtFim)
 			MsgInfo("NENHUMA ORDEM DE PRODUCAO FOI ENCONTRADA!")
 		else
 			WHILE (cTrb)->(!EOF())
-				(cTrb)->(AADD(aWBrowse1,{.F.,C2_NUM + C2_ITEM + C2_SEQUEN,B1_COD,B1_DESC,B1_XCLIENT, dtoc(stod(C2_DATPRI)), dtoc(stod(C2_DATPRF)), C2_QUANT}))
+				(cTrb)->(AADD(aWBrowse1,{.F., C2_NUM, C2_ITEM, C2_SEQUEN, B1_COD, B1_DESC, B1_XCLIENT, dtoc(stod(C2_DATPRI)), dtoc(stod(C2_DATPRF)), C2_QUANT}))
 				(cTrb)->(DBSKIP())
 			END
 		endif
@@ -108,33 +118,38 @@ STATIC FUNCTION Filtrar(dDtIni, dDtFim)
 			aWBrowse1[oWBrowse1:nAt,4],;
 			aWBrowse1[oWBrowse1:nAt,5],;
 			aWBrowse1[oWBrowse1:nAt,6],;
-			aWBrowse1[oWBrowse1:nAt,7]};
-			}
+			aWBrowse1[oWBrowse1:nAt,7],;
+			aWBrowse1[oWBrowse1:nAt,8],;
+			aWBrowse1[oWBrowse1:nAt,9]}}
 
 		oWBrowse1:bHeaderClick := {|o,x| markAll(oWBrowse1) }
 		oWBrowse1:refresh()
 		RETURN
 
 
+//-------------------------------------------------------------------
+//	Botão imprimir
+//-------------------------------------------------------------------
 STATIC FUNCTION Imprimir(aDados)
 	IF LEN(aDados) > 0
-		Processa({|| ETQMTRC(aDados) },"Aguarde","Emitindo Relatorio...",.F.)
+		Processa({|| ETQMTRC(aDados) },"Aguarde","Emitindo Picking-list...",.F.)
 	ELSE
 		Aviso("Atencao - nao existem dados para imprimir!",{"Ok"})
 	endif
 Return
 
 
+//-------------------------------------------------------------------
+//	Imprimir
+//-------------------------------------------------------------------
 Static Function ETQMTRC(aDados)
-
-RETURN
-
-
-static function ETQMTRF(nGet1,npos)
-	oWBrowse1:AARRAY[oWBrowse1:NAT][npos] := nGet1
-return
+	u_PL130A(aDados)
+Return
 
 
+//-------------------------------------------------------------------
+//	Marcar ou desmarcar tudo
+//-------------------------------------------------------------------
 static  Function Markall(oObj)
 	Local nI := 0
 
@@ -146,6 +161,15 @@ static  Function Markall(oObj)
 Return
 
 
+//-------------------------------------------------------------------
+//	Double click
+//-------------------------------------------------------------------
 STATIC FUNCTION ETQMTRE()
 	oWBrowse1:AARRAY[oWBrowse1:NAT][1] := !oWBrowse1:AARRAY[oWBrowse1:NAT][1]
 RETURN()
+
+
+static function ETQMTRF(nGet1,npos)
+	oWBrowse1:AARRAY[oWBrowse1:NAT][npos] := nGet1
+return
+

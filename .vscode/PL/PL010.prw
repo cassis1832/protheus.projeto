@@ -14,6 +14,7 @@ User Function PL010()
 	Local aResps	    := {}
 
 	Local lOp 	    	:= .T.  		   	// Deseja imprimir a ordem de produção
+	Local lReimp    	:= .F.  		   	// Reimpressao de ordem
 	Local lEtiq 	    := .T.  		   	// Deseja imprimir etiquetas
 	Local cQuery 	    := ""
 
@@ -27,6 +28,7 @@ User Function PL010()
 	AAdd(aPergs, {1, "Numero da Ordem Inicial"		, Space(11),,,"SC2",, 60, .T.})
 	AAdd(aPergs, {1, "Numero da Ordem Final"		, Space(11),,,"SC2",, 60, .T.})
 	AAdd(aPergs, {4, "Imprimir Ordem de Producao"	,.T.,"Deseja imprimir a OP" ,90,"",.F.})
+	AAdd(aPergs, {4, "Reimpressao"					,.T.,"Imprime novamente" ,90,"",.F.})
 	AAdd(aPergs ,{4, "Operacoes"   					,.T.,"Todas as operacoes juntas" ,90,"",.F.})
 	AAdd(aPergs ,{4, "Imprimir Etiquetas"			,.T.,"Deseja imprimir etiquetas" ,90,"",.F.})
 
@@ -34,8 +36,9 @@ User Function PL010()
 		cOrdemIni  	:= aResps[1]
 		cOrdemFim  	:= aResps[2]
 		lOP			:= aResps[3]
-		lOper		:= aResps[4]
-		lEtiq		:= aResps[5]
+		lReimp		:= aResps[4]
+		lOper		:= aResps[5]
+		lEtiq		:= aResps[6]
 	Else
 		return
 	endif
@@ -62,17 +65,23 @@ User Function PL010()
 		cQuery += "   AND C2_FILIAL 	 =  '" + xFilial("SC2") + "' "
 		cQuery += "	  AND SC2.D_E_L_E_T_ =  ' ' "
 
+		if lReimp == .T.
+			cQuery += "   AND C2_XPRINT	 =  'S'"
+		Else
+			cQuery += "   AND C2_XPRINT	 <>  'S'"
+		Endif
+
 		cQuery += "	ORDER BY C2_NUM, C2_ITEM, C2_SEQUEN "
 		cAliasOrd := MPSysOpenQuery(cQuery)
 
 		if (cAliasOrd)->(EOF())
-			FWAlertError("ORDEM DE PRODUCAO NAO ENCONTRADA!", "ERRO")
+			FWAlertError("NENHUMA ORDEM DE PRODUCAO FOI ENCONTRADA!", "ERRO")
 			return
 		endif
 
 		While (cAliasOrd)->(! EOF())
 			cOp := (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN
-			u_PL010A(cOp, lOper)
+			u_PL010A(cOp, lOper, lReimp)
 			(cAliasOrd)->(DbSkip())
 		enddo
 
