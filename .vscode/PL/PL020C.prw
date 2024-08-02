@@ -5,6 +5,7 @@
 /*/{Protheus.doc} PL020C
 	Atualização das demandas do MRP com base no EDI e nos pedidos de vendas
     Atualizar tabelas SVB e SVR - demandas do MRP (cliente/loja)
+	02/08/24 - Desprezar previsao no passado
 @author Assis
 @since 11/04/2024
 @version 1.0
@@ -103,24 +104,25 @@ Static Function TrataEDI()
 				dData := DaySub(dData, 1)
 			Endif
 		endif
+ 
+		if (cAlias)->ZA0_TIPOPE == "F" .or. dData > date()
+			cSql := "INSERT INTO " + cTableName + " " 
+			cSql += "(ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO, TT_ORIG) "
+			cSql += "VALUES ('" + FWUUIDv4() 		+ "','" 
+			cSql += (cAlias)->ZA0_PRODUT 			+ "','"
+			cSql += (cAlias)->B1_LOCPAD 			+ "','" 
+			cSql += cValToChar((cAlias)->ZA0_SALDO) + "','" 
+			cSql += dtos(dData) 					+ "','" 
+			cSql += (cAlias)->ZA0_NUMPED 			+ "','" 
+			cSql += cValToChar((cAlias)->B1_XDIAEO) + "','"
+			cSql += "ZA0" + "')"
 
-        cSql := "INSERT INTO " + cTableName + " " 
-		cSql += "(ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO, TT_ORIG) "
-		cSql += "VALUES ('"
-        cSql += FWUUIDv4() 						+ "','" 
-		cSql += (cAlias)->ZA0_PRODUT 			+ "','"
-        cSql += (cAlias)->B1_LOCPAD 			+ "','" 
-		cSql += cValToChar((cAlias)->ZA0_SALDO) + "','" 
-        cSql += dtos(dData) 					+ "','" 
-		cSql += (cAlias)->ZA0_NUMPED 			+ "','" 
-        cSql += cValToChar((cAlias)->B1_XDIAEO) + "','"
-        cSql += "ZA0" + "')"
-
-        if TCSqlExec(cSql) < 0
-           MsgInfo("Erro na execução da query:", "Atenção")
-           MsgInfo(TcSqlError(), "Atenção2")
-        endif
-
+			if TCSqlExec(cSql) < 0
+			MsgInfo("Erro na execução da query:", "Atenção")
+			MsgInfo(TcSqlError(), "Atenção2")
+			endif
+		endif
+		
 		(cAlias)->(DbSkip())
   	End While
 Return
