@@ -9,6 +9,7 @@ Função
    Esse programa chamado a partir do PL020 (manutenção do ZA0)
 	18/07/2024 - Tratamento de entrega pelo dia da semana
 	24/07/2024 - Criacao do tipope = V
+	07/08/2024 - Tratar item bloqueado
 @author Assis
 @since 24/06/2024
 @version 1.0
@@ -18,13 +19,10 @@ User Function PL020B()
 	Local aArea   		:= GetArea()
 	Local cFunBkp 		:= FunName()
 
-	Private cClienteIni	:= ''
-	Private cClienteFim	:= ''
-	Private cLoja	 	:= ''
 	Private dInicio	 	:= date()
 	Private dLimite  	:= date()
-	Private cProdIni  	:= ''
-	Private cProdFim  	:= ''
+	Private cProdIni  	:= CriaVar("B1_COD")
+	Private cProdFim  	:= CriaVar("B1_COD")
 
 	Private cAliasSA7
 	Private dtProcesso 	:= Date()
@@ -58,17 +56,18 @@ Static Function TrataLinhas(oSay)
 	
 	cSql := "SELECT SA7.*, B1_DESC, B1_TS, B1_UM "
 	cSql += "  FROM  " + RetSQLName("SA7") + " SA7 "
+	
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cSql += "    ON B1_COD 			=  A7_PRODUTO "
-	cSql += " WHERE A7_CLIENTE 		>= '" + cClienteIni + "'"
-	cSql += "   AND A7_CLIENTE 		<= '" + cClienteFim + "'"
-	cSql += "   AND A7_LOJA 		=  '" + cLoja + "'" 
+	cSql += "   AND B1_MSBLQL 		=  '2' "
+	cSql += "   AND B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
+	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
+	
+	cSql += " WHERE A7_CLIENTE 		IN ('000004', '000005', '000006')" 
 	cSql += "   AND A7_PRODUTO 		>= '" + cProdIni + "'" 
 	cSql += "   AND A7_PRODUTO 		<= '" + cProdFim + "'" 
 	cSql += "   AND A7_FILIAL 		=  '" + xFILIAL("SA7") + "'"
-	cSql += "   AND B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
 	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
-	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
 	cSql += " ORDER BY A7_CLIENTE, A7_PRODUTO "
 	cAliasSA7 := MPSysOpenQuery(cSql)	
  
@@ -154,13 +153,12 @@ Static Function LimpaDados(oSay)
    	dbSelectArea("ZA0")
    	ZA0->(DBSetOrder(3))  
    
-   	DBSeek(xFilial("ZA0") + cClienteIni)
+   	DBSeek(xFilial("ZA0") + '000004')
 	
 	Do While ! Eof() 
 
-		if ZA0->ZA0_CLIENT 	>= cClienteIni 	.AND. ;
-		 	ZA0->ZA0_CLIENT <= cClienteFim 	.AND. ;
-			ZA0_STATUS     	<> "9" 
+		if ZA0_STATUS <> "9" .and. ;
+		  (ZA0->ZA0_CLIENT 	== '000004'	.or. ZA0->ZA0_CLIENT == '000005' .or. ZA0->ZA0_CLIENT == '000006') 
 
 			if ZA0->ZA0_DTCRIA  <> dtProcesso .or. ;
 				ZA0->ZA0_HRCRIA <> hrProcesso
@@ -183,38 +181,22 @@ Static Function VerParam()
 	Local aResps	    := {}
 	Local lRet 			:= .T.
 
-	AAdd(aPergs, {1, "Informe o cliente inicial "			, CriaVar("ZA0_CLIENT",.F.),,,"SA1",, 50, .F.})
-	AAdd(aPergs, {1, "Informe o cliente final "				, CriaVar("ZA0_CLIENT",.F.),,,"SA1",, 50, .F.})
-	AAdd(aPergs, {1, "Informe a loja "   					, CriaVar("ZA0_LOJA"  ,.F.),,,"SA1",, 30, .F.})
-	AAdd(aPergs, {1, "Informe a data de entrega inicial "	, CriaVar("ZA0_DTENTR",.F.),"",".T.","",".T.", 70, .F.})
-	AAdd(aPergs, {1, "Informe a data de entrega limite " 	, CriaVar("ZA0_DTENTR",.F.),"",".T.","",".T.", 70, .F.})
-	AAdd(aPergs, {1, "Informe o item inicial "				, CriaVar("B1_COD",.F.),,,"SB1",, 70, .F.})
-	AAdd(aPergs, {1, "Informe o item final " 				, CriaVar("B1_COD",.F.),,,"SB1",, 70, .F.})
+	cProdFim := "ZZZZZZZZZZZZ"
+
+	AAdd(aPergs, {1, "Informe a data de entrega inicial "	, dInicio,"",".T.","",".T.", 70, .F.})
+	AAdd(aPergs, {1, "Informe a data de entrega limite " 	, dLimite,"",".T.","",".T.", 70, .F.})
+	AAdd(aPergs, {1, "Informe o item inicial "				, cProdIni,,,"SB1",, 70, .F.})
+	AAdd(aPergs, {1, "Informe o item final " 				, cProdFim,,,"SB1",, 70, .F.})
 
 	If ParamBox(aPergs, "Parametros", @aResps,,,,,,,, .T., .T.)
-	AAdd(aPergs, {1, "Informe o cliente inicial "			, CriaVar("ZA0_CLIENT",.F.),,,"SA1",, 50, .F.})
-		cClienteIni := aResps[1]
-		cClienteFim := aResps[2]
-		cLoja    	:= aResps[3]
-		dInicio	 	:= aResps[4]
-		dLimite  	:= aResps[5]
-		cProdIni 	:= aResps[6]
-		cProdFim 	:= aResps[7]
+		dInicio	 	:= aResps[1]
+		dLimite  	:= aResps[2]
+		cProdIni 	:= aResps[3]
+		cProdFim 	:= aResps[4]
 	Else
 		lRet := .F.
 		return lRet
 	endif
-
-	if cClienteIni != "000004" .and. cClienteIni != "000005" .and. cClienteIni != "000006" .and. cClienteIni != "000007"
-		lRet := .F.
-		FWAlertError("CLIENTE NAO GESTAMP!")
-	endif
-
-	if cClienteFim != "000004" .and. cClienteFim != "000005" .and. cClienteFim != "000006" .and. cClienteFim != "000007"
-		lRet := .F.
-		FWAlertError("CLIENTE NAO GESTAMP!")
-	endif
-
 return lRet
 
 

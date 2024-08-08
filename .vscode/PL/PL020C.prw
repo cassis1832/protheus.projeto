@@ -5,7 +5,8 @@
 /*/{Protheus.doc} PL020C
 	Atualização das demandas do MRP com base no EDI e nos pedidos de vendas
     Atualizar tabelas SVB e SVR - demandas do MRP (cliente/loja)
-	02/08/24 - Desprezar previsao no passado
+	02/08/2024 - Desprezar previsao no passado
+	07/08/2024 - Tratar item bloqueado
 @author Assis
 @since 11/04/2024
 @version 1.0
@@ -75,14 +76,17 @@ Static Function TrataEDI()
 	cSQL := "SELECT ZA0_DTENTR, ZA0_PRODUT, B1_LOCPAD, B1_XDIAEO, ZA0_QTDE, "
 	cSQL += " 	    ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO, ZA0_TIPOPE "
 	cSQL += "  FROM " + RetSQLName("ZA0") + " ZA0 "
+	
 	cSQL += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cSQL += "    ON B1_COD 			=  ZA0_PRODUT "       
+	cSql += "   AND B1_MSBLQL 		=  '2' "
+	cSQL += "   AND B1_FILIAL    	=  '" + xFilial("SB1") + "'"
+	cSQL += "   AND SB1.D_E_L_E_T_ 	<> '*' "          
+	
 	cSQL += " WHERE ZA0_STATUS 		=  '0' "          
 	cSql += "   AND ZA0_DTENTR 		<= '" + Dtos(dData) + "'"
 	cSQL += "   AND ZA0_FILIAL   	=  '" + xFilial("ZA0") + "'"
-	cSQL += "   AND B1_FILIAL    	=  '" + xFilial("SB1") + "'"
 	cSQL += "   AND ZA0.D_E_L_E_T_	<> '*' "          
-	cSQL += "   AND SB1.D_E_L_E_T_ 	<> '*' "          
 	cSQL += " ORDER BY ZA0_CLIENT, ZA0_LOJA, ZA0_PRODUT " 
 	cAlias := MPSysOpenQuery(cSQL)
 
@@ -135,26 +139,31 @@ Static Function TrataPV()
 
     cSQL := "SELECT B1_COD, C6_LOCAL, C6_ENTREG, C6_QTDVEN, C6_NUM, B1_XDIAEO, (C6_QTDVEN - C6_QTDENT) AS C6_SALDO "
 	cSQL += "  FROM " + RetSQLName("SC5") + " SC5 "
+
 	cSQL += " INNER JOIN " + RetSQLName("SC6") + " SC6 "
     cSQL += "    ON C6_NUM         	=  C5_NUM "    
     cSQL += "   AND C6_QTDENT      	<  C6_QTDVEN " 
     cSQL += "   AND C6_BLQ 			<> 'R' "       
+    cSQL += "   AND C6_FILIAL      	=  '" + xFilial("SC6") + "'"
+    cSQL += "   AND SC6.D_E_L_E_T_ 	<> '*' "       
+	
 	cSQL += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
     cSQL += "    ON B1_COD			=  C6_PRODUTO "     
     cSQL += "   AND B1_MRP			=  'S' "     
+	cSql += "   AND B1_MSBLQL 		=  '2' "
+    cSQL += "   AND B1_FILIAL      	=  '" + xFilial("SB1") + "'"
+    cSQL += "   AND SB1.D_E_L_E_T_  <> '*' "       
+	
 	cSQL += " INNER JOIN " + RetSQLName("SF4") + " SF4 "
     cSQL += "    ON F4_CODIGO      	=  C6_TES "
     cSQL += "   AND F4_QTDZERO    	<> '1' "       
-    cSQL += " WHERE C5_NOTA      	=  '' "         
+    cSQL += "   AND F4_FILIAL      	=  '" + xFilial("SF4") + "'"
+    cSQL += "   AND SF4.D_E_L_E_T_  <> '*' "       
+    
+	cSQL += " WHERE C5_NOTA      	=  '' "         
     cSQL += "   AND C5_LIBEROK    	<> 'E' "       
     cSQL += "   AND C5_FILIAL      	=  '" + xFilial("SC5") + "'"
-    cSQL += "   AND C6_FILIAL      	=  '" + xFilial("SC6") + "'"
-    cSQL += "   AND B1_FILIAL      	=  '" + xFilial("SB1") + "'"
-    cSQL += "   AND F4_FILIAL      	=  '" + xFilial("SF4") + "'"
     cSQL += "   AND SC5.D_E_L_E_T_  <> '*' "       
-    cSQL += "   AND SC6.D_E_L_E_T_ 	<> '*' "       
-    cSQL += "   AND SB1.D_E_L_E_T_  <> '*' "       
-    cSQL += "   AND SF4.D_E_L_E_T_  <> '*' "       
     cAlias := MPSysOpenQuery(cSQL)
 
 	While (cAlias)->(!EOF())

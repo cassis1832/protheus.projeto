@@ -5,7 +5,8 @@
     PL100 - GERAÇÃO DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
     MATA410 - EXECAUTO
     Ler ZA0 por cliente/data/natureza/hora de entrega/item
-	16/07 - criação de dialog para mensagens
+	16/07/2024 - criação de dialog para mensagens
+	07/08/2024 - Tratar item bloqueado
 	@type  Function
 	@author ASSIS
 	@since 05/06/2024
@@ -59,23 +60,27 @@ Static Function Processa(oSay)
 	// Ler os pedidos EDI
 	cSql := "SELECT ZA0.*, A7_XNATUR, B1_DESC, B1_TS, B1_UM, A7_XGRUPV"
 	cSql += "  FROM  " + RetSQLName("ZA0") + " ZA0 "
+
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1"
 	cSql += "    ON B1_COD 			=  ZA0_PRODUT "
+	cSql += "   AND B1_MSBLQL 		=  '2' "
+	cSql += "   AND B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
+	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
+
 	cSql += " INNER JOIN " + RetSQLName("SA7") + " SA7 "
 	cSql += "    ON A7_CLIENTE 		=  ZA0_CLIENT"
 	cSql += "   AND A7_LOJA 		=  ZA0_LOJA"
 	cSql += "   AND A7_PRODUTO 		=  ZA0_PRODUT"
+	cSql += "   AND A7_FILIAL 		=  '" + xFILIAL("SA7") + "'"
+	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
+
 	cSql += " WHERE ZA0_CLIENT  	=  '" + cCliente + "'"
 	cSql += "   AND ZA0_LOJA    	=  '" + cLoja + "'"
 	cSql += "   AND ZA0_DTENTR 		<= '" + Dtos(dLimite) + "'"
 	cSql += "   AND ZA0_TIPOPE  	=  'F' "
 	cSql += "   AND ZA0_STATUS  	=  '0' "
 	cSql += "   AND ZA0_QTDE    	>  ZA0_QTCONF "
-	cSql += "   AND B1_FILIAL 		=  '" + xFILIAL("SB1") + "'"
-	cSql += "   AND A7_FILIAL 		=  '" + xFILIAL("SA7") + "'"
 	cSql += "   AND ZA0.D_E_L_E_T_ 	<> '*' "
-	cSql += "   AND SB1.D_E_L_E_T_ 	<> '*' "
-	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
 
 	if cCliente == "000004"  // Gestamp Betim quebra por item
 		cSql += " ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_PRODUT "
@@ -237,7 +242,7 @@ Static Function MostraMensagens(aMensagens)
 
 	oDlg:= FwDialogModal():New()
 	oDlg:SetEscClose(.T.)
-	oDlg:SetTitle('Mensagens da Abertura de Pedidos')
+	oDlg:SetTitle('Mensagens da Geracao de Pedidos de Vendas')
 
 	oDlg:SetPos(000, 000)
 	oDlg:SetSize(300, 500)
@@ -261,7 +266,7 @@ Static Function MostraMensagens(aMensagens)
 
 	oFwBrowse:SetOwner(oPnl)
 	oFwBrowse:SetDoubleClick( {|| fDupClique() } )
-	oFwBrowse:SetDescription( "Mensagens da Abertura de Ordens" )
+	oFwBrowse:SetDescription( "Mensagens da Geracao de Pedidos de Vendas" )
 
 	oFwBrowse:Activate()
 	oDlg:Activate()
