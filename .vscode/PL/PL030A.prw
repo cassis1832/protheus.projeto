@@ -5,6 +5,7 @@
 //-------------------------------------------------------------------
 /*/{Protheus.doc} PL030A
 Consulta geral do planejamento
+	12/08/2024 - Criada coluna de atraso
 @author  Carlos Assis
 @since   22/05/2024
 @version 1.0
@@ -123,11 +124,17 @@ Static Function ObterDados()
 
 	MontaDatas()
 
+	// Carrega pedidos EDI
 	While (cAliasZA0)->(!EOF())
 
 		// Localiza o item e a data
 		nPosItem := aScan(aPedidos, {|x| AllTrim(x[1]) == AllTrim((cAliasZA0)->ZA0_PRODUT)})
-		nPosData := aScan(aDatas, {|x| x == sToD((cAliasZA0)->ZA0_DTENTR)})
+
+		if (cAliasZA0)->ZA0_DTENTR < dToS(Date())
+			nPosData := 1
+		else
+			nPosData := aScan(aDatas, {|x| x == sToD((cAliasZA0)->ZA0_DTENTR)})
+		endif
 
 		// Soma a quantidade do pedido
 		if nPosItem <> 0 .and. nPosData <> 0
@@ -142,7 +149,12 @@ Static Function ObterDados()
 
 		// Localiza o item e a data
 		nPosItem := aScan(aPedidos, {|x| AllTrim(x[1]) == AllTrim((cAliasSC6)->B1_COD)})
-		nPosData := aScan(aDatas, {|x| x == sToD((cAliasSC6)->C6_ENTREG)})
+
+		if (cAliasSC6)->C6_ENTREG < dToS(Date())
+			nPosData := 1
+		else
+			nPosData := aScan(aDatas, {|x| x == sToD((cAliasSC6)->C6_ENTREG)})
+		endif
 
 		// Soma a quantidade do pedido
 		if nPosItem <> 0 .And. nPosData <> 0
@@ -182,20 +194,10 @@ Static Function MontaDatas()
 	Local dData := Nil
 	Local cData := dToS(Date())
 
-	if ! (cAliasZA0)->(EOF())
-		cData := (cAliasZA0)->ZA0_DTENTR
-	Endif
-
-	if ! (cAliasSC6)->(EOF())
-		if cData > (cAliasSC6)->C6_ENTREG
-			cData := (cAliasSC6)->C6_ENTREG
-		endif
-	Endif
-
 	dData  := stod(cData)
 	aDatas := {}
 
-	For nInd := 1 to 15 Step 1
+	For nInd := 2 to 15 Step 1
 		Aadd(aDatas,dData)
 		dData := DaySum(dData, 1)
 	Next
@@ -298,7 +300,7 @@ Static Function RetColumns()
 	if len(aDatas) == 0
 		FWAlertWarning("NAO EXISTEM DADOS PARA MOSTRAR! ", "PLANO GERAL")
 	else
-		iif (len(aDatas) >  0, aAdd(aColumns, {DtoC(aDatas[1]), {|oBrw| aPedidos[oBrw:At(),  4] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  0, aAdd(aColumns, {"Em Atraso", 	{|oBrw| aPedidos[oBrw:At(),  4] }, "C", "@!",	0, 6, 2, .F.}),0)
 		iif (len(aDatas) >  1, aAdd(aColumns, {DtoC(aDatas[2]), {|oBrw| aPedidos[oBrw:At(),  5] }, "C", "@!",	0, 6, 2, .F.}),0)
 		iif (len(aDatas) >  2, aAdd(aColumns, {DtoC(aDatas[3]), {|oBrw| aPedidos[oBrw:At(),  6] }, "C", "@!",	0, 6, 2, .F.}),0)
 		iif (len(aDatas) >  3, aAdd(aColumns, {DtoC(aDatas[4]), {|oBrw| aPedidos[oBrw:At(),  7] }, "C", "@!",	0, 6, 2, .F.}),0)
