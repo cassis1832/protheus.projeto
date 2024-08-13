@@ -130,7 +130,7 @@ Static Function ObterDados()
 		// Localiza o item e a data
 		nPosItem := aScan(aPedidos, {|x| AllTrim(x[1]) == AllTrim((cAliasZA0)->ZA0_PRODUT)})
 
-		if (cAliasZA0)->ZA0_DTENTR < dToS(Date())
+		if (cAliasZA0)->ZA0_DTENTR < dToS(ddatabase)
 			nPosData := 1
 		else
 			nPosData := aScan(aDatas, {|x| x == sToD((cAliasZA0)->ZA0_DTENTR)})
@@ -150,7 +150,7 @@ Static Function ObterDados()
 		// Localiza o item e a data
 		nPosItem := aScan(aPedidos, {|x| AllTrim(x[1]) == AllTrim((cAliasSC6)->B1_COD)})
 
-		if (cAliasSC6)->C6_ENTREG < dToS(Date())
+		if (cAliasSC6)->C6_ENTREG < dToS(ddatabase)
 			nPosData := 1
 		else
 			nPosData := aScan(aDatas, {|x| x == sToD((cAliasSC6)->C6_ENTREG)})
@@ -191,13 +191,11 @@ return
 */
 Static Function MontaDatas()
 	Local nInd  :=0
-	Local dData := Nil
-	Local cData := dToS(Date())
+	Local dData := daySub(ddatabase,1)
 
-	dData  := stod(cData)
 	aDatas := {}
 
-	For nInd := 2 to 15 Step 1
+	For nInd := 1 to 15 Step 1
 		Aadd(aDatas,dData)
 		dData := DaySum(dData, 1)
 	Next
