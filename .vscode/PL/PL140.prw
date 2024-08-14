@@ -180,7 +180,6 @@ Return oView
 Static Function CargaTT()
 	Local cAlias, cSql
 
-	// Carregar pedidos de vendas
 	cSql := "SELECT B8_PRODUTO, B8_SALDO, B8_EMPENHO, B8_LOTECTL, "
 	cSql += "		B1_DESC, B1_XCLIENT, B1_TIPO, B1_XITEM, B1_LE, B1_PE, B1_MRP "
 	cSql += "  FROM " + RetSQLName("SB8") + " SB8 "

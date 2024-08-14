@@ -235,7 +235,10 @@ Static Function LimpaDados(oSay)
 	
 	Do While ! Eof() 
 
-		if ZA0->ZA0_CLIENT == cCliente .AND. ZA0_STATUS <> "9"
+		if ZA0->ZA0_CLIENT == cCliente 	.AND. ;
+			ZA0_STATUS 		<> "9" 		.AND. ;
+			ZA0_TIPOPE 		<> "M" 
+
 			if ZA0->ZA0_DTCRIA <> dtProcesso .or. ;
 				ZA0->ZA0_HRCRIA <> hrProcesso
 

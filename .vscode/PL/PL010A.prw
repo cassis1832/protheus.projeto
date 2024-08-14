@@ -56,21 +56,92 @@ User Function PL010A(cOrdem, lOpera, lReimp)
 	cQuery += "	  AND SC2.D_E_L_E_T_ =  ' ' "
 
 	if lReimp == .T.
-		cQuery += "   AND C2_XPRINT	 =  'S'"
+		cQuery += " AND C2_XPRINT	 =  'S'"
 	Else
-		cQuery += "   AND C2_XPRINT	 <>  'S'"
+		cQuery += " AND C2_XPRINT	 <>  'S'"
 	Endif
 
 	cQuery += "	ORDER BY C2_NUM, C2_ITEM, C2_SEQUEN "
 	cAliasOrd := MPSysOpenQuery(cQuery)
 
 	if ! (cAliasOrd)->(EOF())
-		FwMsgRun(NIL, {|oSay| printOP(oSay)}, "Imprimindo a ordem = " + cOrdem, "Impressao de OP...")
+		if VerEstoque((cAliasOrd)->C2_PRODUTO, (cAliasOrd)->C2_QUANT) == .T.
+			FwMsgRun(NIL, {|oSay| printOP(oSay)}, "Imprimindo a ordem = " + cOrdem, "Impressao de OP...")
+		endif
 	endif
 
 	SetFunName(cFunBkp)
 	RestArea(aArea)
 return
+
+
+Static Function VerEstoque(cProduto, nQtdeNec)
+	Local lRet 		:= .T.
+	Local cSql		:= ""
+	Local cDesc		:= ""
+	Local cMsg      := ""
+	Local nSaldo	:= 0
+	Local nQtFilho	:= 0
+
+	Local cAlias	:= ""
+	Local cAliasSG1	:= ""
+
+	// Ler a estrutura para checar se tem estoque
+	cSql := "SELECT G1_COD, G1_COMP, G1_QUANT, G1_INI, G1_FIM, G1_FANTASM "
+	cSql += "  FROM " + RetSQLName("SG1") + " SG1 "
+
+	cSql += " WHERE G1_COD 			= '" + cProduto + "' "
+	cSql += "   AND G1_FILIAL 		= '" + xFilial("SG1") + "' "
+	cSql += "   AND SG1.D_E_L_E_T_ 	= ' ' "
+	cSql += " ORDER BY G1_COMP "
+	cAliasSG1 := MPSysOpenQuery(cSql)
+
+	While (cAliasSG1)->(!EOF())
+		nQtFilho := nQtdeNec * (cAliasSG1)->G1_QUANT
+
+		cSql := "SELECT B8_PRODUTO, B8_SALDO, B8_EMPENHO, B8_LOTECTL, B1_DESC "
+		cSql += "  FROM " + RetSQLName("SB8") + " SB8 "
+
+		cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+		csQL += "	 ON B1_COD			=  B8_PRODUTO "
+		cSql += "   AND B1_MSBLQL 		=  '2' "
+		cSql += "   AND B1_FILIAL 		= '" + xFilial("SB1") + "'"
+		cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
+
+		cSql += " WHERE B8_PRODUTO 		=  '" + (cAliasSG1)->G1_COMP + "'"
+		cSql += "   AND B8_SALDO      	>  0 "
+		cSql += "   AND B8_FILIAL      	=  '" + xFilial("SB8") + "'"
+		cSql += "   AND SB8.D_E_L_E_T_  =  ' ' "
+		cAlias := MPSysOpenQuery(cSql)
+
+		cDesc := (cAlias)->B1_DESC
+
+		nSaldo := 0
+
+		While (cAlias)->(!EOF())
+			nSaldo := nSaldo + (cAlias)->B8_SALDO
+			(cAlias)->(DbSkip())
+		enddo
+
+		if nSaldo < nQtFilho
+			cMsg := cProduto + " - " + cDesc + CRLF
+			cMsg += "Disponivel = " +  cValToChar(nSaldo) + CRLF
+			cMsg += "Necessario = " +  cValToChar(nQtFilho) + CRLF + CRLF
+			cMsg += "CONFIRMA A IMPRESSAO?" + CRLF
+
+			If !FWAlertYesNo(cMsg , "ESTOQUE INSUFICIENTE PARA A PRODUCAO!")
+				lRet := .F.
+			EndIf
+		endif
+
+		(cAlias)->(DBCLOSEAREA())
+
+		(cAliasSG1)->(DbSkip())
+	enddo
+
+	(cAliasSG1)->(DBCLOSEAREA())
+
+return lRet
 
 
 Static Function printOP(oSay)

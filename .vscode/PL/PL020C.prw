@@ -71,7 +71,7 @@ Return
 Static Function TrataEDI()
     Local dData, cAlias
 
-	dData := DaySum(Date(), 90)
+	dData := DaySum(Date(), 180)
 
 	cSQL := "SELECT ZA0_DTENTR, ZA0_PRODUT, B1_LOCPAD, B1_XDIAEO, ZA0_QTDE, "
 	cSQL += " 	    ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO, ZA0_TIPOPE "
