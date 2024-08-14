@@ -2,15 +2,14 @@
 #Include "RPTDEF.CH"
 #Include "TBICONN.CH"
 
-/*/{Protheus.doc}	PL070
+/*/{Protheus.doc}	PL150
 	Extrair dados de uso de maquina em arquivo txt delimitado
-	08/08/2024 - Tempo de operador e maquinas alternativas
 @author Carlos Assis
 @since 22/07/2024
 @version 1.0   
 /*/
 
-User Function PL070()
+User Function PL150()
 	Local oSay 		:= NIL
 	Local aPergs	:= {}
 	Local aResps	:= {}
@@ -108,24 +107,25 @@ Static Function Processa(oSay)
 	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
-	cSql += "	 ON B1_COD 		 =  C2_PRODUTO"
-	cSql += "   AND B1_FILIAL 	 = '" + xFilial("SB1") + "' "
-	cSql += "	AND SB1.D_E_L_E_T_ = ' ' "
+	cSql += "	 ON B1_COD 		 	 = C2_PRODUTO"
+	cSql += "   AND B1_FILIAL 	 	 = '" + xFilial("SB1") + "' "
+	cSql += "	AND SB1.D_E_L_E_T_ 	 = ' ' "
 
 	cSql += " INNER JOIN " + RetSQLName("SG2") + " SG2 "
-	cSql += "    ON G2_PRODUTO = C2_PRODUTO"
-	cSql += "   AND G2_FILIAL 	 = '" + xFilial("SG2") + "' "
-	cSql += "   AND SG2.D_E_L_E_T_ = ''
+	cSql += "    ON G2_PRODUTO 		 = C2_PRODUTO"
+	cSql += "   AND G2_FILIAL		 = '" + xFilial("SG2") + "' "
+	cSql += "   AND SG2.D_E_L_E_T_ 	 = ''
 
 	cSql += " INNER JOIN " + RetSQLName("SH1") + " SH1 "
-	cSql += "    ON H1_CODIGO = G2_RECURSO"
-	cSql += "   AND H1_FILIAL 	 = '" + xFilial("SH1") + "' "
-	cSql += "   AND SH1.D_E_L_E_T_ = ''
+	cSql += "    ON H1_CODIGO 		 = G2_RECURSO"
+	cSql += "   AND H1_FILIAL 	 	 = '" + xFilial("SH1") + "' "
+	cSql += "   AND SH1.D_E_L_E_T_ 	 = ''
 
-	cSql += " WHERE C2_DATPRF >= '" + dtos(dDtIni) + "'"
-	cSql += "   AND C2_DATPRF <= '" + dtos(dDtFim) + "'"
-	cSql += "   AND C2_FILIAL 	 = '" + xFilial("SC2") + "' "
-	cSql += "	AND SC2.D_E_L_E_T_ = ' ' "
+	cSql += " WHERE C2_DATPRF 	   	>= '" + dtos(dDtIni) + "'"
+	cSql += "   AND C2_DATPRF	   	<= '" + dtos(dDtFim) + "'"
+	cSql += "   AND C2_DATRF   		 = ''"
+	cSql += "   AND C2_FILIAL 	 	 = '" + xFilial("SC2") + "' "
+	cSql += "	AND SC2.D_E_L_E_T_ 	 = ' ' "
 	cSql += "	ORDER BY C2_NUM, C2_ITEM, C2_SEQUEN "
 	cAlias := MPSysOpenQuery(cSql)
 
@@ -222,12 +222,13 @@ return
 Static Function GravaCSV(oSay)
 	Local cSql 		:= ""
 	Local cAlias	:= ""
-	Local cArquivo	:= "c:\temp\PL070.csv"
+	Local cArquivo	:= "c:\temp\PL150.csv"
 	Local cLinha	:= ""
 	Local nParada	:= 0
 	Local nMaoObra	:= 0
 
 	cSql := "SELECT * FROM " + cTableName
+	cSql += " order by tt_recurso, tt_datpri, tt_qthstot desc "
 	cAlias := MPSysOpenQuery(cSql)
 
 	oFile := FWFileWriter():New(cArquivo, .T.)
@@ -237,8 +238,8 @@ Static Function GravaCSV(oSay)
 	EndIf
 
 	If (oFile:Create())
-		cLinha := "Numero Ordem;Tipo;Produto;Descricao;Cliente;Operacao;Maquina;Operadores;Tempo Padrao;Lote Padrao;Dt.Inicio;Dt.Fim;"
-		cLinha += "Quantidade;UM;Setup;Qtde.Horas;Horas Totais;Horas Totais Com Paradas;Tempo Operador;Linha de Producao;"
+		cLinha := "Maquina;Data Inicio;Hs. Totais;Numero Ordem;Tipo;Produto;Descricao;Cliente;Operacao;Operadores;Tempo Padrao;Lote Padrao;Dt.Fim;"
+		cLinha += "Quantidade;UM;Setup;Qtde.Horas;Horas Totais Com Paradas;Tempo Operador;Linha de Producao;"
 		cLinha += "Local da Maquina;Tipo de Maquina;Nome da Maquina;Alternativa 2;Alternativa 3;Alternativa 4;Alternativa 5"
 		oFile:Write(cLinha + CRLF)
 
@@ -253,23 +254,23 @@ Static Function GravaCSV(oSay)
 
 			nMaoObra := (cAlias)->TT_MAOOBRA * nParada
 
-			cLinha := (cAlias)->TT_OP + ";"
+			cLinha := AllTrim((cAlias)->TT_RECURSO) + ";"
+			cLinha += dtoc(stod((cAlias)->TT_DATPRI)) + ";"
+			cLinha += TRANSFORM((cAlias)->TT_QTHSTOT, "@E 999999.99") + ";"
+			cLinha += (cAlias)->TT_OP + ";"
 			cLinha += AllTrim((cAlias)->TT_TPOP) + ";"
 			cLinha += AllTrim((cAlias)->TT_PRODUTO) + ";"
 			cLinha += AllTrim((cAlias)->TT_DESC) + ";"
 			cLinha += AllTrim((cAlias)->TT_XCLIENT) + ";"
 			cLinha += AllTrim((cAlias)->TT_OPERAC) + ";"
-			cLinha += AllTrim((cAlias)->TT_RECURSO) + ";"
 			cLinha += AllTrim(cValToChar((cAlias)->TT_MAOOBRA)) + ";"
 			cLinha += TRANSFORM((cAlias)->TT_TEMPAD, "@E 999999.99") + ";"
 			cLinha += TRANSFORM((cAlias)->TT_LOTEPAD, "@E 999999.99") + ";"
-			cLinha += dtoc(stod((cAlias)->TT_DATPRI)) + ";"
 			cLinha += dtoc(stod((cAlias)->TT_DATPRF)) + ";"
 			cLinha += TRANSFORM((cAlias)->TT_QUANT, "@E 999999") + ";"
 			cLinha += AllTrim((cAlias)->TT_UM) + ";"
 			cLinha += TRANSFORM((cAlias)->TT_SETUP, "@E 999999.99") + ";"
 			cLinha += TRANSFORM((cAlias)->TT_QTHS, "@E 999999.99") + ";"
-			cLinha += TRANSFORM((cAlias)->TT_QTHSTOT, "@E 999999.99") + ";"
 			cLinha += TRANSFORM(nParada, "@E 999999.99") + ";"
 			cLinha += TRANSFORM(nMaoObra, "@E 999999.99") + ";"
 			cLinha += AllTrim((cAlias)->TT_XLIN) + ";"
