@@ -131,7 +131,7 @@ Static Function GravaRegistro(aLinha)
     Local lErro     := .T.
    	Local cProduto  := ""
 	Local dData 	:= ctod(aLinha[4])
-	Local cCodCli  	:= AvKey(aLinha[3], "A7_CODCLI")
+	Local cCodCli  	:= Upper(AvKey(aLinha[3], "A7_CODCLI"))
 
 	if aLinha[7] == 'V' .And. dData <= Date()
 		return
