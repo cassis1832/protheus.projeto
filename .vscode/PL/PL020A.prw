@@ -107,22 +107,22 @@ Static Function CriaPrevisao(aLinha)
 	aLin[6] := Str(Ceiling(nQtde / 4))		// 4 semanas
 
 	dData := AjustaFDS(dData)
-	aLin[4] := dData
+	aLin[4] := dtoc(dData)
 	GravaRegistro(aLin)
 
 	dData := daySum(dData, 7)
 	dData := AjustaFDS(dData)
-	aLin[4] := dData
+	aLin[4] := dtoc(dData)
 	GravaRegistro(aLin)
 
 	dData := daySum(dData, 7)
 	dData := AjustaFDS(dData)
-	aLin[4] := dData
+	aLin[4] := dtoc(dData)
 	GravaRegistro(aLin)
 
 	dData := daySum(dData, 7)
 	dData := AjustaFDS(dData)
-	aLin[4] := dData
+	aLin[4] := dtoc(dData)
 	GravaRegistro(aLin)
 return
 
@@ -130,10 +130,10 @@ return
 Static Function GravaRegistro(aLinha)
     Local lErro     := .T.
    	Local cProduto  := ""
-	Local dData 	:= aLinha[4]
+	Local dData 	:= ctod(aLinha[4])
 	Local cCodCli  	:= AvKey(aLinha[3], "A7_CODCLI")
 
-	if aLinha[7] == 'V' .And. aLinha[4] <= Date()
+	if aLinha[7] == 'V' .And. dData <= Date()
 		return
 	endif
 
@@ -146,11 +146,8 @@ Static Function GravaRegistro(aLinha)
     EndIf
 
 	// Ver o tipo de pedido (P/F/V)
-	if aLinha[7] == "F"
-		dData := ctod(dData)
-	endif
-	if aLinha[7] == "P"
-		dData := AjustaFDS(ctod(dData))
+	if aLinha[7] <> "F"
+		dData := AjustaFDS(dData)
 	endif
 
 	if (MsSeek(xFilial("ZA0") + cCliente + cLoja + cProduto + dtos(dData))) 
