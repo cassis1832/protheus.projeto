@@ -177,6 +177,11 @@ Static Function VerParam()
 		lRet := .f.
 	endif
 
+	if cCliente == "000004" .or. cCliente == "000005" .or. cCliente == "000006" .or. cCliente == "000007" 
+		FWAlertError("CLIENTES NÃO LIBERADOS PARA GERACAO DE PEDIDOS!")
+		lRet := .f.
+	endif
+
 	SA1->(dbSetOrder(1))
 	SE4->(dbSetOrder(1))
 	DA1->(dbSetOrder(1))
