@@ -91,12 +91,12 @@ Static Function TrataOP(aLin)
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cSql += "	 ON B1_COD 			= D4_COD "
+	cSql += "   AND B1_TIPO 	   <> 'SV'"
+	cSql += "   AND B1_FILIAL 	 	= '" + xFilial("SB1") + "' "
+	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
 
 	cSql += " WHERE D4_OP 		 	= '" + aLin[2] + aLin[3] + aLin[4] + "' "
-
-	cSql += "   AND B1_FILIAL 	 	= '" + xFilial("SB1") + "' "
 	cSql += "   AND D4_FILIAL 	 	= '" + xFilial("SD4") + "' "
-	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
 	cSql += "   AND SD4.D_E_L_E_T_ 	= ' ' "
 	cSql += " ORDER BY D4_COD"
 	cAliasCmp := MPSysOpenQuery(cSql)
@@ -132,6 +132,16 @@ Static Function TrataOP(aLin)
 
 		(cAliasCmp)->(DbSkip())
 	EndDo
+
+	// Atualiza print pick da ordem
+	SC2->(dbSetOrder(1))
+
+	If SC2->(MsSeek(xFilial("SC2") + (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN))
+		RecLock("SC2", .F.)
+		SC2->C2_XPRTPL := "S"
+		MsUnLock()
+	endif
+
 Return
 
 
