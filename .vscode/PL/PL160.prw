@@ -40,7 +40,7 @@ User Function PL160()
 	AAdd(aPergs, {4, "Estamparia"				,.T.,"Estamparia" ,90,"",.F.})
 	AAdd(aPergs, {4, "Solda"					,.T.,"Solda" ,90,"",.F.})
 
-	If ParamBox(aPergs, "Extracao de Uso Planejado de Maquina", @aResps,,,,,,,, .T., .T.)
+	If ParamBox(aPergs, "Plano de Produção", @aResps,,,,,,,, .T., .T.)
 		dDtIni 	:= aResps[1]
 		dDtFim 	:= aResps[2]
 		lEstamp	:= aResps[3]
@@ -56,6 +56,7 @@ User Function PL160()
 	aAdd(aCampos, {"TT_CLIENT"	,"C", 20, 0})
 	aAdd(aCampos, {"TT_ITCLI"	,"C", 20, 0})
 	aAdd(aCampos, {"TT_OP"		,"C", 11, 0})
+	aAdd(aCampos, {"TT_TPOP"	,"C", 01, 0})
 	aAdd(aCampos, {"TT_STATUS"	,"C", 01, 0})
 	aAdd(aCampos, {"TT_RECURSO"	,"C", 06, 0})
 	aAdd(aCampos, {"TT_DATPRI"	,"D", 08, 0})
@@ -77,6 +78,9 @@ User Function PL160()
 	aAdd(aCampos, {"TT_OBSPRD"	,"C", 60, 0})
 	aAdd(aCampos, {"TT_PRTOP"	,"C", 01, 0})
 	aAdd(aCampos, {"TT_PRTPL"	,"C", 01, 0})
+	aAdd(aCampos, {"TT_QTHORA"	,"N", 14, 3})
+	aAdd(aCampos, {"TT_SITEMP"	,"C", 01, 0})
+	aAdd(aCampos, {"TT_SITMP"	,"C", 01, 0})
 
 	//Cria a temporária
 	oTempTable := FWTemporaryTable():New(cAliasTT)
@@ -96,24 +100,23 @@ User Function PL160()
 	aAdd(aColunas, {"Recurso"			, "TT_RECURSO"	, "C", 06, 0, "@!"})
 	aAdd(aColunas, {"Produto"			, "TT_PRODUTO"	, "C", 08, 0, "@!"})
 	aAdd(aColunas, {"Descricao"			, "TT_DESC"		, "C", 20, 0, "@!"})
-	aAdd(aColunas, {"Cliente"			, "TT_CLIENT"	, "C", 10, 0, "@!"})
-	aAdd(aColunas, {"Item do Cliente"	, "TT_ITCLI"	, "C", 10, 0, "@!"})
-	aAdd(aColunas, {"Ordem"				, "TT_OP"		, "C", 10, 0, "@!"})
-	aAdd(aColunas, {"Dt. Inicio Prev."	, "TT_DTINIP"	, "D", 06, 0, "@D"})
-	aAdd(aColunas, {"Hr. Inicio Prev."	, "TT_HRINIP"	, "C", 05, 0, "99:99"})
-	aAdd(aColunas, {"Num. Horas"		, "TT_QTHSTOT"	, "N", 05, 3, "@E 9,999,999.999"})
-	aAdd(aColunas, {"Dt. Fim Prev."		, "TT_DTFIMP"	, "D", 06, 0, "@D"})
-	aAdd(aColunas, {"Hr. Fim Prev."		, "TT_HRFIMP"	, "C", 05, 0, "99:99"})
-	aAdd(aColunas, {"Quant."			, "TT_QUANT"	, "N", 05, 3, "@E 9,999,999.999"})
-	aAdd(aColunas, {"Quant. Prod."		, "TT_QUJE"		, "N", 05, 3, "@E 9,999,999.999"})
-	aAdd(aColunas, {"Dt. Inicio Real"	, "TT_DTINIR"	, "D", 06, 0, "@D"})
-	aAdd(aColunas, {"Hr. Inicio Real"	, "TT_HRINIR"	, "C", 05, 0, "99:99"})
-	aAdd(aColunas, {"Dt. Fim Real"		, "TT_DTFIMR"	, "D", 06, 0, "@D"})
-	aAdd(aColunas, {"Hr. Fim Real"		, "TT_HRFIMR"	, "C", 05, 0, "99:99"})
+	aAdd(aColunas, {"Cliente"			, "TT_CLIENT"	, "C", 08, 0, "@!"})
+	aAdd(aColunas, {"Item Cliente"		, "TT_ITCLI"	, "C", 08, 0, "@!"})
+	aAdd(aColunas, {"Ordem"				, "TT_OP"		, "C", 08, 0, "@!"})
+	aAdd(aColunas, {"Tipo"				, "TT_TPOP"		, "C", 01, 0, "@!"})
+	aAdd(aColunas, {"Qt. Hora"			, "TT_QTHORA"	, "N", 05, 3, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Dt. Inicio"		, "TT_DATPRI"	, "D", 06, 0, "@D"})
 	aAdd(aColunas, {"Dt. Fim"			, "TT_DATPRF"	, "D", 06, 0, "@D"})
-	aAdd(aColunas, {"Obs. Empenho"		, "TT_OBSEMP"	, "C", 30, 0, "@!"})
-	aAdd(aColunas, {"Obs. Producao"		, "TT_OBSPRD"	, "C", 30, 0, "@!"})
+	aAdd(aColunas, {"Quant."			, "TT_QUANT"	, "N", 05, 3, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Qt. Prod."			, "TT_QUJE"		, "N", 05, 3, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Num. Horas"		, "TT_QTHSTOT"	, "N", 05, 3, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Dt. Ini. Prev."	, "TT_DTINIP"	, "D", 06, 0, "@D"})
+	aAdd(aColunas, {"Hr. Ini. Prev."	, "TT_HRINIP"	, "C", 05, 0, "99:99"})
+	aAdd(aColunas, {"Dt. Fim Prev."		, "TT_DTFIMP"	, "D", 06, 0, "@D"})
+	aAdd(aColunas, {"Hr. Fim Prev."		, "TT_HRFIMP"	, "C", 05, 0, "99:99"})
+	aAdd(aColunas, {"Sit. Empenho"		, "TT_SITEMP"	, "C", 01, 0, "@!"})
+	aAdd(aColunas, {"Obs. Empenho"		, "TT_OBSEMP"	, "C", 10, 0, "@!"})
+	aAdd(aColunas, {"Obs. Producao"		, "TT_OBSPRD"	, "C", 10, 0, "@!"})
 
 	// Para aparecer caixa de filtrar
 	aAdd(aPesquisa, {"Recurso"		, {{"", "C",  6, 0, "Recurso" 	 , "@!", "TT_RECURSO"}} } )
@@ -133,8 +136,8 @@ User Function PL160()
 	oBrowse:SetSeek(.T., aPesquisa)
 
 	oBrowse:AddLegend("TT_STATUS == 'N'", "YELLOW", "Normal")
-	oBrowse:AddLegend("TT_STATUS == 'U'", "RED", "Suspensa")
-	oBrowse:AddLegend("TT_STATUS == 'S'", "GREEN", "Sacramentada")
+	oBrowse:AddLegend("TT_STATUS == 'U'", "RED", 	"Suspensa")
+	oBrowse:AddLegend("TT_STATUS == 'S'", "GREEN", 	"Sacramentada")
 
 	oBrowse:Activate()
 
@@ -152,9 +155,10 @@ Menu de opcoes na funcao pl160
 /*/
 Static Function MenuDef()
 	Local aRot := {}
-	ADD OPTION aRot TITLE 'Visualizar' 	  ACTION 'VIEWDEF.PL160' OPERATION 2 ACCESS 0
-	ADD OPTION aRot TITLE 'Alterar'    	  ACTION 'VIEWDEF.PL160' OPERATION 4 ACCESS 0
-	ADD OPTION aRot TITLE 'Legenda'    	  ACTION 'u_ProLeg' 	 OPERATION 8 ACCESS 0
+	ADD OPTION aRot TITLE 'Visualizar' 	  ACTION 'VIEWDEF.PL160'  OPERATION 2 ACCESS 0
+	ADD OPTION aRot TITLE 'Alterar'    	  ACTION 'VIEWDEF.PL160'  OPERATION 4 ACCESS 0
+	ADD OPTION aRot TITLE 'Legenda'    	  ACTION 'u_PL160ProLeg'  OPERATION 8 ACCESS 0
+	ADD OPTION aRot TITLE 'Calcular'   	  ACTION 'u_PL160Calculo' OPERATION 8 ACCESS 0
 Return aRot
 
 
@@ -172,8 +176,8 @@ Static Function ModelDef()
 	oStTT:AddTable(cAliasTT, {'TT_ID'}, "Temporaria")
 
 	//Adiciona os campos da estrutura
-
 	oStTT:AddField("Ordem"				,"Ordem"			,"TT_OP"		,"C",11,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_OP,'')" ),.F.,.F.,.F.)
+	oStTT:AddField("Tipo"				,"Tipo"				,"TT_TPOP"		,"C",01,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_TPOP,'')" ),.F.,.F.,.F.)
 	oStTT:AddField("Produto"			,"Produto"			,"TT_PRODUTO"	,"C",07,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_PRODUTO,'')" ), .T., .F., .F.)
 	oStTT:AddField("Descricao"			,"Descricao"		,"TT_DESC"		,"C",40,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DESC,'')" ), .T., .F., .F.)
 	oStTT:AddField("Cliente"			,"Cliente"			,"TT_CLIENT"	,"C",15,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_CLIENT,'')" ), .T., .F., .F.)
@@ -181,8 +185,11 @@ Static Function ModelDef()
 	oStTT:AddField("Dt. Inicio"			,"Data Inicio"		,"TT_DATPRI"	,"D",08,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DATPRI,'')" ),.F.,.F.,.F.)
 	oStTT:AddField("Dt. Fim"			,"Data Fim"			,"TT_DATPRF"	,"D",08,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DATPRF,'')" ),.F.,.F.,.F.)
 	oStTT:AddField("Quantidade"			,"Quantidade"		,"TT_QUANT"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUANT,'')" ),.F.,.F.,.F.)
+	oStTT:AddField("Quant. Hora"		,"Quant. Hora"		,"TT_QTHORA"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QTHORA,'')" ),.F.,.F.,.F.)
+	oStTT:AddField("Sit. Emp."			,"Sit. Emp."		,"TT_SITEMP"	,"C",01,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_SITEMP,'')" ),.F.,.F.,.F.)
+	oStTT:AddField("Sit. MP"			,"Sit. MP"			,"TT_SITMP"		,"C",01,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_SITEMP,'')" ),.F.,.F.,.F.)
 	oStTT:AddField("Quant. Prod."		,"Quant. Prod."		,"TT_QUJE"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUJE,'')" ),.F.,.F.,.F.)
-	oStTT:AddField("Recurso"			,"Recurso"			,"TT_RECURSO"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_RECURSO,'')" ),.F.,.F.,.F.)
+	oStTT:AddField("Recurso"			,"Recurso"			,"TT_RECURSO"	,"C",10,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_RECURSO,'')" ),.F.,.F.,.F.)
 	oStTT:AddField("Num. Horas"			,"Num. Horas"		,"TT_QTHSTOT"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QTHSTOT,'')" ),.F.,.F.,.F.)
 
 	oStTT:AddField("Dt. Inicio Prev."	,"Dt. Inicio Prev."	,"TT_DTINIP"	,"D",08,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DTINIP,'')" ),.F.,.F.,.F.)
@@ -198,6 +205,7 @@ Static Function ModelDef()
 	oStTT:AddField("Obs. Producao"		,"Obs. Producao"	,"TT_OBSPRD"	,"C",40,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_OBSPRD,'')" ), .F., .F., .F.)
 
 	oStTT:SetProperty('TT_OP'		,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStTT:SetProperty('TT_TPOP'		,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStTT:SetProperty('TT_PRODUTO'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStTT:SetProperty('TT_CLIENT'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStTT:SetProperty('TT_ITCLI'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
@@ -205,6 +213,7 @@ Static Function ModelDef()
 	oStTT:SetProperty('TT_DATPRI'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStTT:SetProperty('TT_DATPRF'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStTT:SetProperty('TT_QUANT'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStTT:SetProperty('TT_QTHORA'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStTT:SetProperty('TT_QUJE'		,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStTT:SetProperty('TT_QTHSTOT'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 
@@ -236,24 +245,28 @@ Static Function ViewDef()
 	oStTT:AddField("TT_CLIENT"	,"03","Cliente"			,"Cliente"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTT:AddField("TT_ITCLI"	,"04","Item do Cliente"	,"Item do Cliente"	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTT:AddField("TT_OP"		,"05","Ordem"			,"Ordem"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_DATPRI"	,"06","Dt. Inicio"		,"Dt. Inicio"		,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_DATPRF"	,"07","Dt. Fim"			,"Dt. Fim"			,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_QUANT"	,"08","Quantidade"		,"Quantidade"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_QUJE"	,"09","Quant. Prod."	,"Quant. Prod."		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_RECURSO"	,"10","Recurso"			,"Recurso"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_QTHSTOT"	,"11","Hs. Totais"		,"Hs. Totais"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_TPOP"	,"06","Tipo"			,"Ordem"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_DATPRI"	,"07","Dt. Inicio"		,"Dt. Inicio"		,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_DATPRF"	,"08","Dt. Fim"			,"Dt. Fim"			,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_QUANT"	,"09","Quantidade"		,"Quantidade"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_QTHORA"	,"10","Quant. Hora"		,"Quant. Hora"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_SITEMP"	,"11","Sit. Empenho"	,"Sit. Empenho"		,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_SITMP"	,"12","Sit. MP"			,"Sit. MP"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_QUJE"	,"13","Quant. Prod."	,"Quant. Prod."		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_RECURSO"	,"14","Recurso"			,"Recurso"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_QTHSTOT"	,"15","Hs. Totais"		,"Hs. Totais"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 
-	oStTT:AddField("TT_DTINIP"	,"12","Dt. Inicio Prev.","Dt. Inicio Prev."	,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_HRINIP"	,"13","Hr. Inicio Prev.","Hr. Inicio Prev."	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_DTFIMP"	,"14","Dt. Fim Prev."	,"Dt. Fim Prev."	,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_HRFIMP"	,"15","Hr. Fim Prev."	,"Hr. Fim Prev."	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_DTINIR"	,"16","Dt. Inicio Real"	,"Dt. Inicio Real"	,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_HRINIR"	,"17","Hr. Inicio Real"	,"Hr. Inicio Real"	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_DTFIMR"	,"18","Dt. Fim Real"	,"Dt. Fim Real"		,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_HRFIMR"	,"19","Hr. Fim Real"	,"Hr. Fim Real"		,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_DTINIP"	,"16","Dt. Inicio Prev.","Dt. Inicio Prev."	,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_HRINIP"	,"17","Hr. Inicio Prev.","Hr. Inicio Prev."	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_DTFIMP"	,"18","Dt. Fim Prev."	,"Dt. Fim Prev."	,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_HRFIMP"	,"19","Hr. Fim Prev."	,"Hr. Fim Prev."	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_DTINIR"	,"20","Dt. Inicio Real"	,"Dt. Inicio Real"	,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_HRINIR"	,"21","Hr. Inicio Real"	,"Hr. Inicio Real"	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_DTFIMR"	,"22","Dt. Fim Real"	,"Dt. Fim Real"		,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_HRFIMR"	,"23","Hr. Fim Real"	,"Hr. Fim Real"		,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 
-	oStTT:AddField("TT_OBSEMP"	,"20","Obs. Empenho"	,"Obs. Empenho"		,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_OBSPRD"	,"21","Obs. Producao"	,"Obs. Producao"	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_OBSEMP"	,"24","Obs. Empenho"	,"Obs. Empenho"		,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_OBSPRD"	,"25","Obs. Producao"	,"Obs. Producao"	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 
 	//Criando a view que será o retorno da função e setando o modelo da rotina
 	oView := FWFormView():New()
@@ -272,7 +285,6 @@ Static Function CargaTT(oSay)
 	Local nQuant		:= 0
 	Local nTotal		:= 0
 	Local nSetup		:= 0
-	Local dDtPrev		:= Date()
 
 	if lEstamp == .T.
 		cLinPrd := "Estamparia"
@@ -331,15 +343,9 @@ Static Function CargaTT(oSay)
 
 		nTotal := nSetup + nQuant
 
-		if empty((cAlias)->C2_XDTINIP) .Or. (cAlias)->C2_XDTINIP == ""
-			dDtPrev := (cAlias)->C2_DATPRI
-		else
-			dDtPrev := (cAlias)->C2_XDTINIP
-		endif
-
 		cSql := "INSERT INTO " + cTableName + " ("
-		cSql += " TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ITCLI, TT_OP, TT_STATUS, TT_RECURSO, "
-		cSql += " TT_DATPRI, TT_DATPRF, TT_QUANT, TT_QUJE, TT_QTHSTOT, "
+		cSql += " TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ITCLI, TT_OP, TT_TPOP, TT_STATUS, TT_RECURSO, "
+		cSql += " TT_DATPRI, TT_DATPRF, TT_QUANT, TT_QUJE, TT_QTHSTOT, TT_QTHORA, TT_SITEMP, "
 		cSql += " TT_DTINIP, TT_DTFIMP, TT_HRINIP, TT_HRFIMP, "
 		cSql += " TT_DTINIR, TT_DTFIMR, TT_HRINIR, TT_HRFIMR, "
 		cSql += " TT_DTSACR, TT_HRSACR, TT_OBSEMP, TT_OBSPRD) VALUES ('"
@@ -350,6 +356,7 @@ Static Function CargaTT(oSay)
 		cSql += (cAlias)->B1_XCLIENT				+ "','"
 		cSql += (cAlias)->B1_XITEM 					+ "','"
 		cSql += Transform((cAlias)->C2_NUM, "999999") + AllTrim((cAlias)->C2_ITEM) + AllTrim((cAlias)->C2_SEQUEN) +  "','"
+		cSql += AllTrim((cAlias)->C2_TPOP)  +  "','"
 		cSql += AllTrim((cAlias)->C2_STATUS)  +  "','"
 		cSql += AllTrim((cAlias)->G2_RECURSO) +  "','"
 		cSql += (cAlias)->C2_DATPRI +  "','"
@@ -357,7 +364,9 @@ Static Function CargaTT(oSay)
 		cSql += cValToChar((cAlias)->C2_QUANT) +  "','"
 		cSql += cValToChar((cAlias)->C2_QUJE) +  "','"
 		cSql += cValToChar(nTotal) + "','"
-		cSql += dDtPrev + "','" + (cAlias)->C2_XDTFIMP + "','"
+		cSql += cValToChar(nQuant) + "','"
+		cSql += AllTrim((cAlias)->C2_XSITEMP) +  "','"
+		cSql += (cAlias)->C2_XDTINIP + "','" + (cAlias)->C2_XDTFIMP + "','"
 		cSql += (cAlias)->C2_XHRINIP + "','" + (cAlias)->C2_XHRFIMP + "','"
 		cSql += (cAlias)->C2_XDTINIR + "','" + (cAlias)->C2_XDTFIMR + "','"
 		cSql += (cAlias)->C2_XHRINIR + "','" + (cAlias)->C2_XHRFIMR + "','"
@@ -400,6 +409,7 @@ Static Function MVCMODELPOS(oModel)
 			SC2->C2_XHRSACR := M->TT_HRSACR
 			SC2->C2_XOBSEMP := M->TT_OBSEMP
 			SC2->C2_XOBSPRD := M->TT_OBSPRD
+			SC2->C2_XSITEMP := M->TT_SITEMP
 
 			MsUnLock()
 		endif
@@ -407,3 +417,31 @@ Static Function MVCMODELPOS(oModel)
 
 	RestArea(aArea)
 Return lOk
+
+
+/*---------------------------------------------------------------------*
+  Legendas
+ *---------------------------------------------------------------------*/
+User Function PL160ProLeg()
+    Local aLegenda := {}
+    AAdd(aLegenda,{"BR_AMARELO","Normal"})
+    AAdd(aLegenda,{"BR_VERDE","Sacramentada"})
+    AAdd(aLegenda,{"BR_VERMELHO","Suspensa"})
+    BrwLegenda("Registros", "Status", aLegenda)
+return
+
+
+User Function PL160Calculo()
+	Local cSql := ""
+
+	u_PL160A(dDtIni, dDtFim, lEstamp)
+
+	cSql := "DELETE FROM " + cTableName 
+
+	if TCSqlExec(cSql) < 0
+		MsgInfo("Erro na Delete", "Atenção")
+		MsgInfo(TcSqlError(), "Atenção3")
+	endif
+
+	CargaTT()
+return
