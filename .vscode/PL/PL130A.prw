@@ -61,7 +61,7 @@ Static Function TrataOP(aLin)
 
 	// Ler a OP e item
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_QUANT, "
-	cSql += "	 	CAST(C2_DATPRI AS DATE) C2_DATPRI, C2_XPRIOR, C2_XPRTPL, "
+	cSql += "	 	CAST(C2_DATPRI AS DATE) C2_DATPRI, C2_PRIOR, C2_XPRTPL, "
 	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ "
 	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
 
@@ -85,22 +85,6 @@ Static Function TrataOP(aLin)
 		return
 	endif
 
-	// Ler os empenhos da OP
-	cSql := "SELECT D4_QUANT, D4_LOTECTL, B1_COD, B1_DESC, B1_UM "
-	cSql += "  FROM " + RetSQLName("SD4") + " SD4 "
-
-	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
-	cSql += "	 ON B1_COD 			= D4_COD "
-	cSql += "   AND B1_TIPO 	   <> 'SV'"
-	cSql += "   AND B1_FILIAL 	 	= '" + xFilial("SB1") + "' "
-	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
-
-	cSql += " WHERE D4_OP 		 	= '" + aLin[2] + aLin[3] + aLin[4] + "' "
-	cSql += "   AND D4_FILIAL 	 	= '" + xFilial("SD4") + "' "
-	cSql += "   AND SD4.D_E_L_E_T_ 	= ' ' "
-	cSql += " ORDER BY D4_COD"
-	cAliasCmp := MPSysOpenQuery(cSql)
-
 	// Ler as operacões do item - mas só pega a primeira
 	cSql := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, G2_DESCRI "
 	cSql += "  FROM " + RetSQLName("SG2") + " SG2 "
@@ -112,14 +96,32 @@ Static Function TrataOP(aLin)
 	cSql += " ORDER BY G2_OPERAC"
 	cAliasOper := MPSysOpenQuery(cSql)
 
+	// Ler os empenhos da OP
+	cSql := "SELECT D4_OP, D4_QUANT, D4_LOTECTL, B1_COD, B1_DESC, B1_UM "
+	cSql += "  FROM " + RetSQLName("SD4") + " SD4 "
+
+	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+	cSql += "	 ON B1_COD 			= D4_COD "
+	cSql += "   AND B1_TIPO 	   <> 'SV'"
+	cSql += "   AND B1_FILIAL 	 	= '" + xFilial("SB1") + "' "
+	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
+
+	cSql += " WHERE D4_OP 		 	= '" + aLin[2] + aLin[3] + aLin[4] + "' "
+	cSql += "   AND D4_FILIAL 	 	= '" + xFilial("SD4") + "' "
+	cSql += "   AND SD4.D_E_L_E_T_ 	= ' ' "
+	cSql += " ORDER BY D4_COD, D4_LOTECTL"
+	cAliasCmp := MPSysOpenQuery(cSql)
+
 	While (cAliasCmp)->(!EOF())
-		if nLin == 0 .or. nLin > 50
+
+		if (cAliasCmp)->D4_OP <> cOpAnt
+			cOpAnt := (cAliasCmp)->D4_OP
 			printCabec(aLin)
+			printOP()
 		endif
 
-		if cOpAnt <> aLin[2] + aLin[3] + aLin[4]
-			printOP()
-			cOpAnt := aLin[2] + aLin[3] + aLin[4]
+		if nLin > 800
+			printCabec(aLin)
 		endif
 
 		nLin +=16

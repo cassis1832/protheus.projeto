@@ -5,16 +5,15 @@
 
 /*/{Protheus.doc}	PL160A
 	Distribuição da carga maquina
+	21/08/2024 - Não alterar ordens sacramentadas
 @author Carlos Assis
 @since 20/08/2024
 @version 1.0   
 /*/
-
 User Function PL160A(Inicio, Fim, Tipo)
-	Local aArea 	:= FWGetArea()
-	Local aCampos 	:= {}
-
-	Local oSay 		:= NIL
+	Local aArea 		:= FWGetArea()
+	Local aCampos 		:= {}
+	Local oSay 			:= NIL
 
 	Private	dDtIni		:= Inicio
 	Private	dDtFim		:= Fim
@@ -59,9 +58,7 @@ User Function PL160A(Inicio, Fim, Tipo)
 	oTT2:Create()
 	cTT2Name  := oTT2:GetRealName()
 
-	CargaTT1()
-
-	CargaTT2()
+	FwMsgRun(NIL, {|oSay| CargaInicial(oSay)}, "Preparando o calculo ", "Preparando...")
 
 	FwMsgRun(NIL, {|oSay| Calculo(oSay)}, "Calculando distribuicao", "Calculando...")
 
@@ -72,73 +69,15 @@ User Function PL160A(Inicio, Fim, Tipo)
 return
 
 
-Static Function Calculo(oSay)
-	Local nQtNec	:= 0
-	Local dDtIniP 	:= date()
-	Local dDtFimP 	:= date()
-
-	(cAliasTT1)->(DBSetOrder(2))
-	(cAliasTT2)->(DBSetOrder(2))
-
-	(cAliasTT1)->(DbGoTop())
-
-	While (cAliasTT1)->(! EOF())
-
-		nQtNec 	:= (cAliasTT1)->TT1_QTHSTO
-		dDtIniP := NIL
-		dDtFimP := NIL
-
-		(cAliasTT2)->(DbGoTop())
-		(cAliasTT2)->(DbSeek((cAliasTT1)->TT1_RECURS + dtos((cAliasTT1)->TT1_DATPRI)))
-
-		if ! (cAliasTT2)->(EOF())
-			While nQtNec > 0
-				if (cAliasTT2)->TT2_RECURS == (cAliasTT1)->TT1_RECURS
-					if (cAliasTT2)->TT2_DISP > (cAliasTT2)->TT2_USADA					// Tem horas disponiveis no dia
-
-						if dDtIniP == NIL
-							dDtIniP := stod((cAliasTT2)->TT2_DATA)
-						endif
-
-						dDtFimP := stod((cAliasTT2)->TT2_DATA)
-
-						RecLock(cAliasTT2, .F.)
-
-						if (cAliasTT2)->TT2_DISP - (cAliasTT2)->TT2_USADA >= nQtNec		// Disponivel é suficiente
-							(cAliasTT2)->TT2_USADA := (cAliasTT2)->TT2_USADA + nQtNec
-							nQtNec := 0
-						else
-							nQtNec := nQtNec - ((cAliasTT2)->TT2_DISP - (cAliasTT2)->TT2_USADA)
-							(cAliasTT2)->TT2_USADA := (cAliasTT2)->TT2_DISP
-						endif
-
-						(cAliasTT2)->(MsUnLock())
-					endif
-
-					(cAliasTT2)->(DbSkip())
-				else
-					nQtNec := 0
-				endif
-			enddo
-
-			SC2->(dbSetOrder(1))
-
-			If SC2->(MsSeek(xFilial("SC2") + (cAliasTT1)->TT1_OP))
-				RecLock("SC2", .F.)
-				SC2->C2_XDTINIP := dDtIniP
-				SC2->C2_XDTFIMP := dDtFimP
-				SC2->(MsUnLock())
-			endif
-		endif
-
-		(cAliasTT1)->(DbSkip())
-	enddo
-
-	(cAliasTT1)->(DBCLOSEAREA())
-	(cAliasTT2)->(DBCLOSEAREA())
+Static Function CargaInicial(oSay)
+	CargaTT1()
+	CargaTT2()
 return
 
 
+/*
+	Carrega tabela com as ordens de producao para calcular
+*/
 Static Function CargaTT1()
 	Local cSql 		:= ""
 	Local cAlias 	:= ""
@@ -221,6 +160,7 @@ Static Function CargaTT1()
 	(cAlias)->(DBCLOSEAREA())
 return
 
+
 /*
 	Carrega tabela com as datas do calendario e o tempo disponivel por maquina
 */
@@ -266,14 +206,71 @@ Static Function CargaTT2()
 	(cAlias)->(DBCLOSEAREA())
 return
 
+/*
+	Distribuicao da carga maquina
+*/
+Static Function Calculo(oSay)
+	Local nQtNec	:= 0
+	Local dDtIniP 	:= date()
+	Local dDtFimP 	:= date()
 
-Static Function ListaTT2()
-	Local x := 0
+	(cAliasTT1)->(DBSetOrder(2))
+	(cAliasTT2)->(DBSetOrder(2))
 
-	(cAliasTT2)->(DbGoTop())
+	(cAliasTT1)->(DbGoTop())
 
-	While ! (cAliasTT2)->(EOF())
-		x := x + 1
-		(cAliasTT2)->(DbSkip())
+	While (cAliasTT1)->(! EOF())
+
+		nQtNec 	:= (cAliasTT1)->TT1_QTHSTO
+		dDtIniP := NIL
+		dDtFimP := NIL
+
+		(cAliasTT2)->(DbGoTop())
+		(cAliasTT2)->(DbSeek((cAliasTT1)->TT1_RECURS + dtos((cAliasTT1)->TT1_DATPRI)))
+
+		if ! (cAliasTT2)->(EOF())
+			While nQtNec > 0
+				if (cAliasTT2)->TT2_RECURS == (cAliasTT1)->TT1_RECURS
+					if (cAliasTT2)->TT2_DISP > (cAliasTT2)->TT2_USADA					// Tem horas disponiveis no dia
+
+						if dDtIniP == NIL
+							dDtIniP := stod((cAliasTT2)->TT2_DATA)
+						endif
+
+						dDtFimP := stod((cAliasTT2)->TT2_DATA)
+
+						RecLock(cAliasTT2, .F.)
+
+						if (cAliasTT2)->TT2_DISP - (cAliasTT2)->TT2_USADA >= nQtNec		// Disponivel é suficiente
+							(cAliasTT2)->TT2_USADA := (cAliasTT2)->TT2_USADA + nQtNec
+							nQtNec := 0
+						else
+							nQtNec := nQtNec - ((cAliasTT2)->TT2_DISP - (cAliasTT2)->TT2_USADA)
+							(cAliasTT2)->TT2_USADA := (cAliasTT2)->TT2_DISP
+						endif
+
+						(cAliasTT2)->(MsUnLock())
+					endif
+
+					(cAliasTT2)->(DbSkip())
+				else
+					nQtNec := 0
+				endif
+			enddo
+
+			SC2->(dbSetOrder(1))
+
+			If SC2->(MsSeek(xFilial("SC2") + (cAliasTT1)->TT1_OP))
+				RecLock("SC2", .F.)
+				SC2->C2_XDTINIP := dDtIniP
+				SC2->C2_XDTFIMP := dDtFimP
+				SC2->(MsUnLock())
+			endif
+		endif
+
+		(cAliasTT1)->(DbSkip())
 	enddo
+
+	(cAliasTT1)->(DBCLOSEAREA())
+	(cAliasTT2)->(DBCLOSEAREA())
 return

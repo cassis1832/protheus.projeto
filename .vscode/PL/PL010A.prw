@@ -173,8 +173,8 @@ Static Function printOP(oSay)
 	cAliasCmp := MPSysOpenQuery(cQuery)
 
 	// Ler as operacões do item
-	cQuery := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, G2_DESCRI, G2_MAOOBRA, G2_SETUP, "
-	cQuery += "		  G2_LOTEPAD, G2_TEMPAD, G2_CTRAB, G2_TEMPEND "
+	cQuery := "SELECT G2_PRODUTO, G2_OPERAC, G2_RECURSO, G2_FERRAM, G2_DESCRI, "
+	cQuery += "		  G2_MAOOBRA, G2_SETUP, G2_LOTEPAD, G2_TEMPAD, G2_CTRAB, G2_TEMPEND "
 	cQuery += "  FROM " + RetSQLName("SG2") + " SG2 "
 
 	cQuery += " WHERE G2_CODIGO  	 = '01'"
@@ -311,6 +311,7 @@ Return
 //	Imprime as operacões da OP
 //-----------------------------------------------------------------------------
 Static Function printOper()
+	Private cAliasAlt	:= ""
 
 	oPrinter:Line(nLin+10, 15, nLin+10, 550)
 	oPrinter:Say(nLin+25, 250, "Operacoes",oFont12b)
@@ -328,7 +329,7 @@ Static Function printOper()
 		While (cAliasOper)->(!EOF())
 			nLin +=16
 			oPrinter:Say(nLin, 15, (cAliasOper)->G2_OPERAC, oFont10)
-			oPrinter:Say(nLin, 60, (cAliasOper)->G2_DESCRI,oFont10)
+			oPrinter:Say(nLin, 50, (cAliasOper)->G2_DESCRI,oFont10)
 			oPrinter:Say(nLin, 180, (cAliasOper)->G2_RECURSO, oFont10)
 
 			if (cAliasOper)->G2_LOTEPAD - int((cAliasOper)->G2_LOTEPAD) == 0
@@ -337,12 +338,21 @@ Static Function printOper()
 				oPrinter:Say(nLin, 260, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999.999"), oFont10)
 			endif
 
+			OperAlternativa()
+
+			While (cAliasAlt)->(! EOF())
+				nLin +=16
+				oPrinter:Say(nLin, 50, "Alternativa",oFont10)
+				oPrinter:Say(nLin, 180, (cAliasAlt)->H3_RECALTE, oFont10)
+				(cAliasAlt)->(DbSkip())
+			enddo
+
 			(cAliasOper)->(DbSkip())
 		EndDo
 	else
 		nLin +=16
 		oPrinter:Say(nLin, 15, (cAliasOper)->G2_OPERAC, oFont10)
-		oPrinter:Say(nLin, 60, (cAliasOper)->G2_DESCRI,oFont10)
+		oPrinter:Say(nLin, 50, (cAliasOper)->G2_DESCRI,oFont10)
 		oPrinter:Say(nLin, 180, (cAliasOper)->G2_RECURSO, oFont10)
 
 		if (cAliasOper)->G2_LOTEPAD - int((cAliasOper)->G2_LOTEPAD) == 0
@@ -350,8 +360,33 @@ Static Function printOper()
 		else
 			oPrinter:Say(nLin, 260, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999.999"), oFont10)
 		endif
+
+		OperAlternativa()
+
+		While (cAliasAlt)->(! EOF())
+			nLin +=16
+			oPrinter:Say(nLin, 50, "Alternativa",oFont10)
+			oPrinter:Say(nLin, 180, (cAliasAlt)->H3_RECALTE, oFont10)
+			(cAliasAlt)->(DbSkip())
+		enddo
 	endif
+
+	(cAliasAlt)->(DBCLOSEAREA())
 Return
+
+
+Static Function OperAlternativa()
+	Local cSql  := ""
+
+	cSql := "SELECT * FROM " + RetSQLName("SH3") + " SH3 "
+	cSql += " WHERE H3_PRODUTO = '" + (cAliasOper)->G2_PRODUTO + "'"
+	cSql += "   AND H3_RECPRIN = '" + (cAliasOper)->G2_RECURSO + "'"
+	cSql += "   AND H3_OPERAC  = '" + (cAliasOper)->G2_OPERAC + "'"
+	cSql += "   AND H3_FILIAL 	= '" + xFilial("SH3") + "' "
+	cSql += "   AND SH3.D_E_L_E_T_ = ' ' "
+	cAliasAlt := MPSysOpenQuery(cSql)
+return
+
 
 //-----------------------------------------------------------------------------
 //	Imprime o espaco para registro dos apontamentos e o rodapé da ordem
