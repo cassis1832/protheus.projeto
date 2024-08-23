@@ -4,6 +4,8 @@
 /*/{Protheus.doc} PL100A
     PL100A - GERAÇÃO DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
     MATA410 - EXECAUTO
+	23/08/2024 - Gravar a transportadora do cliente no pedido
+	
 	Params: aItensFat
 		aItensFat - Itens a faturar	(produto, qtde, ts, data, pedido, preco, acao)
 	@since 05/06/2024
@@ -164,14 +166,15 @@ Static Function GravaPedido()
 		RollBAckSx8()
 
 		aCabec := {}
-		aadd(aCabec, {"C5_NUM"    , cDoc		, Nil})
-		aadd(aCabec, {"C5_TIPO"	  , "N"			, Nil})
-		aadd(aCabec, {"C5_CLIENTE", cCliente	, Nil})
-		aadd(aCabec, {"C5_LOJACLI", cLoja		, Nil})
-		aadd(aCabec, {"C5_LOJAENT", cLoja		, Nil})
-		aadd(aCabec, {"C5_CONDPAG", SA1->A1_COND, Nil})
-		aadd(aCabec, {"C5_NATUREZ", cNatureza	, Nil})
-		aadd(aCabec, {"C5_FECENT" , dDtEntr		, Nil})
+		aadd(aCabec, {"C5_NUM"    , cDoc			, Nil})
+		aadd(aCabec, {"C5_TIPO"	  , "N"				, Nil})
+		aadd(aCabec, {"C5_CLIENTE", cCliente		, Nil})
+		aadd(aCabec, {"C5_LOJACLI", cLoja			, Nil})
+		aadd(aCabec, {"C5_LOJAENT", cLoja			, Nil})
+		aadd(aCabec, {"C5_CONDPAG", SA1->A1_COND	, Nil})
+		aadd(aCabec, {"C5_NATUREZ", cNatureza		, Nil})
+		aadd(aCabec, {"C5_FECENT" , dDtEntr			, Nil})
+		aadd(aCabec, {"C5_REDESP" , SA1->A1_TRANSP	, Nil})
 
 		MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabec, aLinhas, nOpcX, .F.)
 
