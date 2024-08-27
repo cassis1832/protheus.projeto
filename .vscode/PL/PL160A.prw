@@ -169,8 +169,11 @@ Static Function CargaTT2()
 	Local cAlias 		:= ""
 	Local dData			:= Date()
 
-	cSql := "SELECT DISTINCT TT1_RECURS FROM " + cTT1Name
-	cSql += " ORDER BY TT1_RECURS "
+	cSql := "SELECT H1_XHSDIA, H1_CODIGO  "
+	cSql += "  FROM " + RetSQLName("SH1") + " SH1 "
+	cSql += " WHERE H1_FILIAL 	 	 = '" + xFilial("SH1") + "' "
+	cSql += "	AND SH1.D_E_L_E_T_ 	 = ' ' "
+	cSql += "	ORDER BY H1_CODIGO "
 	cAlias := MPSysOpenQuery(cSql)
 
 	While (cAlias)->(! EOF())
@@ -189,8 +192,9 @@ Static Function CargaTT2()
 			cSql := "INSERT INTO " + cTT2Name + " ("
 			cSql += " TT2_ID, TT2_RECURS, TT2_DATA, TT2_DISP, TT2_USADA) VALUES ('"
 			cSql += FWUUIDv4() 			 			+ "','"
-			cSql += (cAlias)->TT1_RECURS 			+ "','"
-			cSql += DTOS(dData) 					+ "','8','0')"
+			cSql += (cAlias)->H1_CODIGO 			+ "','"
+			cSql += DTOS(dData) 					+ "','"
+			cSql += (cAlias)->H1_XHSDIA				+ "','0')"
 
 			if TCSqlExec(cSql) < 0
 				MsgInfo("Erro na execução da query:", "Atenção")

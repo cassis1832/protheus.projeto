@@ -7,6 +7,7 @@
     Atualizar tabelas SVB e SVR - demandas do MRP (cliente/loja)
 	02/08/2024 - Desprezar previsao no passado
 	07/08/2024 - Tratar item bloqueado
+	27/08/2024 - Gerar demandas com 2 dias de diferença para a Gestamp
 @author Assis
 @since 11/04/2024
 @version 1.0
@@ -67,13 +68,15 @@ Return
 
 /*---------------------------------------------------------------------*
 	Grava tabela temporaria com base nos pedidos EDI
+	Para o cliente Gestamp a demanda deve ser 2 dias antes
+	Para os demais clientes a demanda deve ser para o dia anterior
  *---------------------------------------------------------------------*/
 Static Function TrataEDI()
     Local dData, cAlias
 
 	dData := DaySum(Date(), 180)
 
-	cSQL := "SELECT ZA0_DTENTR, ZA0_PRODUT, B1_LOCPAD, B1_XDIAEO, ZA0_QTDE, "
+	cSQL := "SELECT ZA0_CLIENT, ZA0_DTENTR, ZA0_PRODUT, B1_LOCPAD, B1_XDIAEO, ZA0_QTDE, "
 	cSQL += " 	    ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO, ZA0_TIPOPE "
 	cSQL += "  FROM " + RetSQLName("ZA0") + " ZA0 "
 	
@@ -100,7 +103,14 @@ Static Function TrataEDI()
 				dData := DaySum(dData, 2)
 			Endif
 		else
-        	dData := DaySub(Stod((cAlias)->ZA0_DTENTR), 1)
+			if (cAlias)->ZA0_CLIENT == "000004" .or. ;
+				(cAlias)->ZA0_CLIENT == "000005" .or. ;
+				(cAlias)->ZA0_CLIENT == "000006" .or. ;
+				(cAlias)->ZA0_CLIENT == "000007" 
+        		dData := DaySub(Stod((cAlias)->ZA0_DTENTR), 2)
+			else
+	        	dData := DaySub(Stod((cAlias)->ZA0_DTENTR), 1)
+			endif
 			if Dow(dData) = 1
 				dData := DaySub(dData, 2)
 			Endif
