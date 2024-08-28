@@ -40,8 +40,6 @@ User Function PL100()
 
 	if nPedidos == 0
 		FWAlertSuccess("NAO FOI CRIADO NENHUM PEDIDO DE VENDA!", "Geracao de Pedidos de Vendas")
-	Else
-		FWAlertSuccess("PEDIDOS CRIADOS COM SUCESSO", "Geracao de Pedidos de Vendas")
 	EndIf
 
 	SetFunName(cFunBkp)
@@ -58,7 +56,7 @@ Static Function Processa(oSay)
 	Private cAliasZA0
 
 	// Ler os pedidos EDI
-	cSql := "SELECT ZA0.*, A7_XNATUR, B1_DESC, B1_TS, B1_UM, A7_XGRUPV"
+	cSql := "SELECT ZA0.*, A7_XNATUR, B1_DESC, B1_TS, B1_UM, A7_XFATSLD, A7_XGRUPV"
 	cSql += "  FROM  " + RetSQLName("ZA0") + " ZA0 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1"
