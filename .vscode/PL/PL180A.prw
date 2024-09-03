@@ -8,23 +8,14 @@
 	Params: aItens = Itens a faturar	
 	{ZA0_CODPED[1], ZA0_CLIENT[2], ZA0_LOJA[3], ZA0_PRODUT[4], ZA0_DTENTR[5], ZA0_HRENTR[6], ZA0_QTDE[7], A7_XNATUR[8], A7_XGRUPV[9]}
 /*/
-User Function PL180A(aItens)
+User Function PL180A(aPedidos)
 	Local aArea   		:= GetArea()
 	Local cFunBkp 		:= FunName()
-	Local nInd			:= 0
+	Local oSay 			:= NIL
 
-	Local cData       	:= ''
-	Local cHrEntr     	:= ''
-	Local cGrupoPV    	:= ''
-
-	Private aMensagens	:= {}
 	Private nPedidos    := 0
-	Private cNatureza  	:= ''
-
-	// Tabelas
-	Private aItensFat  	:= {}	// Itens a faturar		(produto[1], qtde[2], data[3], pedido[4], acao[5])
-	Private aItensRet   := {}	// Itens a retornar 	(nIndFat[1], produto[2], qtde[3], agrega[4])
-	Private aSaldoTerc  := {}	// Saldos de terceiros	(produto[1], docto[2], serie[3], emissao[4], saldo[5], preco[6], usada[7], work[8])
+	Private aMensagens	:= {}
+	Private aItens		:= aPedidos
 
 	if Len(aItens) == 0
 		return
@@ -32,8 +23,35 @@ User Function PL180A(aItens)
 
 	If SA1->(! MsSeek(xFilial("SA1") + aItens[1][2] + aItens[1][3]))
 		MessageBox("Cliente nao cadastrado!","",0)
-		lOk     := .F.
+	else
+		FwMsgRun(NIL, {|oSay| CriarPedidos(oSay)}, "Preparando pedidos", "Criando pedidos de vendas...")
 	endif
+
+	if len(aMensagens) > 0
+		MostraMensagens(aMensagens)
+	endif
+
+	if nPedidos == 0
+		FWAlertSuccess("NAO FOI CRIADO NENHUM PEDIDO DE VENDA!", "Geracao de Pedidos de Vendas")
+	EndIf
+
+	SetFunName(cFunBkp)
+	RestArea(aArea)
+Return
+
+
+Static Function CriarPedidos(oSay)
+	Local nInd			:= 0
+	Local cData       	:= ''
+	Local cHrEntr     	:= ''
+	Local cGrupoPV    	:= ''
+
+	Private cNatureza  	:= ''
+
+	// Tabelas
+	Private aItensFat  	:= {}	// Itens a faturar		(produto[1], qtde[2], data[3], pedido[4], acao[5])
+	Private aItensRet   := {}	// Itens a retornar 	(nIndFat[1], produto[2], qtde[3], agrega[4])
+	Private aSaldoTerc  := {}	// Saldos de terceiros	(produto[1], docto[2], serie[3], emissao[4], saldo[5], preco[6], usada[7], work[8])
 
 	// ORDER BY ZA0_DTENTR, A7_XNATUR, ZA0_HRENTR, A7_XGRUPV, ZA0_PRODUT
 	aSort(aItens,,, {|x, y| x[5]+x[8]+x[6]+x[9]+x[4] < y[5]+y[8]+y[6]+y[9]+y[4]})
@@ -53,18 +71,7 @@ User Function PL180A(aItens)
 	next
 
 	GeraPedido()
-
-	if len(aMensagens) > 0
-		MostraMensagens(aMensagens)
-	endif
-
-	if nPedidos == 0
-		FWAlertSuccess("NAO FOI CRIADO NENHUM PEDIDO DE VENDA!", "Geracao de Pedidos de Vendas")
-	EndIf
-
-	SetFunName(cFunBkp)
-	RestArea(aArea)
-Return
+return
 
 
 Static Function GeraPedido()
@@ -105,7 +112,7 @@ Static Function	TrataSaldoTerc()
 
 		// Atualiza saldo disponivel em terceiro
 		For nIndTerc := 1 To Len(aSaldoTerc)
-			if 	aItensFat[nIndFat][7] == .T.			// Tem saldo para retornar, atualiza qtde usada
+			if 	aItensFat[nIndFat][5] == .T.			// Tem saldo para retornar, atualiza qtde usada
 				aSaldoTerc[nIndTerc][7] := aSaldoTerc[nIndTerc][7] + aSaldoTerc[nIndTerc][8]   
 			endif
 			aSaldoTerc[nIndTerc][8] = 0					// Zera work
@@ -253,6 +260,7 @@ return
 Static Function VerRemessa(aItemRet)
 	Local nQtdeVen	:= 0
 	Local nIndTerc 	:= 0
+	Local dDtEntr  	:= Date()
 	Local nIndFat	:= aItemRet[1]
 	Local nQtdeNec	:= aItemRet[3]
 	Local aLinha  	:= {}
@@ -277,20 +285,22 @@ Static Function VerRemessa(aItemRet)
 					nQtdeNec := nQtdeNec - nQtdeVen
 				endif
 
+				dDtEntr  := stod(aItensFat[nIndFat][3])
+
 				aLinha := {}
 				nLinha := nLinha + 1
-				aadd(aLinha,{"C6_ITEM"      , StrZero(nLinha,2), Nil})
-				aadd(aLinha,{"C6_PRODUTO"   , aSaldoTerc[nIndTerc][1], Nil})
-				aadd(aLinha,{"C6_QTDVEN"    , nQtdeVen, Nil})
-				aadd(aLinha,{"C6_PRCVEN"    , aSaldoTerc[nIndTerc][5] , Nil})
-				aadd(aLinha,{"C6_PRUNIT"    , aSaldoTerc[nIndTerc][5] , Nil})
-				aadd(aLinha,{"C6_TES"       , "685", Nil})
-				aadd(aLinha,{"C6_ENTREG"    , aItensFat[nIndFat][4], Nil})
-				aadd(aLinha,{"C6_PEDCLI"    , aItensFat[nIndFat][5], Nil})
-				aadd(aLinha,{"C6_NFORI"    	, aSaldoTerc[nIndTerc][2], Nil})
-				aadd(aLinha,{"C6_SERIORI"   , aSaldoTerc[nIndTerc][3], Nil})
-				aadd(aLinha,{"C6_ITEMORI"  	, aSaldoTerc[nIndTerc][10], Nil})
-				aadd(aLinha,{"C6_IDENTB6"  	, aSaldoTerc[nIndTerc][9], Nil})
+				aadd(aLinha,{"C6_ITEM"      , StrZero(nLinha,2)			, Nil})
+				aadd(aLinha,{"C6_PRODUTO"   , aSaldoTerc[nIndTerc][1]	, Nil})
+				aadd(aLinha,{"C6_QTDVEN"    , nQtdeVen					, Nil})
+				aadd(aLinha,{"C6_PRCVEN"    , aSaldoTerc[nIndTerc][5] 	, Nil})
+				aadd(aLinha,{"C6_PRUNIT"    , aSaldoTerc[nIndTerc][5] 	, Nil})
+				aadd(aLinha,{"C6_TES"       , "685"						, Nil})
+				aadd(aLinha,{"C6_ENTREG"    , dDtEntr					, Nil}) 
+				aadd(aLinha,{"C6_PEDCLI"    , aItensFat[nIndFat][1]		, Nil}) 
+				aadd(aLinha,{"C6_NFORI"    	, aSaldoTerc[nIndTerc][2]	, Nil})
+				aadd(aLinha,{"C6_SERIORI"   , aSaldoTerc[nIndTerc][3]	, Nil})
+				aadd(aLinha,{"C6_ITEMORI"  	, aSaldoTerc[nIndTerc][10]	, Nil})
+				aadd(aLinha,{"C6_IDENTB6"  	, aSaldoTerc[nIndTerc][9]	, Nil})
 				aadd(aLinhas, aLinha)
 			endif
 		endif

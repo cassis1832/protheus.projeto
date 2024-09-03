@@ -7,8 +7,9 @@ Função
    	Importação do arquivo texto contendo pedidos EDI
    	Gravar tabela ZA0 - movimentos EDI importados 
    	Esse programa chamado a partir do PL020 (manutenção do ZA0)
-	19/07/24 - Gerar previsão mensal
-	02/08/24 - Desprezar previsao no passado
+	19/07/2024 - Gerar previsão mensal
+	02/08/2024 - Desprezar previsao no passado
+	02/09/2024 - Não gravar pedidos no passado
 @author Assis
 @since 08/04/2024
 @version 1.0
@@ -133,7 +134,7 @@ Static Function GravaRegistro(aLinha)
 	Local dData 	:= ctod(aLinha[4])
 	Local cCodCli  	:= Upper(AvKey(aLinha[3], "A7_CODCLI"))
 
-	if aLinha[7] == 'V' .And. dData <= Date()
+	if dData <= Date()
 		return
 	endif
 

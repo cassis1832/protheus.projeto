@@ -49,6 +49,7 @@ User Function PL140()
 	oTempTable:AddIndex("1", {"TT_ID"} )
 	oTempTable:AddIndex("2", {"TT_PRODUTO"	, "TT_LOTE"} )
 	oTempTable:AddIndex("3", {"TT_TIPO"		, "TT_PRODUTO"} )
+	oTempTable:AddIndex("4", {"TT_CLIENT"	, "TT_PRODUTO"} )
 	oTempTable:Create()
 
 	cTableName  := oTempTable:GetRealName()
@@ -84,6 +85,7 @@ User Function PL140()
 	aAdd(aPesquisa, {"Tipo"		, {{"", "C",  02, 0, "Tipo"	  	, "@!", "TT_TIPO"}} } )
 
 	aAdd(aIndex, {"TT_PRODUTO"} )
+	aAdd(aIndex, {"TT_CLIENT","TT_PRODUTO"} )
 
 	//Criando o browse da temporária
 	oBrowse := FWMBrowse():New()

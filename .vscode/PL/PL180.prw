@@ -26,8 +26,9 @@ User Function PL180()
 	oBrowse:SetAlias("ZA0")
 	oBrowse:SetDescription(cTitulo)
 
+	oBrowse:SetOnlyFields({'ZA0_CLIENT','ZA0_LOJA', 'ZA0_PRODUT', 'ZA0_DESCR', 'ZA0_ITCLI', 'ZA0_DTENTR', 'ZA0_HRENTR', 'ZA0_QTDE', 'ZA0_QTSEL', 'ZA0_SLDEST', 'ZA0_QTCONF'})
+
 	//oBrowse:SetSemaphore(.T.) - não pode usar
-	oBrowse:SetDescription( 'Seleção do Pedido EDI' )
 	oBrowse:SetFieldMark( 'ZA0_OK' )
 	oBrowse:SetMark(cMarca, "ZA0", "ZA0_OK")
 	oBrowse:SetAllMark( { || oBrowse:AllMark() } )
@@ -36,6 +37,7 @@ User Function PL180()
 	cCondicao += ".and. ZA0_CLIENT == '" + cCliente + "' "
 	cCondicao += ".and. ZA0_LOJA   == '" + cLoja + "' "
 	cCondicao += ".and. ZA0_DTENTR <= '" + dtos(dLimite) + "'"
+	cCondicao += ".and. ZA0_TIPOPE == 'F'"
 	oBrowse:SetFilterDefault( cCondicao )
 
 	//Setando Legenda
@@ -58,7 +60,6 @@ Static Function MenuDef()
 	ADD OPTION aRot TITLE 'Alterar'    	  ACTION 'VIEWDEF.PL180' 	OPERATION 4 ACCESS 0 
 	ADD OPTION aRot TITLE 'Excluir'    	  ACTION 'VIEWDEF.PL180' 	OPERATION 5 ACCESS 0 
 	ADD OPTION aRot TITLE 'Gerar Pedidos' ACTION 'u_PL180Mark()'	OPERATION 6 ACCESS 0 
-	// ADD OPTION aRot TITLE 'Gerar Pedidos' ACTION 'U_PL180B()'    OPERATION 6 ACCESS 0 
 	ADD OPTION aRot TITLE 'Legenda'    	  ACTION 'u_PL180Leg' 	 	OPERATION 8 Access 0       
 Return aRot
 
@@ -68,17 +69,21 @@ Return aRot
 Static Function ModelDef()
     Local oModel   := Nil
     Local oStZA0   := FWFormStruct(1, "ZA0")
- 
-	oStZA0:SetProperty('ZA0_CLIENT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStZA0:SetProperty('ZA0_LOJA'  ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStZA0:SetProperty('ZA0_CODPED',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStZA0:SetProperty('ZA0_DTCRIA',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStZA0:SetProperty('ZA0_HRCRIA',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStZA0:SetProperty('ZA0_ARQUIV',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStZA0:SetProperty('ZA0_ORIGEM',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStZA0:SetProperty('ZA0_ITCLI' ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 
-	oModel:=MPFormModel():New("PL180M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil) 
+	// Proteger de alteracoes
+	oStZA0:SetProperty('ZA0_PRODUT'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_ITCLI'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_DTENTR'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_HRENTR'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_QTDE'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_SLDEST'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_TIPOPE'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_NUMPED'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_NUM'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_STATUS'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA0:SetProperty('ZA0_QTCONF'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+
+	oModel:=MPFormModel():New("PL180M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil)
 	oModel:AddFields("FORMZA0",/*cOwner*/,oStZA0)
 	oModel:SetPrimaryKey({'ZA0_FILIAL','ZA0_CODPED'})
 	oModel:SetDescription(cTitulo)
@@ -92,6 +97,7 @@ Return oModel
 Static Function ViewDef()
     Local oView  := Nil
     Local oModel := FWLoadModel("PL180")      
+
     Local oStZA0 := FWFormStruct(2, "ZA0")    
 
     oView:= FWFormView():New()               
@@ -184,7 +190,8 @@ Static Function CalcSaldo()
 	Local cSql		:= ""
 
 	cSql := "UPDATE " + RetSQLName("ZA0")
-	cSql += "   SET ZA0_SLDEST = ("
+	cSql += "   SET ZA0_QTSEL  = ZA0_QTDE - ZA0_QTCONF, "
+	cSql += "       ZA0_SLDEST = ("
 	cSql += "		SELECT SUM(B2_QATU) FROM " + RetSQLName("SB2") + " SB2 "
 	cSql += " 		 WHERE B2_COD    		=  ZA0_PRODUT "
 	cSql += "   	   AND B2_FILIAL 		=  '" + xFilial("SB2") + "'"
@@ -194,8 +201,8 @@ Static Function CalcSaldo()
 	cSql += "  FROM " + RetSQLName("ZA0") + " ZA0 "
 	cSql += " WHERE ZA0_CLIENT 		 = '" + cCliente + "'"
 	cSql += "   AND ZA0_LOJA   		 = '" + cLoja + "'"
-	cSql += "   AND ZA0_DTENTR      >= '" + dtos(dLimite) + "'"
 	cSql += "   AND ZA0_STATUS       = '0'"
+	cSql += "   AND ZA0_DTENTR      <= '" + dtos(dLimite) + "'"
 	cSql += "   AND ZA0_FILIAL     	 =  '" + xFilial("ZA0") + "'"
 	cSql += "   AND ZA0.D_E_L_E_T_  <> '*' "
 
@@ -210,12 +217,12 @@ return
   Prepara os registros marcados no checkbox
  *---------------------------------------------------------------------*/
 User Function PL180Mark()
-	Local aArea    := GetArea()
-	Local cMarca   := oBrowse:Mark()
+	Local aArea    	:= GetArea()
+	Local cMarca   	:= oBrowse:Mark()
 	// Local lInverte := oBrowse:IsInvert()
-	Local nCt      := 0
-	Local aPedidos := {}
-	
+	Local nCt      	:= 0
+	Local aPedidos 	:= {}
+
 	SA7->(dbSetOrder(1))    // Filial,Cliente,Loja,Produto
 
 	ZA0->(DbGoTop())
@@ -225,7 +232,9 @@ User Function PL180Mark()
 			nCt++
 
 			If SA7->(MsSeek(xFilial("SA7") + ZA0->ZA0_CLIENT + ZA0->ZA0_LOJA + ZA0->ZA0_PRODUT))
-				aadd(aPedidos,{ZA0->ZA0_CODPED, ZA0->ZA0_CLIENT, ZA0->ZA0_LOJA, ZA0->ZA0_PRODUT, dtos(ZA0->ZA0_DTENTR), ZA0->ZA0_HRENTR, ZA0->ZA0_QTDE, SA7->A7_XNATUR, SA7->A7_XGRUPV})
+				if ZA0_QTSEL <> 0
+					aadd(aPedidos,{ZA0->ZA0_CODPED, ZA0->ZA0_CLIENT, ZA0->ZA0_LOJA, ZA0->ZA0_PRODUT, dtos(ZA0->ZA0_DTENTR), ZA0->ZA0_HRENTR, ZA0->ZA0_QTSEL, SA7->A7_XNATUR, SA7->A7_XGRUPV})
+				endif
 			EndIf
 
 			//Limpando a marca
