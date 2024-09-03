@@ -58,8 +58,11 @@
 		{
 			"args": [],
 			"label": "U_ImportaTxt"
+		},
+		{
+			"label": "sigaest"
 		}
 	],
-	"lastProgramExecuted": "sigapcp",
+	"lastProgramExecuted": "sigaest",
 	"lastProgramArguments": []
 }
