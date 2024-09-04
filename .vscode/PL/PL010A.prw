@@ -7,6 +7,7 @@
 /*/{Protheus.doc}	PL010
 	Impressao da Ordem de Producao Modelo MR V01
 	29/07/2024 - não imprimir OP prevista
+	04/09/2024 - alteracao do xprint pelo xprtop
 @author Carlos Assis
 @since 04/11/2023
 @version 1.0   
@@ -41,7 +42,7 @@ User Function PL010A(cOrdem, lOpera, lReimp)
 	// LER OP E ITEM
 	cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, "
 	cQuery += "	 	  C2_QUANT, CAST(C2_DATPRI AS DATE) C2_DATPRI, "
-	cQuery += "	 	  CAST(C2_DATPRF AS DATE) C2_DATPRF, C2_XPRINT, "
+	cQuery += "	 	  CAST(C2_DATPRF AS DATE) C2_DATPRF, C2_XPRTOP, "
 	cQuery += "	  	  B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ "
 	cQuery += "  FROM " + RetSQLName("SC2") + " SC2 "
 
@@ -56,9 +57,9 @@ User Function PL010A(cOrdem, lOpera, lReimp)
 	cQuery += "	  AND SC2.D_E_L_E_T_ =  ' ' "
 
 	if lReimp == .T.
-		cQuery += " AND C2_XPRINT	 =  'S'"
+		cQuery += " AND C2_XPRTOP	 =  'S'"
 	Else
-		cQuery += " AND C2_XPRINT	 <>  'S'"
+		cQuery += " AND C2_XPRTOP	 <>  'S'"
 	Endif
 
 	cQuery += "	ORDER BY C2_NUM, C2_ITEM, C2_SEQUEN "
@@ -530,7 +531,7 @@ Static Function OpImpressa()
 
 	If SC2->(MsSeek(xFilial("SC2") + (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN))
 		RecLock("SC2", .F.)
-		SC2->C2_XPRINT := "S"
+		SC2->C2_XPRTOP := "S"
 		MsUnLock()
 	endif
 return
