@@ -86,9 +86,9 @@ Static Function CargaTT1()
 	Local nSetup	:= 0
 
 	if lTipo == .T.
-		cLinPrd := "Estamparia"
+		cLinPrd := "01"
 	Else
-		cLinPrd := "Solda"
+		cLinPrd := "02"
 	Endif
 
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_STATUS, "
@@ -101,7 +101,6 @@ Static Function CargaTT1()
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cSql += "	 ON B1_COD 		 	 = C2_PRODUTO"
 	cSql += "   AND B1_FILIAL 	 	 = '" + xFilial("SB1") + "' "
-	cSql += "   AND B1_XLINPRD 	 	 = '" + cLinPrd + "' "
 	cSql += "	AND SB1.D_E_L_E_T_ 	 = ' ' "
 
 	cSql += " INNER JOIN " + RetSQLName("SG2") + " SG2 "
@@ -111,12 +110,14 @@ Static Function CargaTT1()
 
 	cSql += " INNER JOIN " + RetSQLName("SH1") + " SH1 "
 	cSql += "    ON H1_CODIGO 		 = G2_RECURSO"
+	cSql += "   AND H1_LINHAPR 	 	 = '" + cLinPrd + "' "
 	cSql += "   AND H1_FILIAL 	 	 = '" + xFilial("SH1") + "' "
 	cSql += "   AND SH1.D_E_L_E_T_ 	 = ''
 
 	cSql += " WHERE C2_DATPRF 	   	>= '" + dtos(dDtIni) + "'"
 	cSql += "   AND C2_DATPRF	   	<= '" + dtos(dDtFim) + "'"
 	cSql += "   AND C2_DATRF   		 = ''"
+	cSql += "   AND C2_TPPR	   	     = 'I'"
 	cSql += "   AND C2_FILIAL 	 	 = '" + xFilial("SC2") + "' "
 	cSql += "	AND SC2.D_E_L_E_T_ 	 = ' ' "
 	cSql += "	ORDER BY G2_RECURSO, C2_DATPRI, C2_NUM, C2_ITEM, C2_SEQUEN "

@@ -66,9 +66,9 @@ User Function PL010()
 		cQuery += "	  AND SC2.D_E_L_E_T_ =  ' ' "
 
 		if lReimp == .T.
-			cQuery += "   AND C2_XPRINT	 =  'S'"
+			cQuery += "   AND C2_XPRTOP	 =  'S'"
 		Else
-			cQuery += "   AND C2_XPRINT	 <>  'S'"
+			cQuery += "   AND C2_XPRTOP	 <>  'S'"
 		Endif
 
 		cQuery += "	ORDER BY C2_NUM, C2_ITEM, C2_SEQUEN "
