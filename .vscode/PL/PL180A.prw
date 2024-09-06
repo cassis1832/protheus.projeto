@@ -4,7 +4,7 @@
 /*/{Protheus.doc} PL180A
     MATA410 - EXECAUTO
     PL180A - GERAÇÃO DE PEDIDO DE VENDA COM BASE NO PEDIDO EDI
-	
+		06/09/2024 - Gravar nItemPed e xPed
 	Params: aItens = Itens a faturar	
 	{ZA0_CODPED[1], ZA0_CLIENT[2], ZA0_LOJA[3], ZA0_PRODUT[4], ZA0_DTENTR[5], ZA0_HRENTR[6], ZA0_QTDE[7], A7_XNATUR[8], A7_XGRUPV[9]}
 /*/
@@ -214,6 +214,8 @@ Static Function GravaPedido()
 				aadd(aLinha,{"C6_PEDCLI"    , aItensFat[nIndFat][4]	, Nil})
 				aadd(aLinha,{"C6_PRCVEN"    , DA1->DA1_PRCVEN		, Nil})
 				aadd(aLinha,{"C6_PRUNIT"    , DA1->DA1_PRCVEN		, Nil})
+				aadd(aLinha,{"C6_NUMPCO"    , SB1->B1_XPED			, Nil})
+				aadd(aLinha,{"C6_ITEMPC"    , SB1->B1_XNITEM		, Nil})
 				aadd(aLinhas, aLinha)
 
 				For nIndRet := 1 To Len(aItensRet)	
