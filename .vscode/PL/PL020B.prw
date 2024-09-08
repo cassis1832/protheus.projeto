@@ -10,6 +10,7 @@ Função
 	18/07/2024 - Tratamento de entrega pelo dia da semana
 	24/07/2024 - Criacao do tipope = V
 	07/08/2024 - Tratar item bloqueado
+	*********** DEPRECATED **********
 @author Assis
 @since 24/06/2024
 @version 1.0

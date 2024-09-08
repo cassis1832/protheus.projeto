@@ -8,6 +8,7 @@
 	02/08/2024 - Desprezar previsao no passado
 	07/08/2024 - Tratar item bloqueado
 	27/08/2024 - Gerar demandas com 2 dias de diferença para a Gestamp
+	08/09/2024 - Gerar demanda de plano mestre para a Gestamp
 @author Assis
 @since 11/04/2024
 @version 1.0
@@ -17,9 +18,9 @@
 /*/
 
 User Function PL020C()
-	Local aArea   := GetArea()
-	Local cFunBkp := FunName()
-	Local oSay := NIL
+	Local aArea   	:= GetArea()
+	Local cFunBkp 	:= FunName()
+	Local oSay 		:= NIL
 
 	SetFunName("PL020C")
 
@@ -48,6 +49,7 @@ Static Function Processa(oSay)
 	aAdd(aFields, {"TT_DOC",  "C", 10, 0})
 	aAdd(aFields, {"TT_DIAEO","N",  3, 0})
 	aAdd(aFields, {"TT_ORIG", "C",  3, 0})
+	aAdd(aFields, {"TT_TIPO", "C",  1, 0})
 
 	oTempTable:SetFields( aFields )
 	oTempTable:AddIndex("1", {"ID"} )
@@ -72,7 +74,7 @@ Return
 	Para os demais clientes a demanda deve ser para o dia anterior
  *---------------------------------------------------------------------*/
 Static Function TrataEDI()
-    Local dData, cAlias
+    Local dData, cAlias, cTipo
 
 	dData := DaySum(Date(), 180)
 
@@ -94,6 +96,17 @@ Static Function TrataEDI()
 	cAlias := MPSysOpenQuery(cSQL)
 
 	While (cAlias)->(!EOF())
+
+		// Gestamp é plano mestre
+		if (cAlias)->ZA0_CLIENT == "000004" .or. ;
+			(cAlias)->ZA0_CLIENT == "000005" .or. ;
+			(cAlias)->ZA0_CLIENT == "000006" .or. ;
+			(cAlias)->ZA0_CLIENT == "000007" 
+			cTipo := "3"
+		else
+			cTipo := "9"
+		endif
+
 		if (cAlias)->ZA0_TIPOPE == "V"
         	dData := Stod((cAlias)->ZA0_DTENTR)
 			if Dow(dData) = 1
@@ -103,14 +116,8 @@ Static Function TrataEDI()
 				dData := DaySum(dData, 2)
 			Endif
 		else
-			if (cAlias)->ZA0_CLIENT == "000004" .or. ;
-				(cAlias)->ZA0_CLIENT == "000005" .or. ;
-				(cAlias)->ZA0_CLIENT == "000006" .or. ;
-				(cAlias)->ZA0_CLIENT == "000007" 
-        		dData := DaySub(Stod((cAlias)->ZA0_DTENTR), 2)
-			else
-	        	dData := DaySub(Stod((cAlias)->ZA0_DTENTR), 1)
-			endif
+        	dData := DaySub(Stod((cAlias)->ZA0_DTENTR), 2)
+		
 			if Dow(dData) = 1
 				dData := DaySub(dData, 2)
 			Endif
@@ -121,7 +128,7 @@ Static Function TrataEDI()
  
 		if (cAlias)->ZA0_TIPOPE == "F" .or. dData > date()
 			cSql := "INSERT INTO " + cTableName + " " 
-			cSql += "(ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO, TT_ORIG) "
+			cSql += "(ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO, TT_TIPO, TT_ORIG) "
 			cSql += "VALUES ('" + FWUUIDv4() 		+ "','" 
 			cSql += (cAlias)->ZA0_PRODUT 			+ "','"
 			cSql += (cAlias)->B1_LOCPAD 			+ "','" 
@@ -129,7 +136,8 @@ Static Function TrataEDI()
 			cSql += dtos(dData) 					+ "','" 
 			cSql += (cAlias)->ZA0_NUMPED 			+ "','" 
 			cSql += cValToChar((cAlias)->B1_XDIAEO) + "','"
-			cSql += "ZA0" + "')"
+			cSql += cTipo 							+ "','"
+			cSql += "ZA0" 							+ "')"
 
 			if TCSqlExec(cSql) < 0
 			MsgInfo("Erro na execução da query:", "Atenção")
@@ -185,12 +193,16 @@ Static Function TrataPV()
             dData := DaySub(dData, 1)
         Endif
 
-        cSql := "INSERT INTO " + cTableName + " (ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO, TT_ORIG) VALUES "
-        cSql += "('" + FWUUIDv4() + "','" + (cAlias)->B1_COD + "'"
-        cSql += ",'" + (cAlias)->C6_LOCAL + "','" + cValToChar((cAlias)->C6_SALDO) + "'" 
-        cSql += ",'" + dtos(dData) + "','" + (cAlias)->C6_NUM + "'" 
-        cSql += ",'" + cValToChar((cAlias)->B1_XDIAEO) + "'"
-        cSql += ",'" + "SC6" + "')"
+        cSql := "INSERT INTO " + cTableName + " (ID, TT_PROD, TT_LOCAL, TT_QUANT, TT_DATA, TT_DOC, TT_DIAEO, TT_TIPO, TT_ORIG) "
+		cSql += "VALUES ('" + FWUUIDv4() 			+ "','" 
+		cSql += (cAlias)->B1_COD 					+ "','"
+		cSql += (cAlias)->C6_LOCAL 					+ "','" 
+		cSql += cValToChar((cAlias)->C6_SALDO) 		+ "','" 
+		cSql += dtos(dData) 						+ "','" 
+		cSql += (cAlias)->C6_NUM 					+ "','" 
+		cSql += cValToChar((cAlias)->B1_XDIAEO) 	+ "','"
+		cSql += "1" 								+ "','"
+		cSql += "SC6" 								+ "')"
 
         if TCSqlExec(cSql) < 0
            MsgInfo("Erro na execução da query:", "Atenção")
@@ -215,6 +227,7 @@ Static Function GravaDemandas()
 	Private cLocal      := ""
 	Private cDoc        := ""
 	Private nQtde       := 0
+	Private cTipo       := ""
 	Private nSequencia  := 0
 
 	// Limpar as demandas existentes - manuais - "AUTO"
@@ -237,6 +250,7 @@ Static Function GravaDemandas()
             cDoc   := (cAlias)->TT_DOC
             cLocal := (cAlias)->TT_LOCAL
             nQtde  := (cAlias)->TT_QUANT
+            cTipo  := (cAlias)->TT_TIPO
 		else
 			if dDtFim >= stod((cAlias)->TT_DATA)
 				nQtde := nQtde + (cAlias)->TT_QUANT
@@ -247,6 +261,7 @@ Static Function GravaDemandas()
 				cDoc   := (cAlias)->TT_DOC
 	            cLocal := (cAlias)->TT_LOCAL
 				nQtde  := (cAlias)->TT_QUANT
+            	cTipo  := (cAlias)->TT_TIPO
 			endif
         endif
 
@@ -268,7 +283,7 @@ Static Function GravaReg()
 		if nQtde <= 0
 			return
 		endif
-		
+
 		nSequencia := nSequencia + 1
 
 		DbSelectArea("SVR")
@@ -281,7 +296,7 @@ Static Function GravaReg()
 		SVR->VR_QUANT	:= nQtde
 		SVR->VR_LOCAL  	:= cLocal
 		SVR->VR_DOC 	:= cDoc
-		SVR->VR_TIPO   	:= "9"
+		SVR->VR_TIPO   	:= cTipo
 		SVR->VR_REGORI  := 0
 		SVR->VR_ORIGEM  := 'SVR'
 		SVR->(MsUnlock())
