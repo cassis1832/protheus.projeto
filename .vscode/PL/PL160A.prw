@@ -195,7 +195,7 @@ Static Function CargaTT2()
 			cSql += FWUUIDv4() 			 			+ "','"
 			cSql += (cAlias)->H1_CODIGO 			+ "','"
 			cSql += DTOS(dData) 					+ "','"
-			cSql += (cAlias)->H1_XHSDIA				+ "','0')"
+			cSql += cValToChar((cAlias)->H1_XHSDIA)	+ "','0')"
 
 			if TCSqlExec(cSql) < 0
 				MsgInfo("Erro na execução da query:", "Atenção")
