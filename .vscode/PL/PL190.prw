@@ -366,7 +366,7 @@ User Function PL190Mark()
 			// ZA0->(MsUnlock())
 		EndIf
 
-		ZA0->(DbSkip())
+		(cAliasTT)->(DbSkip())
 	EndDo
 
 	RestArea(aArea)

@@ -3,6 +3,7 @@
 
 /*/{Protheus.doc} PL060
 Função: Consulta de planejamento por item - RPAD
+	07/09/2024 - Mostrar os empenhos necessarios
 @author Assis
 @since 10/06/2024
 @version 1.0
@@ -43,6 +44,7 @@ User Function PL060A(pItem)
 	EndIf
 
 	ObterPedidos()
+	ObterEmpenhos()
 	ObterProducao()
 	ObterCompras()
 
@@ -60,9 +62,36 @@ User Function PL060A(pItem)
 Return .T.
 
 
+Static Function ObterEmpenhos()
+	Local cSql		:= ""
+	Local cAlias 	:= ""
+
+	cSql := "SELECT D4_COD, D4_OP, D4_DATA, D4_QTDEORI, D4_QUANT "
+	cSql += "  FROM " + RetSQLName("SD4") + " SD4 "
+
+	cSql += " WHERE D4_COD		 	= '" + cItem + "' "
+	cSql += "   AND D4_QUANT	 	> 0 "
+	cSql += "   AND D4_FILIAL 	 	= '" + xFilial("SD4") + "' "
+	cSql += "   AND SD4.D_E_L_E_T_ 	= ' ' "
+	cSql += " ORDER BY D4_DATA"
+	cAlias := MPSysOpenQuery(cSql)
+
+	While (cAlias)->(!EOF())
+
+		Aadd(aLinhas,{(cAlias)->D4_DATA + "2", 2, "EMP", ;
+			(cAlias)->D4_OP, ;
+			DtoC(sToD((cAlias)->D4_DATA)),(cAlias)->D4_QTDEORI - (cAlias)->D4_QUANT, 0, ""})
+
+		(cAlias)->(DbSkip())
+	enddo
+
+	(cAlias)->(DBCLOSEAREA())
+return
+
+
 Static Function ObterCompras()
-	Local cSql
-	Local cAlias
+	Local cSql		:= ""
+	Local cAlias	:= ""
 
 	cSql := "SELECT C1_NUM, C1_ITEM, C1_PRODUTO, C1_QUANT - C1_QUJE as C1_QUANT, C1_DATPRF "
 	cSql += "  FROM " +	RetSQLName("SC1") + " SC1 "
@@ -71,7 +100,6 @@ Static Function ObterCompras()
 	cSql += "   AND C1_QUANT   > C1_QUJE "
 	cSql += "   AND SC1.D_E_L_E_T_ = ' ' "
 	cSql += " ORDER BY C1_DATPRF "
-
 	cAlias := MPSysOpenQuery(cSql)
 
 	While (cAlias)->(!EOF())
@@ -88,9 +116,9 @@ return
 
 
 Static Function ObterProducao()
-	Local cSql
-	Local cAliasOrd
-	Local bTrata
+	Local cSql		:= ""
+	Local cAlias	:= ""
+	Local bTrata	:= .F.
 
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_DATRF, "
 	cSql += "	   C2_QUANT, C2_DATPRI, C2_DATPRF, C2_QUJE, C2_TPOP"
@@ -100,51 +128,56 @@ Static Function ObterProducao()
 	cSql += "   AND C2_QUANT     	> C2_QUJE "
 	cSql += "   AND SC2.D_E_L_E_T_ 	= ' ' "
 	cSql += " ORDER BY C2_DATPRF "
-	cAliasOrd := MPSysOpenQuery(cSql)
+	cAlias := MPSysOpenQuery(cSql)
 
-	While (cAliasOrd)->(!EOF())
+	While (cAlias)->(!EOF())
 		bTrata := .T.
 
-		if (cAliasOrd)->C2_TPOP == "F" .And. !Empty((cAliasOrd)->C2_DATRF) .And. (cAliasOrd)->(C2_QUJE >= C2_QUANT) //Enc.Totalmente
+		if (cAlias)->C2_TPOP == "F" .And. !Empty((cAlias)->C2_DATRF) .And. (cAlias)->(C2_QUJE >= C2_QUANT) //Enc.Totalmente
 			bTrata := .F.
 		endif
 
-		if (cAliasOrd)->C2_TPOP == "F" .And. !Empty((cAliasOrd)->C2_DATRF) .And. (cAliasOrd)->(C2_QUJE < C2_QUANT) //Enc.Parcialmente
+		if (cAlias)->C2_TPOP == "F" .And. !Empty((cAlias)->C2_DATRF) .And. (cAlias)->(C2_QUJE < C2_QUANT) //Enc.Parcialmente
 			bTrata := .F.
 		endif
 
 		if bTrata == .T.
-			Aadd(aLinhas,{(cAliasOrd)->C2_DATPRF + "1", 1, "OP", ;
-				(cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN, ;
-				DtoC(sToD((cAliasOrd)->C2_DATPRF)),(cAliasOrd)->C2_QUANT - (cAliasOrd)->C2_QUJE, 0, (cAliasOrd)->C2_TPOP})
+			Aadd(aLinhas,{(cAlias)->C2_DATPRF + "1", 1, "OP", ;
+				(cAlias)->C2_NUM + (cAlias)->C2_ITEM + (cAlias)->C2_SEQUEN, ;
+				DtoC(sToD((cAlias)->C2_DATPRF)),(cAlias)->C2_QUANT - (cAlias)->C2_QUJE, 0, (cAlias)->C2_TPOP})
 		endif
 
-		(cAliasOrd)->(DbSkip())
+		(cAlias)->(DbSkip())
 	enddo
 
-	(cAliasOrd)->(DBCLOSEAREA())
+	(cAlias)->(DBCLOSEAREA())
 return
 
+
 Static Function ObterPedidos()
-	Local cSql := ""
+	Local cSql		:= ""
+	Local cAlias 	:= ""
 
 	// Carregar pedidos EDI
 	cSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, ZA0_QTDE, ZA0_NUMPED, ZA0_QTDE - ZA0_QTCONF AS ZA0_SALDO, ZA0_TIPOPE "
 	cSql += "  FROM " +	RetSQLName("ZA0") + " ZA0 "
+
 	cSql += " WHERE ZA0_STATUS          =  '0' "
 	cSql += "   AND ZA0_FILIAL          =  '" + xFilial("ZA0") + "'"
 	cSql += "   AND ZA0_PRODUT          =  '" + cItem +  "'"
 	cSql += "   AND ZA0_QTCONF          <  ZA0_QTDE "
 	cSql += "   AND ZA0.D_E_L_E_T_  	<> '*' "
 	cSql += " ORDER BY ZA0_DTENTR "
-	cAliasZA0 := MPSysOpenQuery(cSql)
+	cAlias := MPSysOpenQuery(cSql)
 
-	While (cAliasZA0)->(!EOF())
-		Aadd(aLinhas,{(cAliasZA0)->ZA0_DTENTR + "2", 2, "EDI", ;
-			(cAliasZA0)->ZA0_NUMPED, ;
-			DtoC(sToD((cAliasZA0)->ZA0_DTENTR)),(cAliasZA0)->ZA0_SALDO, 0, (cAliasZA0)->ZA0_TIPOPE})
-		(cAliasZA0)->(DbSkip())
+	While (cAlias)->(!EOF())
+		Aadd(aLinhas,{(cAlias)->ZA0_DTENTR + "2", 2, "EDI", ;
+			(cAlias)->ZA0_NUMPED, ;
+			DtoC(sToD((cAlias)->ZA0_DTENTR)),(cAlias)->ZA0_SALDO, 0, (cAlias)->ZA0_TIPOPE})
+		(cAlias)->(DbSkip())
 	End While
+
+	(cAlias)->(DBCLOSEAREA())
 
 	// Carregar pedidos de vendas
 	cSql := "SELECT C6_PRODUTO, C6_ENTREG, C6_QTDVEN, C6_QTDENT, (C6_QTDVEN - C6_QTDENT) AS C6_SALDO, C6_NUM "
@@ -170,17 +203,18 @@ Static Function ObterPedidos()
 	cSql += "   AND SC6.D_E_L_E_T_  <> '*' "
 	cSql += "   AND SF4.D_E_L_E_T_  <> '*' "
 	cSql += " ORDER BY C6_ENTREG "
-	cAliasSC6 := MPSysOpenQuery(cSql)
+	cAlias := MPSysOpenQuery(cSql)
 
-	While (cAliasSC6)->(!EOF())
-		Aadd(aLinhas,{(cAliasSC6)->C6_ENTREG + "2", 2,"PV",	(cAliasSC6)->C6_NUM, ;
-			DtoC(sToD((cAliasSC6)->C6_ENTREG)),     ;
-			(cAliasSC6)->C6_SALDO, 0, ""})
-		(cAliasSC6)->(DbSkip())
+	While (cAlias)->(!EOF())
+		Aadd(aLinhas,{(cAlias)->C6_ENTREG + "2", 2,"PV",	(cAlias)->C6_NUM, ;
+			DtoC(sToD((cAlias)->C6_ENTREG)),     ;
+			(cAlias)->C6_SALDO, 0, ""})
+		(cAlias)->(DbSkip())
 	End While
 
-	(cAliasSC6)->(DBCLOSEAREA())
+	(cAlias)->(DBCLOSEAREA())
 return
+
 
 Static Function	CalculaSaldos()
 	Local nRow   := 0
