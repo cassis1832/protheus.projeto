@@ -20,6 +20,8 @@ User Function PL190()
 	Local oSay 			:= NIL
 	Local aPergs		:= {}
 	Local aResps		:= {}
+	Local aComboLin		:= {"Estamparia","Solda"}
+	Local aComboSit		:= {"Nao empenhadas","Empenhadas", "Todas"}
 
 	Private oBrowse		:= Nil
 	Private cMarca 		:= GetMark()
@@ -30,22 +32,22 @@ User Function PL190()
 
 	Private dDtIni  	:= ""
 	Private dDtFim  	:= ""
-	Private lEstamp 	:= .F.
-	Private lSolda  	:= .F.
+	Private nLinha 		:= ""
+	Private nStatus 	:= ""
 
 	//Definicao do menu
 	aRotina := MenuDef()
 
 	AAdd(aPergs, {1, "Informe a data inicial "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
 	AAdd(aPergs, {1, "Informe a data final "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
-	AAdd(aPergs, {4, "Estamparia"				,.T.,"Estamparia" ,90,"",.F.})
-	AAdd(aPergs, {4, "Solda"					,.T.,"Solda" ,90,"",.F.})
+	AAdd(aPergs ,{2, "Linha de producao:"	,01, aComboLin, 70, "", .T.})
+	AAdd(aPergs ,{2, "Situacao do empenho:"	,01, aComboSit, 70, "", .T.})
 
 	If ParamBox(aPergs, "Selecao de Ordens", @aResps,,,,,,,, .T., .T.)
 		dDtIni 	:= aResps[1]
 		dDtFim 	:= aResps[2]
-		lEstamp	:= aResps[3]
-		lSolda	:= aResps[4]
+		nLinha	:= aResps[3]
+		nStatus	:= aResps[4]
 	Else
 		return
 	endif
@@ -230,12 +232,13 @@ Static Function CargaTT(oSay)
 	Local cSql 			:= ""
 	Local cAlias 		:= ""
 	Local cOP 			:= ''
+	Local cLinha		:= ""
 
-	if lEstamp == .T.
-		cLinPrd := "Estamparia"
-	Else
-		cLinPrd := "Solda"
-	Endif
+	if nLinha == 1
+		cLinha := "Estamparia"
+	else
+		cLinha := "Solda"
+	endif
 
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, "
 	cSql += "	    C2_QUANT, C2_DATPRI, C2_DATPRF, C2_XPRTPL,"
@@ -248,7 +251,7 @@ Static Function CargaTT(oSay)
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	cSql += "	 ON B1_COD 		 	 = C2_PRODUTO"
 	cSql += "   AND B1_FILIAL 	 	 = '" + xFilial("SB1") + "' "
-	cSql += "   AND B1_XLINPRD 	 	 = '" + cLinPrd + "' "
+	cSql += "   AND B1_XLINPRD 	 	 = '" + cLinha + "' "
 	cSql += "	AND SB1.D_E_L_E_T_ 	 = ' ' "
 
 	cSql += " INNER JOIN " + RetSQLName("SG2") + " SG2 "
@@ -266,6 +269,13 @@ Static Function CargaTT(oSay)
 	cSql += "   AND C2_DATRF   		 = ''"
 	cSql += "   AND C2_TPOP 	 	<> 'P'"
 	cSql += "   AND C2_FILIAL 	 	 = '" + xFilial("SC2") + "' "
+
+	if nStatus == 1
+		cSql += " AND C2_XSITEMP <> 'S' "
+	elseif nStatus == 2
+		cSql += " AND C2_XSITEMP = 'S' "
+	endif
+
 	cSql += "	AND SC2.D_E_L_E_T_ 	 = ' ' "
 	cSql += "	ORDER BY G2_RECURSO, C2_DATPRI, C2_NUM, C2_ITEM, C2_SEQUEN "
 	cAlias := MPSysOpenQuery(cSql)
