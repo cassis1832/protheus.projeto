@@ -4,47 +4,50 @@
 #Include 'FWMVCDef.ch'
 
 /*/{Protheus.doc}	PL160
-	Extrair dados de ordens de produção para controle de empenho
+	Carga máquina MR
 @author Carlos Assis
 @since 22/07/2024
 @version 1.0   
 /*/
 
 User Function PL160()
-	Local aArea 	:= FWGetArea()
-	Local aCampos 	:= {}
-	Local aColunas 	:= {}
-	Local aPesquisa := {}
-	Local aIndex 	:= {}
+	Local aArea 		:= FWGetArea()
+	Local aCampos 		:= {}
+	Local aColunas 		:= {}
+	Local aPesquisa 	:= {}
+	Local aIndex 		:= {}
 	Local oBrowse
 
-	Local oSay 		:= NIL
-	Local aPergs	:= {}
-	Local aResps	:= {}
+	Local oSay 			:= NIL
+	Local aPergs		:= {}
+	Local aResps		:= {}
 
 	Private cTitulo		:= "Plano de Producao"
 	Private aRotina 	:= {}
 	Private cTableName 	:= ""
 	Private cAliasTT 	:= GetNextAlias()
 
-	Private dDtIni  := ""
-	Private dDtFim  := ""
-	Private lEstamp := .F.
-	Private lSolda  := .F.
+	Private dDtIni  	:= ""
+	Private dDtFim  	:= ""
+	Private lEstamp 	:= .F.
+	Private lSolda  	:= .F.
+	Private cRecurso 	:= .F.
 
 	//Definicao do menu
 	aRotina := MenuDef()
 
 	AAdd(aPergs, {1, "Informe a data inicial "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
 	AAdd(aPergs, {1, "Informe a data final "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
+	AAdd(aPergs, {1, "Recurso"					, CriaVar("H1_CODIGO",.F.),,,"SH1",, 70, .F.})
 	AAdd(aPergs, {4, "Estamparia"				,.T.,"Estamparia" ,90,"",.F.})
 	AAdd(aPergs, {4, "Solda"					,.T.,"Solda" ,90,"",.F.})
 
-	If ParamBox(aPergs, "Plano de Produção", @aResps,,,,,,,, .T., .T.)
-		dDtIni 	:= aResps[1]
-		dDtFim 	:= aResps[2]
-		lEstamp	:= aResps[3]
-		lSolda	:= aResps[4]
+	If ParamBox(aPergs, "PLANO DE PRODUCAO", @aResps,,,,,,,, .T., .T.)
+		dDtIni 		:= aResps[1]
+		dDtFim 		:= aResps[2]
+		cRecurso	:= aResps[3]
+		lEstamp		:= aResps[4]
+		lSolda		:= aResps[5]
 	Else
 		return
 	endif
@@ -75,6 +78,7 @@ User Function PL160()
 	aAdd(aCampos, {"TT_QTHORA"	,"N", 14, 3})
 	aAdd(aCampos, {"TT_SITEMP"	,"C", 01, 0})
 	aAdd(aCampos, {"TT_SITMP"	,"C", 01, 0})
+	aAdd(aCampos, {"TT_SITSLD"	,"C", 01, 0})
 
 	//Cria a temporária
 	oTempTable := FWTemporaryTable():New(cAliasTT)
@@ -131,7 +135,8 @@ User Function PL160()
 	oBrowse:SetSeek(.T., aPesquisa)
 
 	oBrowse:AddLegend("TT_TPOP == 'P'", "YELLOW", "Prevista")
-	oBrowse:AddLegend("TT_TPOP == 'F'", "GREEN",  "Em aberto")
+	oBrowse:AddLegend("TT_TPOP == 'F' .and. TT_SITSLD == 'N' ", "RED", "Falta saldo de materia prima")
+	oBrowse:AddLegend("TT_TPOP == 'F' .and. TT_SITSLD <> 'N' ", "GREEN", "Em aberto")
 
 	oBrowse:Activate()
 
@@ -301,9 +306,14 @@ Static Function CargaTT(oSay)
 
 	cSql += " INNER JOIN " + RetSQLName("SH1") + " SH1 "
 	cSql += "    ON H1_CODIGO 		 = G2_RECURSO"
-	cSql += "   AND H1_LINHAPR 	 	 = '" + cLinPrd + "' "
 	cSql += "   AND H1_FILIAL 	 	 = '" + xFilial("SH1") + "' "
 	cSql += "   AND SH1.D_E_L_E_T_ 	 = ''
+
+	if AllTrim(cRecurso) <> "" .and. AllTrim(cRecurso) <> Nil
+		cSql += "  AND H1_CODIGO  	 = '" + cRecurso + "' "
+	else
+		cSql += "  AND H1_LINHAPR 	 = '" + cLinPrd  + "' "
+	endif
 
 	cSql += " WHERE C2_DATPRF 	   	>= '" + dtos(dDtIni) + "'"
 	cSql += "   AND C2_DATPRF	   	<= '" + dtos(dDtFim) + "'"
@@ -334,7 +344,7 @@ Static Function CargaTT(oSay)
 		cSql += " TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ITCLI, TT_OP, TT_TPOP, TT_RECURSO, TT_LE, "
 		cSql += " TT_DATPRI, TT_DATPRF, TT_QUANT, TT_QUJE, TT_QTHSTOT, TT_QTHORA, TT_SITEMP, "
 		cSql += " TT_DTINIP, TT_DTFIMP, TT_HRINIP, TT_HRFIMP, "
-		cSql += " TT_OBSEMP, TT_OBSPRD) VALUES ('"
+		cSql += " TT_OBSEMP, TT_OBSPRD, TT_SITSLD) VALUES ('"
 
 		cSql += FWUUIDv4() 			 				+ "','"
 		cSql += (cAlias)->C2_PRODUTO 				+ "','"
@@ -354,7 +364,8 @@ Static Function CargaTT(oSay)
 		cSql += AllTrim((cAlias)->C2_XSITEMP) 		+ "','"
 		cSql += (cAlias)->C2_XDTINIP + "','" + (cAlias)->C2_XDTFIMP + "','"
 		cSql += (cAlias)->C2_XHRINIP + "','" + (cAlias)->C2_XHRFIMP + "','"
-		cSql += (cAlias)->C2_XOBSEMP + "','" + (cAlias)->C2_XOBSPRD + "')"
+		cSql += (cAlias)->C2_XOBSEMP + "','" + (cAlias)->C2_XOBSPRD + "','"
+		cSql += "S')"
 
 		if TCSqlExec(cSql) < 0
 			MsgInfo("Erro na execução da query:", "Atenção")
@@ -364,9 +375,35 @@ Static Function CargaTT(oSay)
 		(cAlias)->(DbSkip())
 	enddo
 
+	SaldoComp()
+
 	(cAlias)->(DBCLOSEAREA())
 return
 
+
+// Calcula se existe saldo de componentes 
+Static Function SaldoComp()
+	Local nQtNec	:= 0
+	Local lRet		:= .T.
+
+	(cAliasTT)->(DBSetOrder(1))
+	(cAliasTT)->(DbGoTop())
+
+	While (cAliasTT)->(! EOF())
+		nQtNec 	:= (cAliasTT)->TT_QUANT - (cAliasTT)->TT_QUJE
+
+		lRet := Estrutura((cAliasTT)->TT_PRODUTO, nQtNec)
+
+		if lRet	== .F.		// falta algum componente
+			RecLock(cAliasTT, .F.)
+			(cAliasTT)->TT_SITSLD := "N"
+			(cAliasTT)->(MsUnLock())
+		endif
+
+		(cAliasTT)->(DbSkip())
+	enddo
+
+return
 
 Static Function MVCMODELPOS(oModel)
 	Local aArea   		:= GetArea()
@@ -401,8 +438,9 @@ Return lOk
  *---------------------------------------------------------------------*/
 User Function PL160ProLeg()
     Local aLegenda := {}
-    AAdd(aLegenda,{"BR_AMARELO","Prevista"})
-    AAdd(aLegenda,{"BR_VERDE","Em aberto"})
+    AAdd(aLegenda,{"BR_AMARELO","Ordem ainda prevista - nao deve ser produzida"})
+    AAdd(aLegenda,{"BR_VERDE","Em aberto - liberada"})
+    AAdd(aLegenda,{"BR_VERMELHO","Falta saldo de materia prima ou componente"})
     BrwLegenda("Registros", "Tipo", aLegenda)
 return
 
@@ -421,3 +459,46 @@ User Function PL160Calculo()
 
 	CargaTT()
 return
+
+
+Static Function	Estrutura(cProduto, nQtPai)
+	Local lRet		:= .T.
+	Local cSql 		:= ""
+	Local nQtNec 	:= 0
+	Local cAliasSG1
+	Local cAliasSB2
+
+	cSql := "SELECT G1_COD, G1_COMP, G1_QUANT, G1_INI, G1_FIM, G1_FANTASM "
+	cSql += "  FROM " + RetSQLName("SG1") + " SG1 "
+
+	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+	csQL += "	 ON B1_COD			=  G1_COMP "
+	cSql += "   AND B1_MSBLQL 		=  '2' "
+	cSql += "   AND B1_FILIAL 		= '" + xFilial("SB1") + "' "
+	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
+
+	cSql += " WHERE G1_COD 			= '" + cProduto + "' "
+	cSql += "   AND G1_FILIAL 		= '" + xFilial("SG1") + "' "
+	cSql += "   AND SG1.D_E_L_E_T_ 	= ' ' "
+	cAliasSG1 := MPSysOpenQuery(cSql)
+
+	While (cAliasSG1)->(!EOF())
+		nQtNec := nQtPai * (cAliasSG1)->G1_QUANT
+
+		// Ler o saldo do componente
+		cSql := "SELECT B2_QATU FROM " + RetSQLName("SB2") + " SB2 "
+		cSql += " WHERE B2_COD    		=  '" + (cAliasSG1)->G1_COMP + "'"
+		cSql += "   AND B2_FILIAL 		=  '" + xFilial("SB2") + "'"
+		cSql += "   AND SB2.D_E_L_E_T_  <> '*' "
+		cAliasSB2 := MPSysOpenQuery(cSql)
+
+		if nQtNec > (cAliasSB2)->B2_QATU
+			lRet := .F.
+		endif
+
+		(cAliasSG1)->(DbSkip())
+	EndDo
+
+	(cAliasSB2)->(DBCLOSEAREA())
+	(cAliasSG1)->(DBCLOSEAREA())
+return lRet

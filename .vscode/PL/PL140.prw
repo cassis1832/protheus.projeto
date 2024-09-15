@@ -47,9 +47,8 @@ User Function PL140()
 	oTempTable := FWTemporaryTable():New(cAliasTT)
 	oTempTable:SetFields(aCampos)
 	oTempTable:AddIndex("1", {"TT_ID"} )
-	oTempTable:AddIndex("2", {"TT_PRODUTO"	, "TT_LOTE"} )
-	oTempTable:AddIndex("3", {"TT_TIPO"		, "TT_PRODUTO"} )
-	oTempTable:AddIndex("4", {"TT_CLIENT"	, "TT_PRODUTO"} )
+	oTempTable:AddIndex("2", {"TT_PRODUTO", "TT_LOTE"} )
+	oTempTable:AddIndex("3", {"TT_CLIENT" , "TT_PRODUTO", "TT_LOTE"} )
 	oTempTable:Create()
 
 	cTableName  := oTempTable:GetRealName()
@@ -82,21 +81,21 @@ User Function PL140()
     */
 	aAdd(aPesquisa, {"Produto"	, {{"", "C",  15, 0, "Produto" 	, "@!", "TT_PRODUTO"}} } )
 	aAdd(aPesquisa, {"Cliente"	, {{"", "C",  06, 0, "Cliente" 	, "@!", "TT_CLIENT"}} } )
-	aAdd(aPesquisa, {"Tipo"		, {{"", "C",  02, 0, "Tipo"	  	, "@!", "TT_TIPO"}} } )
 
-	aAdd(aIndex, {"TT_PRODUTO"} )
-	aAdd(aIndex, {"TT_CLIENT","TT_PRODUTO"} )
+	aAdd(aIndex, {"TT_PRODUTO", "TT_LOTE"} )
+	aAdd(aIndex, {"TT_CLIENT" , "TT_PRODUTO", "TT_LOTE"} )
 
 	//Criando o browse da temporária
 	oBrowse := FWMBrowse():New()
-	oBrowse:SetAlias(cAliasTT)
-	oBrowse:SetQueryIndex(aIndex)
 	oBrowse:SetTemporary(.T.)
+	oBrowse:SetAlias(oTempTable:getAlias())
 	oBrowse:SetFields(aColunas)
+	oBrowse:SetQueryIndex(aIndex)
+	oBrowse:SetSeek(.T., aPesquisa)
 	oBrowse:DisableDetails()
 	oBrowse:SetDescription(cTitulo)
-	oBrowse:SetSeek(.T., aPesquisa)
-	//oBrowse:SetItemHeaderClick({"TT_PROD"}) não funciona no FWMBROWSE
+	oBrowse:SetUseFilter(.T.)
+
 	oBrowse:Activate()
 
 	oTempTable:Delete()

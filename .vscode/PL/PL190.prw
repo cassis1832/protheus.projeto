@@ -4,7 +4,8 @@
 #Include 'FWMVCDef.ch'
 
 /*/{Protheus.doc}	PL190
-	Extrair dados de ordens de produção para controle de empenho
+	Plano de empenho
+	13/09/2024 - mostrar apenas a primeira operacao da ordem
 @author Carlos Assis
 @since 02/09/2024
 @version 1.0   
@@ -90,7 +91,7 @@ User Function PL190()
 	aAdd(aColunas, {"Cliente"			, "TT_CLIENT"	, "C", 08, 0, "@!"})
 	aAdd(aColunas, {"Item Cliente"		, "TT_ITCLI"	, "C", 08, 0, "@!"})
 	aAdd(aColunas, {"Ordem"				, "TT_OP"		, "C", 08, 0, "@!"})
-	aAdd(aColunas, {"Quant."			, "TT_QUANT"	, "N", 05, 3, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Quant."			, "TT_QUANT"	, "N", 10, 3, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Dt. Ini. Prev."	, "TT_DTINIP"	, "D", 06, 0, "@D"})
 	aAdd(aColunas, {"Hr. Ini. Prev."	, "TT_HRINIP"	, "C", 05, 0, "99:99"})
 	aAdd(aColunas, {"Prt. OP"			, "TT_PRTOP"	, "C", 01, 0, "@!"})
@@ -118,8 +119,10 @@ User Function PL190()
 	oBrowse:SetMark(cMarca, cAliasTT, "TT_OK")
 	oBrowse:SetAllMark( { || oBrowse:AllMark() } )
 
-	// oBrowse:AddLegend("TT_TPOP == 'P'", "YELLOW", "Prevista")
-	// oBrowse:AddLegend("TT_TPOP == 'F'", "GREEN",  "Em aberto")
+	//Setando Legenda
+	// oBrowse:AddLegend( "(cAliasTT)->TT_SALDO <= 0"						, "RED"		,"Item sem saldo" )
+	// oBrowse:AddLegend( "(cAliasTT)->TT_QUANT <= (cAliasTT)->TT_SALDO"	, "GREEN"	,"Saldo suficiente" )
+	// oBrowse:AddLegend( "(cAliasTT)->TT_QUANT >  (cAliasTT)->TT_SALDO "	, "YELLOW"	,"Saldo insuficiente" )
 
 	oBrowse:Activate()
 
@@ -230,7 +233,8 @@ Return oView
 
 Static Function CargaTT(oSay)
 	Local cSql 			:= ""
-	Local cAlias 		:= ""
+	Local cAliasOrd		:= ""
+	Local cAliasOpr		:= ""
 	Local cOP 			:= ''
 	Local cLinha		:= ""
 
@@ -240,12 +244,9 @@ Static Function CargaTT(oSay)
 		cLinha := "Solda"
 	endif
 
-	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, "
-	cSql += "	    C2_QUANT, C2_DATPRI, C2_DATPRF, C2_XPRTPL,"
-	cSql += "	    C2_XDTINIP, C2_XHRINIP, C2_XSITEMP, C2_XOBSEMP, "
-	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XITEM, "
-	cSql += "	    G2_OPERAC, G2_RECURSO, "
-	cSql += "	  	H1_XLIN, H1_XLOCLIN, H1_XTIPO, H1_XNOME "
+	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_QUANT, C2_DATPRI, C2_DATPRF,"
+	cSql += "	    C2_XPRTPL, C2_XDTINIP, C2_XHRINIP, C2_XSITEMP, C2_XOBSEMP, "
+	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XITEM "
 	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
@@ -254,21 +255,12 @@ Static Function CargaTT(oSay)
 	cSql += "   AND B1_XLINPRD 	 	 = '" + cLinha + "' "
 	cSql += "	AND SB1.D_E_L_E_T_ 	 = ' ' "
 
-	cSql += " INNER JOIN " + RetSQLName("SG2") + " SG2 "
-	cSql += "    ON G2_PRODUTO 		 = C2_PRODUTO"
-	cSql += "   AND G2_FILIAL		 = '" + xFilial("SG2") + "' "
-	cSql += "   AND SG2.D_E_L_E_T_ 	 = ''
-
-	cSql += " INNER JOIN " + RetSQLName("SH1") + " SH1 "
-	cSql += "    ON H1_CODIGO 		 = G2_RECURSO"
-	cSql += "   AND H1_FILIAL 	 	 = '" + xFilial("SH1") + "' "
-	cSql += "   AND SH1.D_E_L_E_T_ 	 = ''
-
 	cSql += " WHERE C2_DATPRF 	   	>= '" + dtos(dDtIni) + "'"
 	cSql += "   AND C2_DATPRF	   	<= '" + dtos(dDtFim) + "'"
 	cSql += "   AND C2_DATRF   		 = ''"
 	cSql += "   AND C2_TPOP 	 	<> 'P'"
 	cSql += "   AND C2_FILIAL 	 	 = '" + xFilial("SC2") + "' "
+	cSql += "	AND SC2.D_E_L_E_T_ 	 = ' ' "
 
 	if nStatus == 1
 		cSql += " AND C2_XSITEMP <> 'S' "
@@ -276,42 +268,53 @@ Static Function CargaTT(oSay)
 		cSql += " AND C2_XSITEMP = 'S' "
 	endif
 
-	cSql += "	AND SC2.D_E_L_E_T_ 	 = ' ' "
-	cSql += "	ORDER BY G2_RECURSO, C2_DATPRI, C2_NUM, C2_ITEM, C2_SEQUEN "
-	cAlias := MPSysOpenQuery(cSql)
+	cAliasOrd := MPSysOpenQuery(cSql)
 
-	While (cAlias)->(! EOF())
-		cOP	 := Transform((cAlias)->C2_NUM, "999999") + AllTrim((cAlias)->C2_ITEM) + AllTrim((cAlias)->C2_SEQUEN)
+	While (cAliasOrd)->(! EOF())
+
+		cSql := "SELECT  G2_RECURSO FROM " + RetSQLName("SG2") + " SG2 "
+		cSql += " WHERE G2_PRODUTO 		 = '" + (cAliasOrd)->C2_PRODUTO + "'"
+		cSql += "   AND G2_FILIAL		 = '" + xFilial("SG2") + "' "
+		cSql += "   AND SG2.D_E_L_E_T_ 	 = ''
+		cSql += "	ORDER BY G2_OPERAC "
+		cAliasOpr := MPSysOpenQuery(cSql)
+
+		cOP	 := Transform((cAliasOrd)->C2_NUM, "999999") + AllTrim((cAliasOrd)->C2_ITEM) + AllTrim((cAliasOrd)->C2_SEQUEN)
 
 		cSql := "INSERT INTO " + cTableName + " ("
-		cSql += " TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ITCLI, TT_OP, TT_RECURSO, "
-		cSql += " TT_QUANT, TT_SITEMP, TT_PRTPL,"
-		cSql += " TT_DTINIP, TT_HRINIP, "
-		cSql += " TT_OBSEMP) VALUES ('"
+		cSql += " TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ITCLI, TT_OP, "
+		cSql += " TT_QUANT, TT_SITEMP, TT_PRTPL, TT_DTINIP, TT_HRINIP, TT_OBSEMP, "
+		cSql += " TT_RECURSO) VALUES ('"
 
 		cSql += FWUUIDv4() 			 				+ "','"
-		cSql += (cAlias)->C2_PRODUTO 				+ "','"
-		cSql += (cAlias)->B1_DESC 					+ "','"
-		cSql += (cAlias)->B1_XCLIENT				+ "','"
-		cSql += (cAlias)->B1_XITEM 					+ "','"
+		cSql += (cAliasOrd)->C2_PRODUTO 			+ "','"
+		cSql += (cAliasOrd)->B1_DESC 				+ "','"
+		cSql += (cAliasOrd)->B1_XCLIENT				+ "','"
+		cSql += (cAliasOrd)->B1_XITEM 				+ "','"
 		cSql += cOP 								+ "','"
-		cSql += AllTrim((cAlias)->G2_RECURSO) 		+ "','"
-		cSql += cValToChar((cAlias)->C2_QUANT) 		+ "','"
-		cSql += AllTrim((cAlias)->C2_XSITEMP) 		+ "','"
-		cSql += (cAlias)->C2_XPRTPL 				+ "','"
-		cSql += (cAlias)->C2_XDTINIP 				+ "','"
-		cSql += (cAlias)->C2_XHRINIP 				+ "','"
-		cSql += (cAlias)->C2_XOBSEMP 				+ "')"
+		cSql += cValToChar((cAliasOrd)->C2_QUANT) 	+ "','"
+		cSql += AllTrim((cAliasOrd)->C2_XSITEMP) 	+ "','"
+		cSql += (cAliasOrd)->C2_XPRTPL 				+ "','"
+		cSql += (cAliasOrd)->C2_XDTINIP 			+ "','"
+		cSql += (cAliasOrd)->C2_XHRINIP 			+ "','"
+		cSql += (cAliasOrd)->C2_XOBSEMP 			+ "','"
+
+		if (cAliasOpr)->(! EOF())
+			cSql += AllTrim((cAliasOpr)->G2_RECURSO) + "')"
+		else
+			cSql += "')"
+		endif
 
 		if TCSqlExec(cSql) < 0
 			MsgInfo("Erro na execução da query:", "Atenção")
 			MsgInfo(TcSqlError(), "Atenção3")
 		endif
 
-		(cAlias)->(DbSkip())
+		(cAliasOrd)->(DbSkip())
 	enddo
 
-	(cAlias)->(DBCLOSEAREA())
+	(cAliasOrd)->(DBCLOSEAREA())
+	(cAliasOpr)->(DBCLOSEAREA())
 return
 
 
@@ -340,12 +343,12 @@ Return lOk
   Legendas
  *---------------------------------------------------------------------*/
 User Function PL190ProLeg()
-    Local aLegenda := {}
-    AAdd(aLegenda,{"BR_AMARELO","Prevista"})
-    AAdd(aLegenda,{"BR_VERDE","Em aberto"})
-    BrwLegenda("Registros", "Tipo", aLegenda)
+    // Local aLegenda := {}
+    // AAdd(aLegenda,{"BR_VERDE","Saldo suficiente"})
+    // AAdd(aLegenda,{"BR_AMARELO","Saldo insuficiente"})
+    // AAdd(aLegenda,{"BR_VERMELHO","Item sem saldo"})
+    // BrwLegenda("Saldos", "Situacao", aLegenda)
 return
-
 
 
 /*---------------------------------------------------------------------*

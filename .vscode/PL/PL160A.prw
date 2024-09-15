@@ -6,6 +6,7 @@
 /*/{Protheus.doc}	PL160A
 	Distribuição da carga maquina
 	21/08/2024 - Não alterar ordens sacramentadas
+	10/09/2024 - Saboneteira com prioridade para carga máquina
 @author Carlos Assis
 @since 20/08/2024
 @version 1.0   
@@ -35,11 +36,12 @@ User Function PL160A(Inicio, Fim, Tipo)
 	aAdd(aCampos, {"TT1_QUJE"	,"N", 14, 3})
 	aAdd(aCampos, {"TT1_QTHSTO"	,"N", 14, 3})
 	aAdd(aCampos, {"TT1_QTHORA"	,"N", 14, 3})
+	aAdd(aCampos, {"TT1_PRIOR"	,"C", 03, 0})
 
 	oTT1 := FWTemporaryTable():New(cAliasTT1)
 	oTT1:SetFields(aCampos)
 	oTT1:AddIndex("1", {"TT1_ID"} )
-	oTT1:AddIndex("2", {"TT1_RECURS", "TT1_DATPRI"} )
+	oTT1:AddIndex("2", {"TT1_RECURS", "TT1_DATPRI", "TT1_PRIOR"} )
 	oTT1:Create()
 	cTT1Name  := oTT1:GetRealName()
 
@@ -84,6 +86,7 @@ Static Function CargaTT1()
 	Local nQuant	:= 0
 	Local nTotal	:= 0
 	Local nSetup	:= 0
+	Local cPrior	:= 0
 
 	if lTipo == .T.
 		cLinPrd := "01"
@@ -91,7 +94,7 @@ Static Function CargaTT1()
 		cLinPrd := "02"
 	Endif
 
-	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_STATUS, "
+	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_STATUS, C2_PRIOR, "
 	cSql += "	    C2_QUANT, C2_QUJE, C2_DATPRI, C2_DATPRF, C2_TPOP, "
 	cSql += "	    G2_OPERAC, G2_RECURSO, G2_MAOOBRA, G2_SETUP, "
 	cSql += "	  	G2_TEMPAD, G2_LOTEPAD, "
@@ -138,17 +141,27 @@ Static Function CargaTT1()
 
 		nTotal := nSetup + nQuant
 
+		cPrior := (cAlias)->C2_PRIOR
+
+		if (cAlias)->C2_PRODUTO == AvKey("11401720", "C2_PRODUTO") ;
+				.OR. (cAlias)->C2_PRODUTO == AvKey("11501720", "C2_PRODUTO") ;
+				.OR. (cAlias)->C2_PRODUTO == AvKey("25401720", "C2_PRODUTO") ;
+				.OR. (cAlias)->C2_PRODUTO == AvKey("25501720", "C2_PRODUTO")
+			cPrior := "100"
+		endif
+
 		cSql := "INSERT INTO " + cTT1Name + " ("
-		cSql += " TT1_ID, TT1_PRODUT, TT1_OP, TT1_RECURS, "
+		cSql += " TT1_ID, TT1_PRODUT, TT1_OP, TT1_RECURS, TT1_PRIOR, "
 		cSql += " TT1_DATPRI, TT1_DATPRF, TT1_QTHSTO) VALUES ('"
 
 		cSql += FWUUIDv4() 			 				+ "','"
 		cSql += (cAlias)->C2_PRODUTO 				+ "','"
 		cSql += Transform((cAlias)->C2_NUM, "999999") + AllTrim((cAlias)->C2_ITEM) + AllTrim((cAlias)->C2_SEQUEN) +  "','"
-		cSql += AllTrim((cAlias)->G2_RECURSO) +  "','"
-		cSql += (cAlias)->C2_DATPRI +  "','"
-		cSql += (cAlias)->C2_DATPRF +  "','"
-		cSql += cValToChar(nTotal) + "')"
+		cSql += AllTrim((cAlias)->G2_RECURSO) 		+  "','"
+		cSql += AllTrim(cPrior) 					+  "','"
+		cSql += (cAlias)->C2_DATPRI 				+  "','"
+		cSql += (cAlias)->C2_DATPRF 				+  "','"
+		cSql += cValToChar(nTotal) 					+ "')"
 
 		if TCSqlExec(cSql) < 0
 			MsgInfo("Erro na execução da query:", "Atenção")
@@ -268,7 +281,23 @@ Static Function Calculo(oSay)
 			If SC2->(MsSeek(xFilial("SC2") + (cAliasTT1)->TT1_OP))
 				RecLock("SC2", .F.)
 				SC2->C2_XDTINIP := dDtIniP
-				SC2->C2_XDTFIMP := dDtFimP
+
+				if dDtFimP > SC2->C2_DATPRF
+					SC2->C2_XDTFIMP := NIL
+					SC2->C2_XOBSPRD := "Data calculada fora da data de termino"
+				else
+					SC2->C2_XDTFIMP := dDtFimP
+					SC2->C2_XOBSPRD := ""
+				endif
+
+				// Saboneteira tem prioridade na carga maquina
+				if SC2->C2_PRODUTO == AvKey("11401720", "C2_PRODUTO") ;
+						.OR. SC2->C2_PRODUTO == AvKey("11501720", "C2_PRODUTO") ;
+						.OR. SC2->C2_PRODUTO == AvKey("25401720", "C2_PRODUTO") ;
+						.OR. SC2->C2_PRODUTO == AvKey("25501720", "C2_PRODUTO")
+					SC2->C2_PRIOR := "100"
+				endif
+
 				SC2->(MsUnLock())
 			endif
 		endif
