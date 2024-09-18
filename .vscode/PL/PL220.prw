@@ -2,7 +2,7 @@
 #Include 'FWMVCDef.ch'
 
 /*/{Protheus.doc} PL220
-Função: Carga maquina SH8
+Função: Consulta carga máquina SH8
 @author Assis
 @since 09/09/2024
 @version 1.0
@@ -14,28 +14,59 @@ Função: Carga maquina SH8
 Static cTitulo := "Carga Maquina"
 
 User Function PL220()
+	Local aPergs		:= {}
+	Local aResps		:= {}
+	Local cCondicao		:= ""
 	Local oBrowse
+
+	Private aComboLin	:= {"Estamparia","Solda"}
+	Private cRecurso 	:= ""
+	Private cLinha		:= ""
+
+	AAdd(aPergs ,{2, "Linha de producao:"	,01, aComboLin, 70, "", .T.})
+	AAdd(aPergs, {1, "Recurso"				, CriaVar("H1_CODIGO",.F.),,,"SH1",, 70, .F.})
+
+	If ParamBox(aPergs, "PLANO DE PRODUCAO", @aResps,,,,,,,, .T., .T.)
+		nLinha		:= aResps[1]
+		cRecurso	:= aResps[2]
+	Else
+		return
+	endif
+
+	FwMsgRun(NIL, {|oSay| PreparaSH8(oSay)}, "Preparando arquivo de trabalho", "Preparando arquivo de trabalho...")
 
 	oBrowse := FWMBrowse():New()
 	oBrowse:SetAlias("SH8")
 	oBrowse:SetDescription(cTitulo)
-	oBrowse:SetOnlyFields({'H8_XPROD','H8_OP'})
 
+	if (allTrim(cRecurso) != '')
+		cCondicao := "H8_RECURSO == '" + cRecurso + "'"
+	else
+		IF nLinha == 1
+			cCondicao := "H8_XLINPRD == '" + "E" + "'"
+		else
+			cCondicao := "H8_XLINPRD == '" + "S" + "'"
+		endif
+	endif
+
+	oBrowse:SetFilterDefault( cCondicao )
+	oBrowse:DisableDetails()
+
+	// oBrowse:SetOnlyFields({'H8_XPROD','H8_OP'})
 	// oBrowse:AddLegend("SH8->SH8_STATUS == '0'", "GREEN", "Ativo")
 	// oBrowse:AddLegend("SH8->SH8_STATUS == '1'", "YELLOW", "Com erro")
 	// oBrowse:AddLegend("SH8->SH8_STATUS == '9'", "RED", "Inativo")
+
 	oBrowse:Activate()
 Return Nil
 
-/*---------------------------------------------------------------------*
-	Criação do menu MVC
- *---------------------------------------------------------------------*/
+
 Static Function MenuDef()
 	Local aRot := {}
 
-	ADD OPTION aRot TITLE 'Visualizar' 	  ACTION 'VIEWDEF.PL220' OPERATION 2   					  ACCESS 0 
-	ADD OPTION aRot TITLE 'Alterar'    	  ACTION 'VIEWDEF.PL220' OPERATION MODEL_OPERATION_UPDATE ACCESS 0 
-	ADD OPTION aRot TITLE 'Legenda'    	  ACTION 'u_ProLeg' 	 OPERATION 8     				  Access 0       
+	ADD OPTION aRot TITLE 'Visualizar' 	  ACTION 'VIEWDEF.PL220' OPERATION 2   					  ACCESS 0
+	ADD OPTION aRot TITLE 'Alterar'    	  ACTION 'VIEWDEF.PL220' OPERATION MODEL_OPERATION_UPDATE ACCESS 0
+	ADD OPTION aRot TITLE 'Legenda'    	  ACTION 'u_ProLeg' 	 OPERATION 8     				  Access 0
 Return aRot
 
 /*---------------------------------------------------------------------*
@@ -45,8 +76,9 @@ Static Function ModelDef()
     Local oModel   := Nil
     Local oStSH8   := FWFormStruct(1, "SH8")
  
-	// oStSH8:SetProperty('SH8_CLIENT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'INCLUI'))
-	// oStSH8:SetProperty('SH8_CODPED',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStSH8:SetProperty('H8_OPER',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStSH8:SetProperty('H8_RECURSO',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStSH8:SetProperty('H8_QUANT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 
 	oModel:=MPFormModel():New("PL220M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil) 
 	oModel:AddFields("FORMSH8",/*cOwner*/,oStSH8)
@@ -75,7 +107,7 @@ Return oView
 
 
 Static Function MVCMODELPOS(oModel)
-	Local lOk	:= .T.
+	Local lOk			:= .T.
 Return lOk
 
 
@@ -89,3 +121,33 @@ User Function PL220ProLeg()
     AAdd(aLegenda,{"BR_VERMELHO","Inativo"})
     BrwLegenda("Registros", "Status", aLegenda)
 return
+
+
+/*---------------------------------------------------------------------*
+  Atualiza o cod. produto na SH8
+ *---------------------------------------------------------------------*/
+Static Function PreparaSH8(oSay)
+	SH8->(dbSetOrder(1))
+	SC2->(dbSetOrder(1))
+	SB1->(dbSetOrder(1))
+
+	While SH8->(!Eof())
+	
+		if allTrim(SH8->H8_XPROD) == '' .or. SH8->H8_XPROD == Nil .or. allTrim(SH8->H8_XLINPRD) == ''
+			RecLock("SH8", .F.)
+
+			if SC2->(MsSeek(xFilial("SC2") + SH8->H8_OP))
+				SH8->H8_XPROD := SC2->C2_PRODUTO
+			endif
+
+			if SB1->(MsSeek(xFilial("SB1") + SC2->C2_PRODUTO))
+				SH8->H8_XLINPRD := SB1->B1_XLINPRD
+			endif
+			
+			MsUnLock()
+		endif
+
+		SH8->(dbSkip())
+	End
+return
+

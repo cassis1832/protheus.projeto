@@ -239,9 +239,9 @@ Static Function CargaTT(oSay)
 	Local cLinha		:= ""
 
 	if nLinha == 1
-		cLinha := "Estamparia"
+		cLinha := "E"
 	else
-		cLinha := "Solda"
+		cLinha := "S"
 	endif
 
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_QUANT, C2_DATPRI, C2_DATPRF,"
