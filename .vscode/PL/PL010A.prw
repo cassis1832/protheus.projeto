@@ -8,6 +8,7 @@
 	Impressao da Ordem de Producao Modelo MR V01
 	29/07/2024 - não imprimir OP prevista
 	04/09/2024 - alteracao do xprint pelo xprtop
+	20/09/2024 - se a ordem for externa imprimir "Ordem Externa"
 @author Carlos Assis
 @since 04/11/2023
 @version 1.0   
@@ -40,10 +41,10 @@ User Function PL010A(cOrdem, lOpera, lReimp)
 	endif
 
 	// LER OP E ITEM
-	cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, "
-	cQuery += "	 	  C2_QUANT, CAST(C2_DATPRI AS DATE) C2_DATPRI, "
-	cQuery += "	 	  CAST(C2_DATPRF AS DATE) C2_DATPRF, C2_XPRTOP, "
-	cQuery += "	  	  B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ "
+	cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_TPPR,"
+	cQuery += "	 	  C2_QUANT, CAST(C2_DATPRI AS DATE) C2_DATPRI,"
+	cQuery += "	 	  CAST(C2_DATPRF AS DATE) C2_DATPRF, C2_XPRTOP,"
+	cQuery += "	  	  B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ"
 	cQuery += "  FROM " + RetSQLName("SC2") + " SC2 "
 
 	cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
@@ -76,6 +77,9 @@ User Function PL010A(cOrdem, lOpera, lReimp)
 return
 
 
+//-----------------------------------------------------------------------------
+//	Verificar o estoque de componentes para emitir mensagem
+//-----------------------------------------------------------------------------
 Static Function VerEstoque(cProduto, nQtdeNec)
 	Local lRet 		:= .T.
 	Local cSql		:= ""
@@ -141,7 +145,6 @@ Static Function VerEstoque(cProduto, nQtdeNec)
 	enddo
 
 	(cAliasSG1)->(DBCLOSEAREA())
-
 return lRet
 
 
@@ -267,8 +270,13 @@ Static Function printCabec()
 	nLin +=20
 	oPrinter:Say(nLin, 15, "Cliente:",oFont10)
 	oPrinter:Say(nLin, 75, (cAliasOrd)->B1_XCLIENT, oFont10)
+
 	oPrinter:Say(nLin, 220, "Projeto:",oFont10)
 	oPrinter:Say(nLin, 270,(cAliasOrd)->B1_XPROJ, oFont10)
+
+	if ((cAliasOrd)->C2_TPPR == 'E')
+		oPrinter:Say(nLin, 400, "ORDEM EXTERNA",oFont12b)
+	endif
 
 Return
 
