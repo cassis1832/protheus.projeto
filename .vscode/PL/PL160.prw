@@ -278,10 +278,14 @@ Static Function CargaTT(oSay)
 	Local nSetup		:= 0
 	Local cOP 			:= ''
 
-	if lEstamp == .T.
+	if lEstamp == .T. .and. lSolda == .T.
+		cLinPrd := "03"
+	elseif lEstamp == .T.
 		cLinPrd := "01"
-	Else
+	Elseif lSolda == .T.
 		cLinPrd := "02"
+	else
+		cLinPrd := ""
 	Endif
 
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, "
@@ -312,7 +316,9 @@ Static Function CargaTT(oSay)
 	if AllTrim(cRecurso) <> "" .and. AllTrim(cRecurso) <> Nil
 		cSql += "  AND H1_CODIGO  	 = '" + cRecurso + "' "
 	else
-		cSql += "  AND H1_LINHAPR 	 = '" + cLinPrd  + "' "
+		if cLinPrd == "01" .or. cLinPrd == "02"
+			cSql += "  AND H1_LINHAPR 	 = '" + cLinPrd  + "' "
+		endif
 	endif
 
 	cSql += " WHERE C2_DATPRF 	   	>= '" + dtos(dDtIni) + "'"

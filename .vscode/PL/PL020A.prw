@@ -10,6 +10,7 @@ Função
 	19/07/2024 - Gerar previsão mensal
 	02/08/2024 - Desprezar previsao no passado
 	02/09/2024 - Não gravar pedidos no passado
+	22/09/2024 - Atualizar ES do item
 @author Assis
 @since 08/04/2024
 @version 1.0
@@ -24,6 +25,8 @@ User Function PL020A()
 	Private cCliente 	:= ''
 	Private cLoja	 	:= ''
 	Private cArquivo 	:= ''
+	Private cProduto  	:= ""
+	Private cCodCli  	:= ""
 
 	Private dtProcesso 	:= Date()
 	Private hrProcesso 	:= Time()
@@ -53,7 +56,7 @@ User Function PL020A()
 Return
 
 /*---------------------------------------------------------------------*
-	Trata todas as linhas que estão na variavel aLinhas
+	Trata todas as linhas que estao na variavel aLinhas
  *---------------------------------------------------------------------*/
 Static Function TrataLinhas(oSay, aLinhas)
 	Local nLin 	   		:= 0
@@ -68,6 +71,7 @@ Static Function TrataLinhas(oSay, aLinhas)
   	aLinha   := strTokArr(aLinhas [1], ';')
 	cCliente := AvKey(aLinha[1], "A1_COD")
 	cLoja	 := AvKey(aLinha[2], "A1_LOJA")
+	cCodCli  := Upper(AvKey(aLinha[3], "A7_CODCLI"))
 
    // Ver se o cliente está cadastrado
 	dbSelectArea("SA1")
@@ -87,11 +91,24 @@ Static Function TrataLinhas(oSay, aLinhas)
         For nlin := 1 To Len(aLinhas) Step 1
             aLinha := strTokArr(aLinhas [nLin], ';')
 
-			if aLinha[7] == 'V'
-				CriaPrevisao(aLinha)
-			else
-				GravaRegistro(aLinha)
-			endif
+			// Consistir o codigo do cliente e item do cliente
+			SA7->(DBSetOrder(3))  // Filial/cliente/loja/codcli
+
+			If SA7->(MsSeek(xFilial("SA7") + cCliente + cLoja + cCodCli))
+				cProduto := SA7->A7_PRODUTO
+				lErro = .F.
+
+				if aLinha[7] == 'V'
+					CriaPrevisao(aLinha)
+				else
+					// Gestamp rateia quantidade mensal
+					if (cCliente >= '000004' .and. cCliente <= '000007')
+						RateiaMensal(aLinha)
+					else
+						GravaRegistro(aLinha)
+					endif
+				endif
+			EndIf
         next	
     EndIf
 return
@@ -128,23 +145,64 @@ Static Function CriaPrevisao(aLinha)
 return
 
 
+/*---------------------------------------------------------------------*
+  Rateia a quantidade mensal nos dias uteis que faltam ate o fim do mes
+ *---------------------------------------------------------------------*/
+Static Function RateiaMensal(aLinha)
+	Local aLin		:= aLinha
+	Local dData		:= firstDate(ctod(aLin[4]))
+	Local nQtde		:= Ceiling(Val(StrTran(aLin[6],",",".")))
+	Local nDias		:= 0
+	Local nMes		:= 0
+
+	dbSelectArea("SB1")
+	SB1->(DBSetOrder(1))  // Filial/codigo
+
+	// Atualiza o consumo mensal e o estoque de seguranca
+	if SA7->A7_XCONSME != nQtde
+		RecLock("SA7", .F.)	
+		SA7->A7_XCONSME := nQtde
+		SA7->(MsUnLock())
+
+		If SB1->(MsSeek(xFilial("SB1") + cProduto))
+			RecLock("SB1", .F.)	
+			SB1->B1_ESTSEG := Ceiling(nQtde / 20)
+			SB1->(MsUnLock())
+		endIf
+	endif
+
+	nMes := Month(dData)
+
+	// Conta os dias uteis do mes
+	Do While Month(dData) == nMes
+		if (dow(dData) > 2 .and. dow(dData) < 7)
+			nDias++
+		endif
+
+		dData := daySum(dData, 1)
+	EndDo
+
+	aLin[6] := Str(Ceiling(nQtde / nDias))
+	dData 	:= firstDate(ctod(aLinha[4]))
+
+	// Grava somente os dias uteis futuros
+	Do While Month(dData) == nMes
+		if (dow(dData) > 2 .and. dow(dData) < 7)
+			aLin[4] := dtoc(dData)
+			GravaRegistro(aLin)
+		endif
+		dData := daySum(dData, 1)
+	EndDo
+Return
+
+
 Static Function GravaRegistro(aLinha)
     Local lErro     := .T.
-   	Local cProduto  := ""
 	Local dData 	:= ctod(aLinha[4])
-	Local cCodCli  	:= Upper(AvKey(aLinha[3], "A7_CODCLI"))
 
 	if dData <= Date()
 		return
 	endif
-
-	// Consistir o codigo do cliente e item do cliente
-	SA7->(DBSetOrder(3))  // Filial/cliente/loja/codcli
-
-	If SA7->(MsSeek(xFilial("SA7") + cCliente + cLoja + cCodCli))
-        cProduto := SA7->A7_PRODUTO
-        lErro = .F.
-    EndIf
 
 	// Ver o tipo de pedido (P/F/V)
 	if aLinha[7] <> "F"
