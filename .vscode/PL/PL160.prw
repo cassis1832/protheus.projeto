@@ -502,9 +502,9 @@ Static Function	Estrutura(cProduto, nQtPai)
 			lRet := .F.
 		endif
 
+		(cAliasSB2)->(DBCLOSEAREA())
 		(cAliasSG1)->(DbSkip())
 	EndDo
 
-	(cAliasSB2)->(DBCLOSEAREA())
 	(cAliasSG1)->(DBCLOSEAREA())
 return lRet

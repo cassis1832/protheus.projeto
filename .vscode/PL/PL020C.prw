@@ -9,6 +9,7 @@
 	07/08/2024 - Tratar item bloqueado
 	27/08/2024 - Gerar demandas com 2 dias de diferença para a Gestamp
 	08/09/2024 - Gerar demanda de plano mestre para a Gestamp
+	22/09/2024 - Nao gravar T4j porque ele atualiza na sincronizacao
 @author Assis
 @since 11/04/2024
 @version 1.0
@@ -35,6 +36,10 @@ Return
 Static Function Processa(oSay)
 	Private cAliasTT
 	Private cTableName
+
+	Private dtProcesso 	:= Date()
+	Private hrProcesso 	:= Time()
+
 	Private oTempTable
 
 	oTempTable := FWTemporaryTable():New()
@@ -276,7 +281,7 @@ Static Function GravaDemandas()
 return
 
 /*---------------------------------------------------------------------*
-    Grava SVR e T4J
+    Grava SVR 
  *---------------------------------------------------------------------*/
 Static Function GravaReg()
 
@@ -299,21 +304,9 @@ Static Function GravaReg()
 		SVR->VR_TIPO   	:= cTipo
 		SVR->VR_REGORI  := 0
 		SVR->VR_ORIGEM  := 'SVR'
+		SVR->VR_XDTCRI  := dtProcesso
+		SVR->VR_XHRCRI 	:= hrProcesso
 		SVR->(MsUnlock())
-
-		DbSelectArea("T4J")
-		RecLock("T4J", .T.)
-		T4J->T4J_FILIAL	:= xFilial("T4J") 
-		T4J->T4J_DATA 	:= SVR->VR_DATA
-		T4J->T4J_PROD 	:= SVR->VR_PROD
-		T4J->T4J_ORIGEM := SVR->VR_TIPO
-		T4J->T4J_DOC 	:= SVR->VR_DOC
-		T4J->T4J_QUANT 	:= SVR->VR_QUANT
-		T4J->T4J_LOCAL  := SVR->VR_LOCAL
-		T4J->T4J_IDREG  := SVR->VR_FILIAL + SVR->VR_CODIGO + cValToChar(nSequencia)
-		T4J->T4J_CODE   := SVR->VR_CODIGO
-		T4J->T4J_PROC	:= '2'
-		T4J->(MsUnlock())
 
 return
 
@@ -322,36 +315,47 @@ return
  *---------------------------------------------------------------------*/
 Static Function LimpaDemandas()
 
+	// dbSelectArea("T4J")
+	// T4J->(DBSetOrder(1))  // 
+	// DBGoTop()
+
+    // While T4J->( !Eof() )
+	// 	if T4J_CODE = 'AUTO'
+    //   		RecLock("T4J", .F.)
+    //   		DbDelete()
+    //   		SVR->(MsUnlock())
+	// 	EndIf
+
+	// 	T4J->( dbSkip() )
+  	// End While
+
 	dbSelectArea("SVR")
+
 	SVR->(DBSetOrder(1))  // 
 	DBGoTop()
 
     While SVR->( !Eof() )
-
-        if VR_CODIGO = 'AUTO'
-            RecLock("SVR", .F.)
-            DbDelete()
-            SVR->(MsUnlock())
+        if VR_CODIGO = 'AUTO' 
+			if VR_XDTCRI != dtProcesso .or. VR_XHRCRI != hrProcesso
+				RecLock("SVR", .F.)
+				DbDelete()
+				SVR->(MsUnlock())
+			else
+				// RecLock("T4J", .T.)
+				// T4J->T4J_FILIAL	:= xFilial("T4J") 
+				// T4J->T4J_DATA 	:= SVR->VR_DATA
+				// T4J->T4J_PROD 	:= SVR->VR_PROD
+				// T4J->T4J_ORIGEM := SVR->VR_TIPO
+				// T4J->T4J_DOC 	:= SVR->VR_DOC
+				// T4J->T4J_QUANT 	:= SVR->VR_QUANT
+				// T4J->T4J_LOCAL  := SVR->VR_LOCAL
+				// T4J->T4J_IDREG  := SVR->VR_FILIAL + SVR->VR_CODIGO + SVR->VR_SEQUEN
+				// T4J->T4J_CODE   := SVR->VR_CODIGO
+				// T4J->T4J_PROC	:= '2'
+				// T4J->(MsUnlock())
+			endif
         EndIf
 
         SVR->( dbSkip() )
-
   	End While
-
-	dbSelectArea("T4J")
-	T4J->(DBSetOrder(1))  // 
-	DBGoTop()
-
-    While T4J->( !Eof() )
-
-		if T4J_CODE = 'AUTO'
-      		RecLock("T4J", .F.)
-      		DbDelete()
-      		SVR->(MsUnlock())
-		EndIf
-
-		T4J->( dbSkip() )
-
-  	End While
-
 return

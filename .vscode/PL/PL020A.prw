@@ -60,8 +60,9 @@ Return
  *---------------------------------------------------------------------*/
 Static Function TrataLinhas(oSay, aLinhas)
 	Local nLin 	   		:= 0
-  	Local lErro			:= .F.
 	Local aLinha		:= {}
+
+  	Private lErro		:= .F.
 
 	if Len(aLinhas) == 0
 		return
@@ -71,7 +72,6 @@ Static Function TrataLinhas(oSay, aLinhas)
   	aLinha   := strTokArr(aLinhas [1], ';')
 	cCliente := AvKey(aLinha[1], "A1_COD")
 	cLoja	 := AvKey(aLinha[2], "A1_LOJA")
-	cCodCli  := Upper(AvKey(aLinha[3], "A7_CODCLI"))
 
    // Ver se o cliente está cadastrado
 	dbSelectArea("SA1")
@@ -89,7 +89,8 @@ Static Function TrataLinhas(oSay, aLinhas)
 	    DBSetOrder(2)  // Filial/cliente/loja/item/data
 
         For nlin := 1 To Len(aLinhas) Step 1
-            aLinha := strTokArr(aLinhas [nLin], ';')
+            aLinha 	:= strTokArr(aLinhas [nLin], ';')
+			cCodCli := Upper(AvKey(aLinha[3], "A7_CODCLI"))
 
 			// Consistir o codigo do cliente e item do cliente
 			SA7->(DBSetOrder(3))  // Filial/cliente/loja/codcli
@@ -152,6 +153,7 @@ Static Function RateiaMensal(aLinha)
 	Local aLin		:= aLinha
 	Local dData		:= firstDate(ctod(aLin[4]))
 	Local nQtde		:= Ceiling(Val(StrTran(aLin[6],",",".")))
+	Local nQtdeLin	:= 0
 	Local nDias		:= 0
 	Local nMes		:= 0
 
@@ -175,19 +177,22 @@ Static Function RateiaMensal(aLinha)
 
 	// Conta os dias uteis do mes
 	Do While Month(dData) == nMes
-		if (dow(dData) > 2 .and. dow(dData) < 7)
+		if (dow(dData) > 1 .and. dow(dData) < 7)
 			nDias++
 		endif
 
 		dData := daySum(dData, 1)
 	EndDo
 
-	aLin[6] := Str(Ceiling(nQtde / nDias))
+	nQtdeLin := nQtde / nDias
+	nQtdeLin := Ceiling(nQtdeLin / 100) * 100
+
+	aLin[6] := Str(nQtdeLin)
 	dData 	:= firstDate(ctod(aLinha[4]))
 
 	// Grava somente os dias uteis futuros
 	Do While Month(dData) == nMes
-		if (dow(dData) > 2 .and. dow(dData) < 7)
+		if (dow(dData) > 1 .and. dow(dData) < 7)
 			aLin[4] := dtoc(dData)
 			GravaRegistro(aLin)
 		endif
@@ -197,7 +202,6 @@ Return
 
 
 Static Function GravaRegistro(aLinha)
-    Local lErro     := .T.
 	Local dData 	:= ctod(aLinha[4])
 
 	if dData <= Date()
