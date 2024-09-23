@@ -168,7 +168,7 @@ Static Function RateiaMensal(aLinha)
 
 		If SB1->(MsSeek(xFilial("SB1") + cProduto))
 			RecLock("SB1", .F.)	
-			SB1->B1_ESTSEG := Ceiling(nQtde / 20)
+			SB1->B1_ESTSEG := Ceiling(nQtde / 20 * 3)
 			SB1->(MsUnLock())
 		endIf
 	endif
