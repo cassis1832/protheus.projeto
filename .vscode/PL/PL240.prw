@@ -28,11 +28,11 @@ User Function PL240()
 	AAdd(aPergs, {4, "Solda"					,.T.,"Solda" ,90,"",.F.})
 
 	If ParamBox(aPergs, "CARGA MAQUINA MR", @aResps,,,,,,,, .T., .T.)
-		dDtIni 		:= aResps[2]
-		dDtFim 		:= aResps[3]
-		cRecurso	:= aResps[4]
-		lEstamp		:= aResps[5]
-		lSolda		:= aResps[6]
+		dDtIni 		:= aResps[1]
+		dDtFim 		:= aResps[2]
+		cRecurso	:= aResps[3]
+		lEstamp		:= aResps[4]
+		lSolda		:= aResps[5]
 	Else
 		return
 	endif

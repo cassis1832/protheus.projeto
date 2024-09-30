@@ -28,11 +28,11 @@ User Function PL230()
 	AAdd(aPergs, {4, "Solda"					,.T.,"Solda" ,90,"",.F.})
 
 	If ParamBox(aPergs, "CARGA MAQUINA MR", @aResps,,,,,,,, .T., .T.)
-		dDtIni 		:= aResps[2]
-		dDtFim 		:= aResps[3]
-		cRecurso	:= aResps[4]
-		lEstamp		:= aResps[5]
-		lSolda		:= aResps[6]
+		dDtIni 		:= aResps[1]
+		dDtFim 		:= aResps[2]
+		cRecurso	:= aResps[3]
+		lEstamp		:= aResps[4]
+		lSolda		:= aResps[5]
 	Else
 		return
 	endif
@@ -44,9 +44,11 @@ User Function PL230()
 	//Criando o browse da temporária
 	oBrowse := FWMBrowse():New()
 	oBrowse:SetAlias('ZA2')
-	oBrowse:AddLegend("ZA2->ZA2_TPOP == 'P'", "YELLOW", "Prevista", "1")
-	oBrowse:AddLegend("ZA2->ZA2_TPOP == 'F' .and. ZA2->ZA2_SITSLD == 'N'", "RED", "Falta saldo de materia prima", "1")
-	oBrowse:AddLegend("ZA2->ZA2_TPOP == 'F' .and. ZA2->ZA2_SITSLD == 'S'", "GREEN", "Em aberto", "1")
+	oBrowse:AddLegend("ZA2->ZA2_TPOP == 'P'", "YELLOW", "Ordem Prevista", "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'F' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Confirmada", "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'F' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Confirmada - sem saldo", "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'S'"	, "BLUE"	, "Ordem Planejada", "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'N'"	, "PINK"	, "Ordem Planejada - sem saldo", "1")
 	oBrowse:SetDescription(cTitulo)
 
 	cCondicao := "ZA2_TIPO == '1'"
@@ -121,7 +123,7 @@ Static Function SaldoComp()
 		u_PL230Calculo()
 	endif
 	
-	While ("ZA2")->(! EOF()) .and. ZA2->ZA2_TIPO == 1
+	While ("ZA2")->(! EOF()) .and. ZA2->ZA2_TIPO == "1"
 		nQtNec 	:= ZA2->ZA2_QUANT - ZA2->ZA2_QUJE
 
 		lRet := Estrutura(ZA2->ZA2_PROD, nQtNec)
@@ -217,9 +219,11 @@ return
  *---------------------------------------------------------------------*/
 User Function PL230Legenda()
     Local aLegenda := {}
-    AAdd(aLegenda,{"BR_AMARELO","Ordem ainda prevista - nao deve ser produzida"})
-    AAdd(aLegenda,{"BR_VERDE","Em aberto - liberada"})
-    AAdd(aLegenda,{"BR_VERMELHO","Falta saldo de materia prima ou componente"})
+    AAdd(aLegenda,{"BR_AMARELO","Ordem prevista - nao deve ser produzida"})
+    AAdd(aLegenda,{"BR_VERDE","Ordem confirmada"})
+    AAdd(aLegenda,{"BR_VERMELHO","Ordem confirmada - sem saldo de componente ou MP"})
+    AAdd(aLegenda,{"BR_AZUL","Ordem Planejada"})
+    AAdd(aLegenda,{"BR_PINK","Ordem Planejada - sem saldo"})
     BrwLegenda("Registros", "Tipo", aLegenda)
 return
 

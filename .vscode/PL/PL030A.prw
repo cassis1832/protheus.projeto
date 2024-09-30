@@ -1,6 +1,5 @@
 #Include 'Protheus.ch'
-#INCLUDE "TOTVS.CH"
-#INCLUDE "FWMVCDEF.CH"
+#Include 'FWMVCDef.ch'
 
 //-------------------------------------------------------------------
 /*/{Protheus.doc} PL030A
@@ -26,7 +25,10 @@ User Function PL030A(cCliente1, cLoja1)
 
 	Private oDlg       	:= Nil
 	Private oFwBrowse  	:= Nil
+	Private oBrw  		:= Nil
+
 	Private aColumns   	:= {}
+
 
 	ObterDados()
 
@@ -77,6 +79,8 @@ Static Function ObterDados()
 
 		(cAliasSA7)->(DbSkip())
 	EndDo
+
+	(cAliasSA7)->(DBCLOSEAREA())
 
 	// Carregar pedidos EDI
 	cSql := "SELECT ZA0_DTENTR, ZA0_PRODUT, ZA0_QTDE, ZA0_QTCONF, (ZA0_QTDE - ZA0_QTCONF) AS ZA0_SALDO "
@@ -145,6 +149,8 @@ Static Function ObterDados()
 		(cAliasZA0)->(DbSkip())
 	End While
 
+	(cAliasZA0)->(DBCLOSEAREA())
+
 	While (cAliasSC6)->(!EOF())
 
 		// Localiza o item e a data
@@ -164,6 +170,8 @@ Static Function ObterDados()
 
 		(cAliasSC6)->(DbSkip())
 	End While
+
+	(cAliasSC6)->(DBCLOSEAREA())
 return
 
 Static Function	CalculaSaldos()
@@ -250,10 +258,11 @@ Return
 
 Static Function fWBrowse1()
 	Local nX:=0
+	Local geraXml  := {|| GeraExcel()}
 
 	oDlg:= FwDialogModal():New()
 	oDlg:SetEscClose(.T.)
-	oDlg:SetTitle('Plano por cliente')
+	oDlg:SetTitle('Plano por cliente ' + cCliente1)
 
 	//Seta a largura e altura da janela em pixel
 	oDlg:SetPos(000, 000)
@@ -261,16 +270,15 @@ Static Function fWBrowse1()
 
 	oDlg:CreateDialog()
 	oDlg:AddCloseButton(Nil, 'Fechar')
-
-	//oDlg:AddButton('Sair'    , { || oModal:DeActivate() }, 'Sair',,.T.,.F.,.T.,)
+	oDlg:AddButton("Excel", geraXml, "Excel", , .T., .F., .T., )
 
 	oPnl:=oDlg:GetPanelMain()
 
 	oFwBrowse := FWBrowse():New()
+	oFWBrowse:DisableReport()
 	oFwBrowse:SetDataArrayoBrowse()  //Define utilização de array
 	oFwBrowse:AddStatusColumns( { || BrwStatus() }, { || BrwLegend() } )
 	oFwBrowse:SetArray(aPedidos)
-
 
 	aColumns := RetColumns()
 
@@ -289,33 +297,36 @@ Return
 
 
 Static Function RetColumns()
-	Local aColumns := {}
+	Local aCols := {}
 
-	aAdd(aColumns, {"Item",  {|oBrw| aPedidos[oBrw:At(), 1] }, "C", "@!"     , 1, 10, 0, .F.})
-	aAdd(aColumns, {"Item do cliente", {|oBrw| aPedidos[oBrw:At(), 2] }, "C", "@!"     , 1, 10, 0, .F.})
-	aAdd(aColumns, {"Saldo Atual", {|oBrw| aPedidos[oBrw:At(), 3] }, "C", "@!", 0,  6, 2, .F.})
+	if len(aColumns) != 0
+		return aColumns
+	endif
+
+	aAdd(aCols, {"Item",  			{|oBrw| aPedidos[oBrw:At(), 1] }, "C", "@!", 1, 10, 0, .F.})
+	aAdd(aCols, {"Item do cliente", {|oBrw| aPedidos[oBrw:At(), 2] }, "C", "@!", 1, 10, 0, .F.})
+	aAdd(aCols, {"Saldo Atual", 	{|oBrw| aPedidos[oBrw:At(), 3] }, "C", "@!", 0,  6, 2, .F.})
 
 	if len(aDatas) == 0
 		FWAlertWarning("NAO EXISTEM DADOS PARA MOSTRAR! ", "PLANO GERAL")
 	else
-		iif (len(aDatas) >  0, aAdd(aColumns, {"Em Atraso", 	{|oBrw| aPedidos[oBrw:At(),  4] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  1, aAdd(aColumns, {DtoC(aDatas[2]), {|oBrw| aPedidos[oBrw:At(),  5] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  2, aAdd(aColumns, {DtoC(aDatas[3]), {|oBrw| aPedidos[oBrw:At(),  6] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  3, aAdd(aColumns, {DtoC(aDatas[4]), {|oBrw| aPedidos[oBrw:At(),  7] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  4, aAdd(aColumns, {DtoC(aDatas[5]), {|oBrw| aPedidos[oBrw:At(),  8] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  5, aAdd(aColumns, {DtoC(aDatas[6]), {|oBrw| aPedidos[oBrw:At(),  9] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  6, aAdd(aColumns, {DtoC(aDatas[7]), {|oBrw| aPedidos[oBrw:At(), 10] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  7, aAdd(aColumns, {DtoC(aDatas[8]), {|oBrw| aPedidos[oBrw:At(), 11] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  8, aAdd(aColumns, {DtoC(aDatas[9]), {|oBrw| aPedidos[oBrw:At(), 12] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  9, aAdd(aColumns, {DtoC(aDatas[10]),{|oBrw| aPedidos[oBrw:At(), 13] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) > 10, aAdd(aColumns, {DtoC(aDatas[11]),{|oBrw| aPedidos[oBrw:At(), 14] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) > 11, aAdd(aColumns, {DtoC(aDatas[12]),{|oBrw| aPedidos[oBrw:At(), 15] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) > 12, aAdd(aColumns, {DtoC(aDatas[13]),{|oBrw| aPedidos[oBrw:At(), 16] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) > 13, aAdd(aColumns, {DtoC(aDatas[14]),{|oBrw| aPedidos[oBrw:At(), 17] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) > 14, aAdd(aColumns, {DtoC(aDatas[15]),{|oBrw| aPedidos[oBrw:At(), 18] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  0, aAdd(aCols, {"Em Atraso", 	 {|oBrw| aPedidos[oBrw:At(),  4] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  1, aAdd(aCols, {DtoC(aDatas[2]), {|oBrw| aPedidos[oBrw:At(),  5] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  2, aAdd(aCols, {DtoC(aDatas[3]), {|oBrw| aPedidos[oBrw:At(),  6] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  3, aAdd(aCols, {DtoC(aDatas[4]), {|oBrw| aPedidos[oBrw:At(),  7] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  4, aAdd(aCols, {DtoC(aDatas[5]), {|oBrw| aPedidos[oBrw:At(),  8] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  5, aAdd(aCols, {DtoC(aDatas[6]), {|oBrw| aPedidos[oBrw:At(),  9] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  6, aAdd(aCols, {DtoC(aDatas[7]), {|oBrw| aPedidos[oBrw:At(), 10] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  7, aAdd(aCols, {DtoC(aDatas[8]), {|oBrw| aPedidos[oBrw:At(), 11] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  8, aAdd(aCols, {DtoC(aDatas[9]), {|oBrw| aPedidos[oBrw:At(), 12] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  9, aAdd(aCols, {DtoC(aDatas[10]),{|oBrw| aPedidos[oBrw:At(), 13] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) > 10, aAdd(aCols, {DtoC(aDatas[11]),{|oBrw| aPedidos[oBrw:At(), 14] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) > 11, aAdd(aCols, {DtoC(aDatas[12]),{|oBrw| aPedidos[oBrw:At(), 15] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) > 12, aAdd(aCols, {DtoC(aDatas[13]),{|oBrw| aPedidos[oBrw:At(), 16] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) > 13, aAdd(aCols, {DtoC(aDatas[14]),{|oBrw| aPedidos[oBrw:At(), 17] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) > 14, aAdd(aCols, {DtoC(aDatas[15]),{|oBrw| aPedidos[oBrw:At(), 18] }, "C", "@!",	0, 6, 2, .F.}),0)
 	EndIf
-
-Return aColumns
+Return aCols
 
 
 Static Function BrwStatus()
@@ -338,7 +349,6 @@ Static Function BrwLegend()
 Return
 
 
-
 Static Function fDupClique()
 	Local aArea   := FWGetArea()
 
@@ -350,3 +360,59 @@ Static Function fDupClique()
 
 	FWRestArea(aArea)
 Return
+
+
+Static Function GeraExcel()
+	Local oExcel
+	Local oFWMsExcel
+	Local cArquivo    	:= 'c:\temp\PL030A.xml'
+	Local cAba			:= ""
+	Local nX			:= 0
+	Local nY			:= 0
+	Local nCols			:= 0
+	Local aVal			:= {}
+
+	//Criando o objeto que irá gerar o conteúdo do Excel
+	oFWMsExcel := FWMSExcel():New()
+
+	//Aba
+	cAba := "Cliente" + " - " + cCliente
+
+	oFWMsExcel:AddworkSheet(cAba)
+
+	//Criando a Tabela
+	oFWMsExcel:AddTable(cAba,"Dados")
+	oFWMsExcel:AddColumn(cAba,"Dados","Produto",1)
+	oFWMsExcel:AddColumn(cAba,"Dados","Item do Cliente",1)
+	oFWMsExcel:AddColumn(cAba,"Dados","Saldo Atual",1)
+	oFWMsExcel:AddColumn(cAba,"Dados","Em Atraso",1)
+
+	if Len(aPedidos[1]) > 19
+		nCols := 19
+	else
+		nCols := Len(aPedidos[1])
+	endif
+
+	For nX := 1 to nCols - 4
+		oFWMsExcel:AddColumn(cAba,"Dados",DtoC(aDatas[nX]),1)
+	Next nX
+
+	For nX := 1 to Len(aPedidos)
+		aVal := {}
+		For nY := 1 to nCols
+			Aadd(aVal, aPedidos[nX][nY])
+		Next nY
+
+		oFWMsExcel:AddRow(cAba,"Dados",aVal)
+	Next nX
+
+	//Ativando o arquivo e gerando o xml
+	oFWMsExcel:Activate()
+	oFWMsExcel:GetXMLFile(cArquivo)
+
+	//Abrindo o excel e abrindo o arquivo xml
+	oExcel := MsExcel():New()            	//Abre uma nova conexão com Excel
+	oExcel:WorkBooks:Open(cArquivo)     	//Abre uma planilha
+	oExcel:SetVisible(.T.)                 	//Visualiza a planilha
+	oExcel:Destroy()                        //Encerra o processo do gerenciador de tarefas
+return
