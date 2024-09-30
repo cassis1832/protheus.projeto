@@ -332,7 +332,7 @@ Static Function printOper()
 	oPrinter:Say(nLin, 180, "Maquina",oFont09)
 	oPrinter:Say(nLin, 260, "Qtde/Hr",oFont09)
 	oPrinter:Say(nLin, 360, "Qtde Real.",oFont09)
-	oPrinter:Say(nLin, 460, "Observacoes",oFont09)
+	oPrinter:Say(nLin, 460, "Qtde Perda",oFont09)
 
 	if lOper
 		While (cAliasOper)->(!EOF())

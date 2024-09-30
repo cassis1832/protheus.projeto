@@ -97,7 +97,7 @@ Static Function CargaTT1()
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_STATUS, C2_PRIOR, B1_XPRIOR, "
 	cSql += "	    C2_QUANT, C2_QUJE, C2_DATPRI, C2_DATPRF, C2_TPOP, "
 	cSql += "	    G2_OPERAC, G2_RECURSO, G2_MAOOBRA, G2_SETUP, "
-	cSql += "	  	G2_TEMPAD, G2_LOTEPAD, "
+	cSql += "	  	G2_TEMPAD, G2_LOTEPAD, G2_XDIRESQ, "
 	cSql += "	  	H1_XLIN, H1_XLOCLIN, H1_XTIPO, H1_XSETUP, H1_XNOME "
 	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
 
@@ -127,7 +127,13 @@ Static Function CargaTT1()
 	cAlias := MPSysOpenQuery(cSql)
 
 	While (cAlias)->(! EOF())
-		nQuant := (cAlias)->C2_QUANT / (cAlias)->G2_LOTEPAD
+
+		// Se for direita e esquerda deve dobrar a quantidade/hora
+		if (cAlias)->G2_XDIRESQ == 'S'
+			nQuant := (cAlias)->C2_QUANT / ((cAlias)->G2_LOTEPAD * 2)
+		else
+			nQuant := (cAlias)->C2_QUANT / (cAlias)->G2_LOTEPAD
+		endif
 
 		if (cAlias)->G2_SETUP > 0
 			nSetup	:= (cAlias)->G2_SETUP

@@ -387,7 +387,9 @@ Static Function CargaTT(oSay)
 return
 
 
-// Calcula se existe saldo de componentes 
+/*---------------------------------------------------------------------*
+	Calcula se existe saldo de componentes 
+ *---------------------------------------------------------------------*/
 Static Function SaldoComp()
 	Local nQtNec	:= 0
 	Local lRet		:= .T.
@@ -410,6 +412,7 @@ Static Function SaldoComp()
 	enddo
 
 return
+
 
 Static Function MVCMODELPOS(oModel)
 	Local aArea   		:= GetArea()
