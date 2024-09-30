@@ -1,14 +1,14 @@
 #Include 'Protheus.ch'
 #Include 'FWMVCDef.ch'
 
-/*/{Protheus.doc}	PL230
-	Carga máquina MR - Baseado nas OPs - Real
+/*/{Protheus.doc}	PL240
+	Carga máquina MR Gerencial
 @author Carlos Assis
 @since 22/07/2024
 @version 1.0   
 /*/
 
-User Function PL230()
+User Function PL240()
 	Local oBrowse
 	Local aPergs		:= {}
 	Local aResps		:= {}
@@ -39,7 +39,11 @@ User Function PL230()
 
 	chkFile("ZA2")
 
-	SaldoComp()
+	ZA2->(DBSetOrder(2))
+
+	If ! ZA2->(MsSeek(xFilial("ZA2") + "2"))
+		u_PL240Calculo()
+	endif
 
 	//Criando o browse da temporária
 	oBrowse := FWMBrowse():New()
@@ -49,7 +53,7 @@ User Function PL230()
 	oBrowse:AddLegend("ZA2->ZA2_TPOP == 'F' .and. ZA2->ZA2_SITSLD == 'S'", "GREEN", "Em aberto", "1")
 	oBrowse:SetDescription(cTitulo)
 
-	cCondicao := "ZA2_TIPO == '1'"
+	cCondicao := "ZA2_TIPO == '2'"
 
 	oBrowse:SetFilterDefault( cCondicao )
 	oBrowse:DisableDetails()
@@ -60,11 +64,11 @@ return
 
 Static Function MenuDef()
 	Local aRot := {}
-	ADD OPTION aRot TITLE 'Visualizar' 	  	ACTION 'VIEWDEF.PL230'  OPERATION 2 ACCESS 0
-	ADD OPTION aRot TITLE 'Alterar'    	  	ACTION 'VIEWDEF.PL230'  OPERATION 4 ACCESS 0
-	ADD OPTION aRot TITLE 'Legenda'    	  	ACTION 'u_PL230Legenda' OPERATION 8 ACCESS 0
-	ADD OPTION aRot TITLE 'Calcular'   	  	ACTION 'u_PL230Calculo' OPERATION 8 ACCESS 0
-	ADD OPTION aRot TITLE 'Imprimir Plano'  ACTION 'u_PL230Print' 	OPERATION 8 ACCESS 0
+	ADD OPTION aRot TITLE 'Visualizar' 	  	ACTION 'VIEWDEF.PL240'  OPERATION 2 ACCESS 0
+	ADD OPTION aRot TITLE 'Alterar'    	  	ACTION 'VIEWDEF.PL240'  OPERATION 4 ACCESS 0
+	ADD OPTION aRot TITLE 'Legenda'    	  	ACTION 'u_PL240Legenda' OPERATION 8 ACCESS 0
+	ADD OPTION aRot TITLE 'Calcular'   	  	ACTION 'u_PL240Calculo' OPERATION 8 ACCESS 0
+	ADD OPTION aRot TITLE 'Imprimir Plano'  ACTION 'u_PL240Print' 	OPERATION 8 ACCESS 0
 Return aRot
 
 
@@ -83,7 +87,7 @@ Static Function ModelDef()
 	oStZA2:SetProperty('ZA2_QUANT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA2:SetProperty('ZA2_QUJE',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 
-	oModel:=MPFormModel():New  ("PL230M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil)
+	oModel:=MPFormModel():New  ("PL240M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil)
 
 	oModel:AddFields("FORMZA2",/*cOwner*/,oStZA2)
 	oModel:SetPrimaryKey({'ZA2_FILIAL', 'ZA2_COD', 'ZA2_OP', 'ZA2_OPER'})
@@ -94,7 +98,7 @@ Return oModel
 
 Static Function ViewDef()
 	Local oView := Nil
-	Local oModel := FWLoadModel("PL230")
+	Local oModel := FWLoadModel("PL240")
 	Local oStZA2 := FWFormStruct(2, "ZA2")
 
 	//Criando a view que será o retorno da função e setando o modelo da rotina
@@ -108,59 +112,20 @@ Static Function ViewDef()
 Return oView
 
 
-/*---------------------------------------------------------------------*
-  Verifica se tem saldo dos componentes
- *---------------------------------------------------------------------*/
-Static Function SaldoComp()
-	Local lRet		:= .T.
-	Local nQtNec	:= 0
-
-	ZA2->(DBSetOrder(2))
-
-	If ! ZA2->(MsSeek(xFilial("ZA2") + "1"))
-		u_PL230Calculo()
-	endif
-	
-	While ("ZA2")->(! EOF()) .and. ZA2->ZA2_TIPO == 1
-		nQtNec 	:= ZA2->ZA2_QUANT - ZA2->ZA2_QUJE
-
-		lRet := Estrutura(ZA2->ZA2_PROD, nQtNec)
-
-		if lRet	== .F.		// falta algum componente
-			RecLock("ZA2", .F.)
-			ZA2->ZA2_SITSLD := "N"
-			ZA2->(MsUnLock())
-		endif
-
-		ZA2->(DbSkip())
-	enddo
-return
-
-
 Static Function MVCMODELPOS(oModel)
 	Local aArea   		:= GetArea()
 	Local lOk			:= .T.
 	Local nOperation 	:=	oModel:GetOperation()
- 
-	If nOperation == MODEL_OPERATION_UPDATE
-		SC2->(dbSetOrder(1))
 
-		If SC2->(MsSeek(xFilial("SC2") + M->ZA2_OP))
-			RecLock("SC2", .F.)
-			SC2->C2_XDTINIP := M->ZA2_DTINIP
-			SC2->C2_XDTFIMP := M->ZA2_DTFIMP
-			SC2->C2_XHRINIP := M->ZA2_HRINIP
-			SC2->C2_XHRFIMP := M->ZA2_HRFIMP
-			MsUnLock()
-		endif
+	If nOperation == MODEL_OPERATION_UPDATE
 	EndIf
 
 	RestArea(aArea)
 Return lOk
 
 
-User Function PL230Calculo()
-	u_PL230A(dDtIni, dDtFim)
+User Function PL240Calculo()
+	u_PL240A(dDtIni, dDtFim)
 return
 
 
@@ -207,15 +172,15 @@ Static Function	Estrutura(cProduto, nQtPai)
 return lRet
 
 
-User Function PL230Print()
-	u_PL250("1")
+User Function PL240Print()
+	u_PL230("2")
 return
 
 
 /*---------------------------------------------------------------------*
   Legendas
  *---------------------------------------------------------------------*/
-User Function PL230Legenda()
+User Function PL240Legenda()
     Local aLegenda := {}
     AAdd(aLegenda,{"BR_AMARELO","Ordem ainda prevista - nao deve ser produzida"})
     AAdd(aLegenda,{"BR_VERDE","Em aberto - liberada"})

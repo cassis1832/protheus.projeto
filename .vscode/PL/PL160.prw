@@ -1,5 +1,4 @@
 #Include "PROTHEUS.CH"
-#Include "RPTDEF.CH"
 #Include "TBICONN.CH"
 #Include 'FWMVCDef.ch'
 
