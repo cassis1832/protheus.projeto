@@ -262,7 +262,7 @@ Static Function fWBrowse1()
 
 	oDlg:= FwDialogModal():New()
 	oDlg:SetEscClose(.T.)
-	oDlg:SetTitle('Plano por cliente ' + cCliente1)
+	oDlg:SetTitle('Plano por cliente ' + cCliente)
 
 	//Seta a largura e altura da janela em pixel
 	oDlg:SetPos(000, 000)

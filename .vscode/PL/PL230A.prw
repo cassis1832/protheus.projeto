@@ -35,7 +35,6 @@ User Function PL230A(Inicio, Fim)
 	cTTName  := oTT:GetRealName()
 
 	FwMsgRun(NIL, {|oSay| CargaInicial(oSay)}, "Preparando o calculo ", "Preparando...")
-
 	FwMsgRun(NIL, {|oSay| Calculo(oSay)}, "Calculando distribuicao", "Calculando...")
 
 	oTT:Delete()
@@ -54,28 +53,29 @@ Static Function CargaInicial(oSay)
 	Local nSeq			:= 0
 	Local dData			:= Date()
 
-	if lEstamp == .T. .and. lSolda == .T.
-		cLinPrd := "03"
-	elseif lEstamp == .T.
-		cLinPrd := "01"
-	Elseif lSolda == .T.
-		cLinPrd := "02"
-	else
-		cLinPrd := ""
-	Endif
+	// Limpa as linhas planejadas e de ordens encerradas
+	SC2->(dbSetOrder(1))	// OP
+	ZA2->(DBSetOrder(1))	// Tipo/Codigo
+	ZA2->(DbSeek(xFilial("ZA2") + "1"))
 
-	// Limpa as linhas planejadas deopis limpar as ops encerradas
-	cSql := "DELETE FROM "  + RetSQLName("ZA2")
-	cSql += " WHERE ZA2_FILIAL 	 	= '" + xFilial("ZA2") + "' "
-	cSql += "	AND ZA2_TIPO  	    = '1' "
-	cSql += "	AND ZA2_STAT  	   <> 'F' "
-	cSql += "	AND D_E_L_E_T_  	= ' ' "
+	While ! ZA2->(EoF())
+		RecLock("ZA2", .F.)
 
-	if TCSqlExec(cSql) < 0
-		MsgInfo("Erro na execução do delete:", "Atenção")
-		MsgInfo(TcSqlError(), "Atenção")
-	endif
+		if ZA2->ZA2_STAT == 'P'
+			ZA2->(DbDelete())
+		else
+			If SC2->(MsSeek(xFilial("SC2") + ZA2->ZA2_OP))
+				if AllTrim(dtos(SC2->C2_DATRF)) <> ''
+					ZA2->(DbDelete())
+				endif
+			endif
+		endif
 
+		ZA2->(MsUnLock())
+		ZA2->(DbSkip())
+	enddo
+
+	// Carrega os dados
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_STATUS, C2_PRIOR,"
 	cSql += "	    C2_QUANT, C2_QUJE, C2_DATPRI, C2_DATPRF, C2_TPOP, "
 	cSql += "	    C2_XDTINIP, C2_XDTFIMP, C2_XHRINIP, C2_XHRFIMP, "
@@ -111,6 +111,8 @@ Static Function CargaInicial(oSay)
 	cAlias := MPSysOpenQuery(cSql)
 
 	While (cAlias)->(! EOF())
+		cOP		:= Transform((cAlias)->C2_NUM, "999999") + AllTrim((cAlias)->C2_ITEM) + AllTrim((cAlias)->C2_SEQUEN)
+		cPrior := (cAlias)->C2_PRIOR
 		nQuant := (cAlias)->C2_QUANT / (cAlias)->G2_LOTEPAD
 
 		if (cAlias)->G2_SETUP > 0
@@ -124,11 +126,10 @@ Static Function CargaInicial(oSay)
 		endif
 
 		nTotal 	:= nSetup + nQuant
-		cOP		:= Transform((cAlias)->C2_NUM, "999999") + AllTrim((cAlias)->C2_ITEM) + AllTrim((cAlias)->C2_SEQUEN)
 
-		cPrior := (cAlias)->C2_PRIOR
-
-		if (cAlias)->B1_XPRIOR <> 0
+		if (cAlias)->B1_XPRIOR == ''
+			cPrior := '500'
+		else
 			cPrior := (cAlias)->B1_XPRIOR
 		endif
 
@@ -141,8 +142,8 @@ Static Function CargaInicial(oSay)
 
 			RecLock("ZA2", .T.)
 			ZA2_FILIAL	:= xFilial("ZA2")
-			ZA2_COD		:= cValToChar(nSeq)
 			ZA2_TIPO	:= "1"
+			ZA2_COD		:= GETSXENUM("ZA2", "ZA2_COD", 1)
 			ZA2_OP		:= cOP
 			ZA2_PROD	:= (cAlias)->C2_PRODUTO
 			ZA2_CLIENT	:= (cAlias)->B1_XCLIENT
@@ -155,7 +156,7 @@ Static Function CargaInicial(oSay)
 			ZA2_QUJE	:= (cAlias)->C2_QUJE
 			ZA2_RECURS	:= AllTrim((cAlias)->G2_RECURSO)
 			ZA2_HSTOT	:= nTotal
-			ZA2_QTHORA	:= nQuant
+			ZA2_QTHORA	:= (cAlias)->G2_LOTEPAD
 			ZA2_DTINIP	:= stod((cAlias)->C2_XDTINIP)
 			ZA2_DTFIMP	:= stod((cAlias)->C2_XDTFIMP)
 			ZA2_HRINIP	:= (cAlias)->C2_XHRINIP
@@ -165,6 +166,7 @@ Static Function CargaInicial(oSay)
 			ZA2_SITSLD	:= "S"
 			ZA2_STAT	:= "P"
 			ZA2->(MsUnLock())
+			ConfirmSx8()
 		endif
 
 		(cAlias)->(DbSkip())
@@ -173,15 +175,10 @@ Static Function CargaInicial(oSay)
 	(cAlias)->(DBCLOSEAREA())
 
 	// Carregar tabela de tempos disponiveis por recurso
-	cSql := "SELECT H1_XHSDIA, H1_CODIGO  "
-	cSql += "  FROM " + RetSQLName("SH1") + " SH1 "
-	cSql += " WHERE H1_FILIAL 	 	 = '" + xFilial("SH1") + "' "
-	cSql += "	AND SH1.D_E_L_E_T_ 	 = ' ' "
-	cSql += "	ORDER BY H1_CODIGO "
-	cAlias := MPSysOpenQuery(cSql)
+	SH1->(DBSetOrder(1))
+	SH1->(DbSeek(xFilial("SH1")))
 
-	While (cAlias)->(! EOF())
-
+	While ! SH1->(EoF())
 		dData := dDtIni
 
 		While dData <= dDtFim
@@ -195,10 +192,10 @@ Static Function CargaInicial(oSay)
 
 			cSql := "INSERT INTO " + cTTName + " ("
 			cSql += " TT_ID, TT_RECURS, TT_DATA, TT_DISP, TT_USADA) VALUES ('"
-			cSql += FWUUIDv4() 			 			+ "','"
-			cSql += (cAlias)->H1_CODIGO 			+ "','"
-			cSql += DTOS(dData) 					+ "','"
-			cSql += cValToChar((cAlias)->H1_XHSDIA)	+ "','0')"
+			cSql += FWUUIDv4() 			 		+ "','"
+			cSql += SH1->H1_CODIGO 				+ "','"
+			cSql += DTOS(dData) 				+ "','"
+			cSql += cValToChar(SH1->H1_XHSDIA)	+ "','0')"
 
 			if TCSqlExec(cSql) < 0
 				MsgInfo("Erro na execução da query:", "Atenção")
@@ -208,10 +205,9 @@ Static Function CargaInicial(oSay)
 			dData := DaySum(dData, 1)
 		enddo
 
-		(cAlias)->(DbSkip())
+		SH1->(DbSkip())
 	enddo
 
-	(cAlias)->(DBCLOSEAREA())
 return
 
 

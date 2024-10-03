@@ -90,7 +90,7 @@ Static Function ModelDef()
 	oModel:=MPFormModel():New  ("PL240M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil)
 
 	oModel:AddFields("FORMZA2",/*cOwner*/,oStZA2)
-	oModel:SetPrimaryKey({'ZA2_FILIAL', 'ZA2_COD', 'ZA2_OP', 'ZA2_OPER'})
+	oModel:SetPrimaryKey({'ZA2_FILIAL', 'ZA2_TIPO', 'ZA2_RECURS', 'ZA2_DTINIP', 'ZA2_PROD', 'ZA2_OPER'})
 	oModel:SetDescription("Modelo de Dados do Cadastro ")
 	oModel:GetModel("FORMZA2"):SetDescription("Formulário do Cadastro ")
 Return oModel
@@ -173,7 +173,7 @@ return lRet
 
 
 User Function PL240Print()
-	u_PL230("2")
+	u_PL250("2")
 return
 
 

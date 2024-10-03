@@ -356,6 +356,7 @@ Static Function printOper()
 				(cAliasAlt)->(DbSkip())
 			enddo
 
+			(cAliasAlt)->(DBCLOSEAREA())
 			(cAliasOper)->(DbSkip())
 		EndDo
 	else
@@ -378,9 +379,9 @@ Static Function printOper()
 			oPrinter:Say(nLin, 180, (cAliasAlt)->H3_RECALTE, oFont10)
 			(cAliasAlt)->(DbSkip())
 		enddo
+		(cAliasAlt)->(DBCLOSEAREA())
 	endif
 
-	(cAliasAlt)->(DBCLOSEAREA())
 Return
 
 

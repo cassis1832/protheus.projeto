@@ -62,7 +62,7 @@ return
 
 
 /*---------------------------------------------------------------------*
-	Carregar ZA2 com a demanda do ZA0 e pedidos de vendas
+	Carregar ZA2 com a demanda e pedidos de vendas
  *---------------------------------------------------------------------*/
 Static Function CargaInicial(oSay)
 	Local cSql 			:= ""
@@ -72,8 +72,6 @@ Static Function CargaInicial(oSay)
 	Local nSetup		:= 0
 
 	Private nSeq		:= 0
-
-	Demandas()
 
 	// Limpa a rodada anterior
 	cSql := "DELETE FROM "  + RetSQLName("ZA2")
@@ -85,6 +83,8 @@ Static Function CargaInicial(oSay)
 		MsgInfo("Erro na execução do delete tipo 2:", "Atenção")
 		MsgInfo(TcSqlError(), "Atenção")
 	endif
+
+	Demandas()
 
 	cSql := "SELECT TT2.*, "
 	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XITEM, B1_LE, B1_XPRIOR, "
@@ -137,7 +137,8 @@ Static Function CargaInicial(oSay)
 
 		RecLock("ZA2", .T.)
 		ZA2_FILIAL	:= xFilial("ZA2")
-		ZA2_COD		:= cValToChar(nSeq)
+		ZA2_TIPO	:= "2"
+		ZA2_COD		:= GETSXENUM("ZA2", "ZA2_COD", 1)
 		ZA2_OP		:= cValToChar(nSeq)
 		ZA2_PROD	:= (cAlias)->TT2_PROD
 		ZA2_CLIENT	:= (cAlias)->B1_XCLIENT
@@ -154,8 +155,8 @@ Static Function CargaInicial(oSay)
 		ZA2_OPER	:= (cAlias)->G2_OPERAC
 		ZA2_PRIOR	:= cValToChar((cAlias)->B1_XPRIOR)
 		ZA2_STAT	:= "P"
-		ZA2_TIPO	:= "2"
 		ZA2->(MsUnLock())
+		ConfirmSx8()
 
 		(cAlias)->(DbSkip())
 	enddo
@@ -175,6 +176,8 @@ Static Function Demandas()
 	cSql := "SELECT VR_PROD, SUBSTRING(VR_DATA,1,6) VR_DATA, SUM(VR_QUANT) VR_QUANT "
 	cSql += "  FROM " + RetSQLName("SVR") + " SVR "
 	cSql += " WHERE VR_FILIAL 	 	 = '" + xFilial("SVR") + "' "
+	cSql += "	AND VR_DATA 	 	>= '" + DTOS(dDtIni) + "'"
+	cSql += "	AND VR_DATA 	 	<= '" + DTOS(dDtFim) + "'"
 	cSql += "	AND SVR.D_E_L_E_T_ 	 = ' ' "
 	cSql += " GROUP BY VR_PROD, SUBSTRING(VR_DATA,1,6) "
 
@@ -377,7 +380,6 @@ Static Function Calculo(oSay)
 		ZA2->(DbSkip())
 	enddo
 
-	(DBCLOSEAREA())
 	(cAliasTT1)->(DBCLOSEAREA())
 return
 

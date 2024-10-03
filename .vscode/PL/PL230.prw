@@ -9,10 +9,11 @@
 /*/
 
 User Function PL230()
-	Local oBrowse
 	Local aPergs		:= {}
 	Local aResps		:= {}
 
+	Private oBrowse
+	Private cMarca 		:= GetMark()
 	Private cTitulo		:= "Carga Maquina MR"
 
 	Private dDtIni  	:= ""
@@ -27,7 +28,7 @@ User Function PL230()
 	AAdd(aPergs, {4, "Estamparia"				,.T.,"Estamparia" ,90,"",.F.})
 	AAdd(aPergs, {4, "Solda"					,.T.,"Solda" ,90,"",.F.})
 
-	If ParamBox(aPergs, "CARGA MAQUINA MR", @aResps,,,,,,,, .T., .T.)
+	If ParamBox(aPergs, "PL230 - CARGA MAQUINA MR", @aResps,,,,,,,, .T., .T.)
 		dDtIni 		:= aResps[1]
 		dDtFim 		:= aResps[2]
 		cRecurso	:= aResps[3]
@@ -42,20 +43,20 @@ User Function PL230()
 	SaldoComp()
 
 	//Criando o browse da temporária
-	oBrowse := FWMBrowse():New()
+	oBrowse := FWMarkBrowse():New()
 	oBrowse:SetAlias('ZA2')
+	oBrowse:SetDescription(cTitulo)
+	oBrowse:SetFilterDefault( "ZA2_TIPO == '1'" )
+	oBrowse:DisableDetails()
+	oBrowse:SetFieldMark( 'ZA2_OK' )
+	oBrowse:SetMark(cMarca, "ZA2", "ZA2_OK")
+	oBrowse:SetAllMark( { || oBrowse:AllMark() } )
+
 	oBrowse:AddLegend("ZA2->ZA2_TPOP == 'P'", "YELLOW", "Ordem Prevista", "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'F' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Confirmada", "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'F' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Confirmada - sem saldo", "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'L' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Liberada", "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'L' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Liberada - sem saldo", "1")
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'S'"	, "BLUE"	, "Ordem Planejada", "1")
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'N'"	, "PINK"	, "Ordem Planejada - sem saldo", "1")
-	oBrowse:SetDescription(cTitulo)
-
-	cCondicao := "ZA2_TIPO == '1'"
-
-	oBrowse:SetFilterDefault( cCondicao )
-	oBrowse:DisableDetails()
-
 	oBrowse:Activate()
 return
 
@@ -64,9 +65,10 @@ Static Function MenuDef()
 	Local aRot := {}
 	ADD OPTION aRot TITLE 'Visualizar' 	  	ACTION 'VIEWDEF.PL230'  OPERATION 2 ACCESS 0
 	ADD OPTION aRot TITLE 'Alterar'    	  	ACTION 'VIEWDEF.PL230'  OPERATION 4 ACCESS 0
+	ADD OPTION aRot TITLE 'Liberar'			ACTION 'u_PL230Mark()'	OPERATION 5 ACCESS 0
+	ADD OPTION aRot TITLE 'Calcular'   	  	ACTION 'u_PL230Calculo' OPERATION 9 ACCESS 0
 	ADD OPTION aRot TITLE 'Legenda'    	  	ACTION 'u_PL230Legenda' OPERATION 8 ACCESS 0
-	ADD OPTION aRot TITLE 'Calcular'   	  	ACTION 'u_PL230Calculo' OPERATION 8 ACCESS 0
-	ADD OPTION aRot TITLE 'Imprimir Plano'  ACTION 'u_PL230Print' 	OPERATION 8 ACCESS 0
+	ADD OPTION aRot TITLE 'Imprimir Plano'	ACTION 'u_PL230Print' 	OPERATION 6 ACCESS 0
 Return aRot
 
 
@@ -79,6 +81,12 @@ Static Function ModelDef()
 	oStZA2:SetProperty('ZA2_DATPRI',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA2:SetProperty('ZA2_DATPRF',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA2:SetProperty('ZA2_PROD',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA2:SetProperty('ZA2_PRIOR',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA2:SetProperty('ZA2_TPOP',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA2:SetProperty('ZA2_TPOP',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA2:SetProperty('ZA2_TPOP',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA2:SetProperty('ZA2_DTUPD',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStZA2:SetProperty('ZA2_HRUPD',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA2:SetProperty('ZA2_ITCLI',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA2:SetProperty('ZA2_LE',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA2:SetProperty('ZA2_OPER',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
@@ -88,9 +96,9 @@ Static Function ModelDef()
 	oModel:=MPFormModel():New  ("PL230M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil)
 
 	oModel:AddFields("FORMZA2",/*cOwner*/,oStZA2)
-	oModel:SetPrimaryKey({'ZA2_FILIAL', 'ZA2_COD', 'ZA2_OP', 'ZA2_OPER'})
-	oModel:SetDescription("Modelo de Dados do Cadastro ")
-	oModel:GetModel("FORMZA2"):SetDescription("Formulário do Cadastro ")
+	oModel:SetPrimaryKey({'ZA2_FILIAL', 'ZA2_TIPO', 'ZA2_RECURS', 'ZA2_DTINIP', 'ZA2_PROD', 'ZA2_OPER'})
+	oModel:SetDescription("Sequenciamento da producao ")
+	oModel:GetModel("FORMZA2"):SetDescription("Ordem de Produção ")
 Return oModel
 
 
@@ -104,7 +112,7 @@ Static Function ViewDef()
 	oView:SetModel(oModel)
 	oView:AddField("VIEW_ZA2", oStZA2, "FORMZA2")
 	oView:CreateHorizontalBox("TELA",100)
-	oView:EnableTitleView('VIEW_ZA2', 'DADOS DA ORDEM DE PRODUCAO')
+	oView:EnableTitleView('VIEW_ZA2', 'Ordem de Producao')
 	oView:SetCloseOnOk({||.T.})
 	oView:SetOwnerView("VIEW_ZA2","TELA")
 Return oView
@@ -210,7 +218,7 @@ return lRet
 
 
 User Function PL230Print()
-	u_PL250("1")
+	u_PL250()
 return
 
 
@@ -227,3 +235,29 @@ User Function PL230Legenda()
     BrwLegenda("Registros", "Tipo", aLegenda)
 return
 
+
+
+/*---------------------------------------------------------------------*
+  Firmar as OPs selecionadas
+ *---------------------------------------------------------------------*/
+User Function PL230Mark()
+	Local aArea    	:= GetArea()
+	Local cMarca   	:= oBrowse:Mark()
+
+	While !ZA2->(EoF())
+		If oBrowse:IsMark(cMarca)
+			RecLock('ZA2', .F.)
+			ZA2_OK := ''
+			if ZA2->ZA2_STAT == 'L'
+				ZA2->ZA2_STAT := 'P'
+			else
+				ZA2->ZA2_STAT := 'L'
+			endif
+			ZA2->(MsUnlock())
+		EndIf
+
+		ZA2->(DbSkip())
+	EndDo
+
+	RestArea(aArea)
+Return NIL
