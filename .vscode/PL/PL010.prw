@@ -48,7 +48,7 @@ User Function PL010()
 	endif
 
 	if lReimp == .T.
-		if UsrFullName() != "carlos.assis" .and. UsrFullName() !="elisangela.vieira"
+		if RetCodUsr() != "000001" .and. RetCodUsr() !="000037"
 			FWAlertError("Usuario nao autorizado para reimprimir ordem","Impressao de ordem")
 			Return
 		endif

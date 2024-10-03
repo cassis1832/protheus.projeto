@@ -228,6 +228,7 @@ return
 //	Imprime o cabecalho da OP
 //-----------------------------------------------------------------------------
 Static Function printCabec()
+	Local cNumOp	:= ''
 
 	oPrinter := FWMSPrinter():New(cFilePrint,	IMP_PDF,.F.,cDir,.T.,,,,.T.,.F.,,.T.)
 	oFont1 := TFont():New('Courier new',,-18,.T.)
@@ -246,7 +247,13 @@ Static Function printCabec()
 
 	oPrinter:Line(nLin-20, 400, 60, 400)
 	oPrinter:Say(nLin-10, 430,"Num. Ordem",oFont10)
-	oPrinter:Say(nLin-5 + 17, 410, cValToChar((cAliasOrd)->C2_NUM) + "/" + cValToChar((cAliasOrd)->C2_ITEM) + "/" + cValToChar((cAliasOrd)->C2_SEQUEN), oFont16b)
+
+	cNumOp := cValToChar((cAliasOrd)->C2_NUM)
+	if len(cNumOp) == 6
+		cNumOp := SUBSTR(cNumOp, 1, 3) + '.' + SUBSTR(cNumOp, 4, 3)
+	endif
+
+	oPrinter:Say(nLin-5 + 17, 410, cNumOp + "-" + cValToChar((cAliasOrd)->C2_ITEM) + "-" + cValToChar((cAliasOrd)->C2_SEQUEN), oFont16b)
 
 	nLin +=35
 	oPrinter:Say(nLin, 15, "Cod. Item:" ,oFont10)
