@@ -2,43 +2,51 @@
 #Include 'FWMVCDef.ch'
 
 /*/{Protheus.doc}	PL230
-	Carga máquina MR - Baseado nas OPs - Real
+	Plano de producao MR - Baseado nas OPs - Real
 @author Carlos Assis
 @since 22/07/2024
 @version 1.0   
 /*/
 
-User Function PL230()
+User Function PL230(cRec, dIni, dFim)
+	Local aArea 		:= FWGetArea()
 	Local aPergs		:= {}
 	Local aResps		:= {}
+	Local cFiltro		:= "ZA2_TIPO == '1'"
 
 	Private oBrowse
 	Private cMarca 		:= GetMark()
-	Private cTitulo		:= "Carga Maquina MR"
+	Private cTitulo		:= "Plano de Producao - MR"
 
-	Private dDtIni  	:= ""
-	Private dDtFim  	:= ""
+	Private cRecurso 	:= Nil
+	Private dDtIni  	:= Nil
+	Private dDtFim  	:= Nil
 	Private lEstamp 	:= .F.
 	Private lSolda  	:= .F.
-	Private cRecurso 	:= .F.
 
-	AAdd(aPergs, {1, "Informe a data inicial "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
-	AAdd(aPergs, {1, "Informe a data final "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
-	AAdd(aPergs, {1, "Recurso"					, CriaVar("H1_CODIGO",.F.),,,"SH1",, 70, .F.})
-	AAdd(aPergs, {4, "Estamparia"				,.T.,"Estamparia" ,90,"",.F.})
-	AAdd(aPergs, {4, "Solda"					,.T.,"Solda" ,90,"",.F.})
+	if cRec == Nil
+		AAdd(aPergs, {1, "Informe a data inicial "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
+		AAdd(aPergs, {1, "Informe a data final "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
+		AAdd(aPergs, {1, "Recurso"					, CriaVar("H1_CODIGO",.F.),,,"SH1",, 70, .F.})
+		AAdd(aPergs, {4, "Estamparia"				,.T.,"Estamparia" ,90,"",.F.})
+		AAdd(aPergs, {4, "Solda"					,.T.,"Solda" ,90,"",.F.})
 
-	If ParamBox(aPergs, "PL230 - CARGA MAQUINA MR", @aResps,,,,,,,, .T., .T.)
-		dDtIni 		:= aResps[1]
-		dDtFim 		:= aResps[2]
-		cRecurso	:= aResps[3]
-		lEstamp		:= aResps[4]
-		lSolda		:= aResps[5]
-	Else
-		return
+		If ParamBox(aPergs, "PL230 - PLANO DE PRODUCAO - MR", @aResps,,,,,,,, .T., .T.)
+			dDtIni 		:= aResps[1]
+			dDtFim 		:= aResps[2]
+			cRecurso	:= aResps[3]
+			lEstamp		:= aResps[4]
+			lSolda		:= aResps[5]
+		Else
+			return
+		endif
+	else
+		cRecurso 	:= cRec
+		dDtIni		:= dIni
+		dDtFim		:= dFim
+
+		cFiltro		+= " .and. ZA2_RECURS == '" + cRecurso + "'"
 	endif
-
-	chkFile("ZA2")
 
 	SaldoComp()
 
@@ -46,7 +54,7 @@ User Function PL230()
 	oBrowse := FWMarkBrowse():New()
 	oBrowse:SetAlias('ZA2')
 	oBrowse:SetDescription(cTitulo)
-	oBrowse:SetFilterDefault( "ZA2_TIPO == '1'" )
+	oBrowse:SetFilterDefault( cFiltro )
 	oBrowse:DisableDetails()
 	oBrowse:SetFieldMark( 'ZA2_OK' )
 	oBrowse:SetMark(cMarca, "ZA2", "ZA2_OK")
@@ -58,6 +66,8 @@ User Function PL230()
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'S'"	, "BLUE"	, "Ordem Planejada", "1")
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'N'"	, "PINK"	, "Ordem Planejada - sem saldo", "1")
 	oBrowse:Activate()
+
+	FWRestArea(aArea)
 return
 
 

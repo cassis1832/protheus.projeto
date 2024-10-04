@@ -190,12 +190,13 @@ Static Function CargaTT()
 	cSql += "  FROM " + RetSQLName("SB8") + " SB8 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
-	cSql += "    ON B1_COD          =  B8_PRODUTO "
-	cSql += "   AND B1_FILIAL      	=  '" + xFilial("SB1") + "'"
+	cSql += "    ON B1_COD           = B8_PRODUTO "
+	cSql += "   AND B1_FILIAL      	 = '" + xFilial("SB1") + "'"
 	cSql += "   AND SB1.D_E_L_E_T_  <> '*' "
 
-	cSql += " WHERE B8_SALDO      	>  0 "
-	cSql += "   AND B8_FILIAL      	=  '" + xFilial("SB8") + "'"
+	cSql += " WHERE B8_SALDO      	<> 0 "
+	cSql += "   AND B8_LOCAL      	<> '99'"
+	cSql += "   AND B8_FILIAL      	 = '" + xFilial("SB8") + "'"
 	cSql += "   AND SB8.D_E_L_E_T_  <> '*' "
 	cSql += " ORDER BY B8_PRODUTO, B8_LOTECTL "
 	cAlias := MPSysOpenQuery(cSql)
