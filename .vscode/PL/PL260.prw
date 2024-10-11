@@ -2,57 +2,32 @@
 #Include 'FWMVCDef.ch'
 
 /*/{Protheus.doc} PL260
-Função: Carga maquina - selecao por maquina
+Função: Follow-up de materia prima e componentes
 @author Assis
-@since 04/10/2024	
+@since 08/10/2024
 @version 1.0
-	@return Nil, Funcao nao tem retorno
+	@return Nil, Fução não tem retorno
 	@example
 	u_PL260()
 /*/
 
-Static cTitulo := "Plano de Producao por Maquina - MR"
+Static cTitulo := "Follow-up de materia prima e componentes"
 
 User Function PL260()
 	Local oBrowse
-	Local aPergs		:= {}
-	Local aResps		:= {}
-	Local cFiltro		:= ""
-
-	Private dDtIni  	:= Nil
-	Private dDtFim  	:= Nil
-	Private lEstamp 	:= .F.
-	Private lSolda  	:= .F.
-
-	AAdd(aPergs, {1, "Informe a data inicial "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
-	AAdd(aPergs, {1, "Informe a data final "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
-	AAdd(aPergs, {4, "Estamparia"				,.T.,"Estamparia" ,90,"",.F.})
-	AAdd(aPergs, {4, "Solda"					,.T.,"Solda" ,90,"",.F.})
-
-	If ParamBox(aPergs, "PL260 - CARGA MAQUINA MR", @aResps,,,,,,,, .T., .T.)
-		dDtIni 		:= aResps[1]
-		dDtFim 		:= aResps[2]
-		lEstamp		:= aResps[3]
-		lSolda		:= aResps[4]
-	Else
-		return
-	endif
-
-	if lEstamp == .T.
-		cFiltro		+= " H1_LINHAPR == '01' "
-	endif
-
-	if lSolda == .T.
-		if cFiltro != ""
-			cFiltro += " .or. "
-		endif
-		cFiltro += "H1_LINHAPR == '02'"
-	endif
+	Private cFiltro := ""
 
 	oBrowse := FWMBrowse():New()
-	oBrowse:SetAlias("SH1")
+	oBrowse:SetAlias("SC7")
 	oBrowse:SetDescription(cTitulo)
+
+	cFiltro	:= " C7_QUJE < C7_QUANT .AND. C7_PRODUTO >= '1' .AND. C7_PRODUTO < '5' .AND. LEN(alltrim(C7_PRODUTO)) >= 7 "
+
 	oBrowse:SetFilterDefault( cFiltro )
+
+	// oBrowse:AddLegend("SC7->SC7_STATUS == '0'", "GREEN", "Ativo")
+	// oBrowse:AddLegend("SC7->SC7_STATUS == '1'", "YELLOW", "Com erro")
+	// oBrowse:AddLegend("SC7->SC7_STATUS == '9'", "RED", "Inativo")
 	oBrowse:Activate()
 Return Nil
 
@@ -61,7 +36,9 @@ Return Nil
  *---------------------------------------------------------------------*/
 Static Function MenuDef()
 	Local aRot := {}
-	ADD OPTION aRot TITLE 'Visualizar'  ACTION 'U_PL260Consulta()' OPERATION MODEL_OPERATION_VIEW ACCESS 0 
+
+	ADD OPTION aRot TITLE 'Visualizar' 	  ACTION 'VIEWDEF.PL260' OPERATION 2   					  ACCESS 0 
+	ADD OPTION aRot TITLE 'Legenda'    	  ACTION 'u_ProLeg' 	 OPERATION 8     				  Access 0       
 Return aRot
 
 /*---------------------------------------------------------------------*
@@ -69,13 +46,15 @@ Return aRot
  *---------------------------------------------------------------------*/
 Static Function ModelDef()
     Local oModel   := Nil
-    Local oStSH1   := FWFormStruct(1, "SH1")
+    Local oStSC7   := FWFormStruct(1, "SC7")
+ 
+	// oStSC7:SetProperty('SC7_CODPED',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 
-	oModel:=MPFormModel():New("PL260M", Nil, Nil, Nil, Nil) 
-	oModel:AddFields("FORMSH1",/*cOwner*/,oStSH1)
-	oModel:SetPrimaryKey({'SH1_FILIAL','SH1_CODIGO'})
+	oModel:=MPFormModel():New("PL260M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil) 
+	oModel:AddFields("FORMSC7",/*cOwner*/,oStSC7)
+	oModel:SetPrimaryKey({'SC7_FILIAL','SC7_CODPED'})
 	oModel:SetDescription(cTitulo)
-	oModel:GetModel("FORMSH1"):SetDescription("Maquinas "+cTitulo)
+	oModel:GetModel("FORMSC7"):SetDescription("Formulario do Cadastro "+cTitulo)
 Return oModel
 
 /*---------------------------------------------------------------------*
@@ -84,28 +63,29 @@ Return oModel
 Static Function ViewDef()
     Local oView  := Nil
     Local oModel := FWLoadModel("PL260")      
-    Local oStSH1 := FWFormStruct(2, "SH1")    
+    Local oStSC7 := FWFormStruct(2, "SC7")    
 
     oView:= FWFormView():New()               
     oView:SetModel(oModel)
-    oView:AddField("VIEW_SH1", oStSH1, "FORMSH1")
+    oView:AddField("VIEW_SC7", oStSC7, "FORMSC7")
     oView:CreateHorizontalBox("TELA",100)
-    oView:EnableTitleView('VIEW_SH1', 'Maquina - ' + cTitulo )  
+    oView:EnableTitleView('VIEW_SC7', 'Dados - '+cTitulo )  
     oView:SetCloseOnOk({||.T.})
-    oView:SetOwnerView("VIEW_SH1","TELA")
+    oView:SetOwnerView("VIEW_SC7","TELA")
 
 Return oView
 
 
-User Function PL260Consulta()
-    U_PL230(H1_CODIGO, dDtIni, dDtFim)
-return
+Static Function MVCMODELPOS(oModel)
+	Local aArea   		:= GetArea()
+	RestArea(aArea)
+Return lOk
 
 
 /*---------------------------------------------------------------------*
   Legendas
  *---------------------------------------------------------------------*/
-User Function PL260Leg()
+User Function PL260Legenda()
     Local aLegenda := {}
     AAdd(aLegenda,{"BR_VERDE","Ativo"})
     AAdd(aLegenda,{"BR_AMARELO","Com Erro"})

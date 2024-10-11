@@ -149,7 +149,7 @@ Static Function CargaTT1()
 
 		cPrior := (cAlias)->C2_PRIOR
 
-		if (cAlias)->B1_XPRIOR <> 0
+		if (cAlias)->B1_XPRIOR <> "0"
 			cPrior := (cAlias)->B1_XPRIOR
 		endif
 

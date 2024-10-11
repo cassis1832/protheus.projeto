@@ -479,6 +479,8 @@ Static Function printApont()
 	oPrinter:Say(nLin, 330, "Visto PCP:",oFont10)
 	oPrinter:Say(nLin, 420, "_____________________",oFont10)
 
+	nLin += 27
+	oPrinter:Say(nLin, 380, UsrFullName() + " " + DToc(Date()) + " " + Time(),oFont09)
 Return
 
 

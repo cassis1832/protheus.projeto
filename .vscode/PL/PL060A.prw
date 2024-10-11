@@ -80,7 +80,7 @@ Static Function ObterEmpenhos()
 
 		Aadd(aLinhas,{(cAlias)->D4_DATA + "2", 2, "EMP", ;
 			(cAlias)->D4_OP, ;
-			DtoC(sToD((cAlias)->D4_DATA)),(cAlias)->D4_QTDEORI - (cAlias)->D4_QUANT, 0, ""})
+			DtoC(sToD((cAlias)->D4_DATA)),(cAlias)->D4_QUANT, 0, ""})
 
 		(cAlias)->(DbSkip())
 	enddo
