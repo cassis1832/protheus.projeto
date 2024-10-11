@@ -4,6 +4,7 @@
 
 /*/{Protheus.doc}	PL240A
 	Distribuição da carga maquina gerencial
+	10/10/2024 - 20% de ineficiencia
 @author Carlos Assis
 @since 25/09/2024
 @version 1.0   
@@ -68,7 +69,6 @@ Static Function CargaInicial(oSay)
 	Local cSql 			:= ""
 	Local cAlias 		:= ""
 	Local nQuant		:= 0
-	Local nTotal		:= 0
 	Local nSetup		:= 0
 
 	Private nSeq		:= 0
@@ -89,7 +89,7 @@ Static Function CargaInicial(oSay)
 	cSql := "SELECT TT2.*, "
 	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XITEM, B1_LE, B1_XPRIOR, "
 	cSql += "	    G2_OPERAC, G2_RECURSO, G2_MAOOBRA, G2_SETUP, G2_TEMPAD, G2_LOTEPAD, G2_XDIRESQ,"
-	cSql += "	  	H1_XLIN, H1_XLOCLIN, H1_XTIPO, H1_XSETUP, H1_XNOME "
+	cSql += "	  	H1_XLIN, H1_XLOCLIN, H1_XTIPO, H1_XSETUP, H1_XNOME, H1_XLINPRD "
 	cSql += "  FROM " + cTT2Name + " TT2 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
@@ -121,17 +121,18 @@ Static Function CargaInicial(oSay)
 			nQuant := (cAlias)->TT2_QUANT / (cAlias)->G2_LOTEPAD
 		endif
 
+		nSetup	:= 0.5
+
 		if (cAlias)->G2_SETUP > 0
 			nSetup	:= (cAlias)->G2_SETUP
 		else
 			if (cAlias)->H1_XSETUP > 0
 				nSetup	:= (cAlias)->H1_XSETUP
-			else
-				nSetup	:= 0.5
 			endif
 		endif
 
-		nTotal 	:= nSetup + nQuant
+		// Ajusta o setup pelo lote economico
+		nSetup := nSetup * Ceiling((cAlias)->TT2_QUANT / (cAlias)->B1_LE)
 
 		nSeq++
 
@@ -143,17 +144,19 @@ Static Function CargaInicial(oSay)
 		ZA2_PROD	:= (cAlias)->TT2_PROD
 		ZA2_CLIENT	:= (cAlias)->B1_XCLIENT
 		ZA2_ITCLI	:= (cAlias)->B1_XITEM
+		ZA2_LE		:= (cAlias)->B1_LE
+		ZA2_QUANT	:= (cAlias)->TT2_QUANT
+		ZA2_LINPRD	:= (cAlias)->H1_XLINPRD
+		ZA2_OPER	:= (cAlias)->G2_OPERAC
+		ZA2_RECURS	:= AllTrim((cAlias)->G2_RECURSO)
+		ZA2_PRIOR	:= cValToChar((cAlias)->B1_XPRIOR)
 		ZA2_DATPRI	:= stod((cAlias)->TT2_DATA)
 		ZA2_DATPRF	:= stod((cAlias)->TT2_DATA)
 		ZA2_TPOP	:= "p"
-		ZA2_LE		:= (cAlias)->B1_LE
-		ZA2_QUANT	:= (cAlias)->TT2_QUANT
 		ZA2_QUJE	:= 0
-		ZA2_RECURS	:= AllTrim((cAlias)->G2_RECURSO)
-		ZA2_HSTOT	:= nTotal
 		ZA2_QTHORA	:= nQuant
-		ZA2_OPER	:= (cAlias)->G2_OPERAC
-		ZA2_PRIOR	:= cValToChar((cAlias)->B1_XPRIOR)
+		ZA2_HSTOT	:= nSetup + nQuant
+		ZA2_HSTOTI	:= nSetup + (nQuant * 1.2)
 		ZA2_STAT	:= "P"
 		ZA2->(MsUnLock())
 		ConfirmSx8()
@@ -203,6 +206,7 @@ Static Function Demandas()
 
 	(cAlias)->(DBCLOSEAREA())
 
+	// Explosao das demandas para gerar demandas dos filhos
 	(cAliasTT2)->(DBSetOrder(1))
 
 	while lFim == .F.

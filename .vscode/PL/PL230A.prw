@@ -82,7 +82,7 @@ Static Function CargaInicial(oSay)
 	cSql += "	    C2_XSITEMP, C2_XOBSEMP, C2_XOBSPRD, "
 	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XITEM, B1_LE, B1_XPRIOR, "
 	cSql += "	    G2_OPERAC, G2_RECURSO, G2_MAOOBRA, G2_SETUP, G2_TEMPAD, G2_LOTEPAD, "
-	cSql += "	  	H1_XLIN, H1_XLOCLIN, H1_XTIPO, H1_XSETUP, H1_XNOME "
+	cSql += "	  	H1_XLIN, H1_XLOCLIN, H1_XTIPO, H1_XSETUP, H1_XNOME, H1_XLINPRD "
 	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
@@ -155,6 +155,8 @@ Static Function CargaInicial(oSay)
 			ZA2_QUANT	:= (cAlias)->C2_QUANT
 			ZA2_QUJE	:= (cAlias)->C2_QUJE
 			ZA2_RECURS	:= AllTrim((cAlias)->G2_RECURSO)
+			ZA2_LINPRD	:= (cAlias)->H1_XLINPRD
+			ZA2_TIPLIN	:= (cAlias)->H1_XLIN
 			ZA2_HSTOT	:= nTotal
 			ZA2_QTHORA	:= (cAlias)->G2_LOTEPAD
 			ZA2_DTINIP	:= stod((cAlias)->C2_XDTINIP)

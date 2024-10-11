@@ -9,35 +9,33 @@
 /*/
 
 User Function PL240()
+	Local aArea 		:= FWGetArea()
 	Local oBrowse
 	Local aPergs		:= {}
 	Local aResps		:= {}
+	Local cFiltro		:= "ZA2_TIPO == '2'"
 
-	Private cTitulo		:= "Carga Maquina MR"
+	Private cTitulo		:= "Carga Maquina Gerencial - MR"
 
+	Private cRecurso 	:= .F.
 	Private dDtIni  	:= ""
 	Private dDtFim  	:= ""
-	Private lEstamp 	:= .F.
-	Private lSolda  	:= .F.
-	Private cRecurso 	:= .F.
+	Private cLinha		:= ""
 
 	AAdd(aPergs, {1, "Informe a data inicial "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
 	AAdd(aPergs, {1, "Informe a data final "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
 	AAdd(aPergs, {1, "Recurso"					, CriaVar("H1_CODIGO",.F.),,,"SH1",, 70, .F.})
-	AAdd(aPergs, {4, "Estamparia"				,.T.,"Estamparia" ,90,"",.F.})
-	AAdd(aPergs, {4, "Solda"					,.T.,"Solda" ,90,"",.F.})
+	AAdd(aPergs, {2, "Linha",               	cLinha, {"E=Estamparia","S=Solda"}, 70, ".T.", .F.})
 
-	If ParamBox(aPergs, "CARGA MAQUINA MR", @aResps,,,,,,,, .T., .T.)
+	If ParamBox(aPergs, "CARGA MAQUINA GERENCIAL - MR", @aResps,,,,,,,, .T., .T.)
 		dDtIni 		:= aResps[1]
 		dDtFim 		:= aResps[2]
 		cRecurso	:= aResps[3]
-		lEstamp		:= aResps[4]
-		lSolda		:= aResps[5]
+		cLinha		:= aResps[4]
+		cFiltro	+= " .and. ZA2_LINPRD == '" + cLinha + "'"
 	Else
 		return
 	endif
-
-	chkFile("ZA2")
 
 	ZA2->(DBSetOrder(2))
 
@@ -48,17 +46,12 @@ User Function PL240()
 	//Criando o browse da temporária
 	oBrowse := FWMBrowse():New()
 	oBrowse:SetAlias('ZA2')
-	oBrowse:AddLegend("ZA2->ZA2_TPOP == 'P'", "YELLOW", "Prevista", "1")
-	oBrowse:AddLegend("ZA2->ZA2_TPOP == 'F' .and. ZA2->ZA2_SITSLD == 'N'", "RED", "Falta saldo de materia prima", "1")
-	oBrowse:AddLegend("ZA2->ZA2_TPOP == 'F' .and. ZA2->ZA2_SITSLD == 'S'", "GREEN", "Em aberto", "1")
 	oBrowse:SetDescription(cTitulo)
-
-	cCondicao := "ZA2_TIPO == '2'"
-
-	oBrowse:SetFilterDefault( cCondicao )
+	oBrowse:SetFilterDefault( cFiltro )
 	oBrowse:DisableDetails()
-
 	oBrowse:Activate()
+
+	FWRestArea(aArea)
 return
 
 
@@ -87,7 +80,7 @@ Static Function ModelDef()
 	oStZA2:SetProperty('ZA2_QUANT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA2:SetProperty('ZA2_QUJE',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 
-	oModel:=MPFormModel():New  ("PL240M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil)
+	oModel:=MPFormModel():New  ("PL240M", Nil, Nil, Nil, Nil)
 
 	oModel:AddFields("FORMZA2",/*cOwner*/,oStZA2)
 	oModel:SetPrimaryKey({'ZA2_FILIAL', 'ZA2_TIPO', 'ZA2_RECURS', 'ZA2_DTINIP', 'ZA2_PROD', 'ZA2_OPER'})
@@ -110,18 +103,6 @@ Static Function ViewDef()
 	oView:SetCloseOnOk({||.T.})
 	oView:SetOwnerView("VIEW_ZA2","TELA")
 Return oView
-
-
-Static Function MVCMODELPOS(oModel)
-	Local aArea   		:= GetArea()
-	Local lOk			:= .T.
-	Local nOperation 	:=	oModel:GetOperation()
-
-	If nOperation == MODEL_OPERATION_UPDATE
-	EndIf
-
-	RestArea(aArea)
-Return lOk
 
 
 User Function PL240Calculo()
@@ -175,16 +156,3 @@ return lRet
 User Function PL240Print()
 	u_PL250("2")
 return
-
-
-/*---------------------------------------------------------------------*
-  Legendas
- *---------------------------------------------------------------------*/
-User Function PL240Legenda()
-    Local aLegenda := {}
-    AAdd(aLegenda,{"BR_AMARELO","Ordem ainda prevista - nao deve ser produzida"})
-    AAdd(aLegenda,{"BR_VERDE","Em aberto - liberada"})
-    AAdd(aLegenda,{"BR_VERMELHO","Falta saldo de materia prima ou componente"})
-    BrwLegenda("Registros", "Tipo", aLegenda)
-return
-
