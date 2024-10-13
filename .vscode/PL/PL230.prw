@@ -273,15 +273,16 @@ Static Function ObterDados
 	Local cAlias 	:= ''
 	Local xInd		:= 0
 
-	Local aPergs		:= {}
-	Local aResps		:= {}
+	Local aPergs	:= {}
+	Local aResps	:= {}
 
-	Local aTipos		:= {}
-	Local cLinha		:= ""
+	Local aTipos	:= {}
+	Local cLinha	:= ""
 
 	Local cRecurso 	:= Nil
-	Local dDtIni  	:= Nil
-	Local dDtFim  	:= Nil
+
+	Private dDtIni  := Nil
+	Private dDtFim  := Nil
 
 	cFiltro := "ZA2_TIPO == '1'"
 
