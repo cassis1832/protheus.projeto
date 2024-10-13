@@ -8,12 +8,15 @@
 @version 1.0   
 /*/
 User Function PL230()
-	Local aArea 		:= FWGetArea()
+	Local aArea 	:= FWGetArea()
 
 	Private oBrowse
-	Private cMarca 		:= GetMark()
-	Private cTitulo		:= "Plano de Producao - MR"
-	Private cFiltro		:= ""
+	Private cMarca 	:= GetMark()
+	Private cTitulo	:= "Plano de Producao - MR"
+	Private cFiltro	:= ""
+
+	Private dDtIni  := Nil
+	Private dDtFim  := Nil
 
 	ObterDados()
 
@@ -280,9 +283,6 @@ Static Function ObterDados
 	Local cLinha	:= ""
 
 	Local cRecurso 	:= Nil
-
-	Private dDtIni  := Nil
-	Private dDtFim  := Nil
 
 	cFiltro := "ZA2_TIPO == '1'"
 
