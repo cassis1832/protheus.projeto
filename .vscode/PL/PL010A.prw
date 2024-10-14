@@ -183,8 +183,8 @@ Static Function printOP(oSay)
 
 	cQuery += " WHERE G2_CODIGO  	 = '01'"
 	cQuery += "   AND G2_PRODUTO 	 = '" + (cAliasOrd)->B1_COD + "' "
-	cQuery += "   AND G2_DTINI 	 	<= '" + (cAliasOrd)->C2_DATPRI + "' "
-	cQuery += "   AND G2_DTPRF	 	>= '" + (cAliasOrd)->C2_DATPRF + "' "
+	cQuery += "   AND G2_DTINI 	 	<= '" + dtos((cAliasOrd)->C2_DATPRI) + "' "
+	cQuery += "   AND G2_DTFIM	 	>= '" + dtos((cAliasOrd)->C2_DATPRF) + "' "
 	cQuery += "   AND G2_FILIAL  	 = '" + xFilial("SG2") + "' "
 	cQuery += "   AND SG2.D_E_L_E_T_ = ' ' "
 	cQuery += " ORDER BY G2_OPERAC"
