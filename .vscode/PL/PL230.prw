@@ -105,16 +105,15 @@ Return oView
   Verifica se tem saldo dos componentes
  *---------------------------------------------------------------------*/
 Static Function SaldoComp()
+	Local lTem		:= .F.
 	Local lRet		:= .T.
 	Local nQtNec	:= 0
 
 	ZA2->(DBSetOrder(2))
-
-	// If ! ZA2->(MsSeek(xFilial("ZA2") + "1"))
-	// 	u_PL230Calculo()
-	// endif
+	ZA2->(DbGoTop())
 	
 	While ("ZA2")->(! EOF()) .and. ZA2->ZA2_TIPO == "1"
+		lTem := .T.
 		nQtNec 	:= ZA2->ZA2_QUANT - ZA2->ZA2_QUJE
 
 		lRet := Estrutura(ZA2->ZA2_PROD, nQtNec)
@@ -127,6 +126,10 @@ Static Function SaldoComp()
 
 		ZA2->(DbSkip())
 	enddo
+
+	if lTem == .F.
+	 	u_PL230Calculo()
+	endif
 return
 
 /*---------------------------------------------------------------------*
@@ -284,7 +287,6 @@ Static Function ObterDados
 
 	Local cRecurso 	:= Nil
 
-	cFiltro := "ZA2_TIPO == '1'"
 
 	cSql := "SELECT DISTINCT H1_XLIN "
 	cSql += "  FROM " + RetSQLName("SH1") + " SH1 "
@@ -293,9 +295,10 @@ Static Function ObterDados
 	cSql += " ORDER BY H1_XLIN "
 	cAlias := MPSysOpenQuery(cSql)
 
+	Aadd(aTipos, "")
+
 	While (cAlias)->(!EOF())
 		xInd++
-		// Aadd(aTipos, cValToChar(xInd) + "=" + AllTrim((cAlias)->H1_XLIN) )
 		Aadd(aTipos, AllTrim((cAlias)->H1_XLIN))
 		(cAlias)->(DbSkip())
 	EndDo
@@ -306,6 +309,8 @@ Static Function ObterDados
 	AAdd(aPergs, {1, "Informe a data final "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .T.})
 	AAdd(aPergs, {1, "Recurso"					, CriaVar("H1_CODIGO",.F.),,,"SH1",, 70, .F.})
 	AAdd(aPergs, {2, "Linha"					, cLinha, aTipos, 70, ".T.", .F.})
+
+	cFiltro := "ZA2_TIPO == '1'"
 
 	If ParamBox(aPergs, "PL230 - PLANO DE PRODUCAO - MR", @aResps,,,,,,,, .T., .T.)
 		dDtIni 		:= aResps[1]

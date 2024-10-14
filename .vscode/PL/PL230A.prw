@@ -93,6 +93,8 @@ Static Function CargaInicial(oSay)
 
 	cSql += " INNER JOIN " + RetSQLName("SG2") + " SG2 "
 	cSql += "    ON G2_PRODUTO 		 = C2_PRODUTO"
+	cSql += "   AND G2_DTINI 	 	<= C2_DATPRI "
+	cSql += "   AND G2_DTFIM	 	>= C2_DATPRF "
 	cSql += "   AND G2_FILIAL		 = '" + xFilial("SG2") + "' "
 	cSql += "   AND SG2.D_E_L_E_T_ 	 = ''
 
@@ -287,7 +289,6 @@ Static Function Calculo(oSay)
 		ZA2->(DbSkip())
 	enddo
 
-	(DBCLOSEAREA())
 	(cAliasTT)->(DBCLOSEAREA())
 return
 
