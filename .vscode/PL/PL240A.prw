@@ -53,7 +53,8 @@ User Function PL240A(Inicio, Fim)
 	cTT2Name  := oTT2:GetRealName()
 
 	FwMsgRun(NIL, {|oSay| CargaInicial(oSay)}	, "Preparando o calculo ", "Preparando...")
-	FwMsgRun(NIL, {|oSay| Calculo(oSay)}		, "Calculando distribuicao", "Calculando...")
+
+	// FwMsgRun(NIL, {|oSay| Calculo(oSay)}		, "Calculando distribuicao", "Calculando...")
 
 	oTT1:Delete()
 	oTT2:Delete()
@@ -175,28 +176,44 @@ return
 Static Function Demandas()
 	Local cSql 			:= ""
 	Local cAlias 		:= ""
-
+	Local nQtde			:= 0
+	Local nPos			:= 0
 	Private lFim		:= .F.
 
-	cSql := "SELECT VR_PROD, SUBSTRING(VR_DATA,1,6) VR_DATA, SUM(VR_QUANT) VR_QUANT "
+	cSql := "SELECT VR_PROD, B1_XCLIENT, SUBSTRING(VR_DATA,1,6) VR_DATA, SUM(VR_QUANT) VR_QUANT "
 	cSql += "  FROM " + RetSQLName("SVR") + " SVR "
+
+	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+	cSql += "    ON B1_COD 		 	 = VR_PROD "
+	cSql += "   AND B1_FILIAL 	 	 = '" + xFilial("SB1") + "' "
+	cSql += "   AND SB1.D_E_L_E_T_ 	 = ''"
+	 
 	cSql += " WHERE VR_FILIAL 	 	 = '" + xFilial("SVR") + "' "
 	cSql += "	AND VR_DATA 	 	>= '" + DTOS(dDtIni) + "'"
 	cSql += "	AND VR_DATA 	 	<= '" + DTOS(dDtFim) + "'"
 	cSql += "	AND SVR.D_E_L_E_T_ 	 = ' ' "
-	cSql += " GROUP BY VR_PROD, SUBSTRING(VR_DATA,1,6) "
+	cSql += " GROUP BY VR_PROD, B1_XCLIENT, SUBSTRING(VR_DATA,1,6) "
 
 	cAlias := MPSysOpenQuery(cSql)
 
 	While (cAlias)->(! EOF())
 		nSeq++
 
+		nQtde := (cAlias)->VR_QUANT
+
+		nPos := At("GEST", Upper((cAlias)->B1_XCLIENT), 1)
+		
+		if nPos > 0
+			nQtde := nQtde * 1.2
+		endif
+
 		cSql := "INSERT INTO " + cTT2Name + " ("
 		cSql += " TT2_SEQ, TT2_PROD, TT2_DATA, TT2_QUANT, TT2_OK) VALUES ('"
 		cSql += cValToChar(nSeq) 				+ "','"
 		cSql += (cAlias)->VR_PROD 				+ "','"
 		cSql += (cAlias)->VR_DATA + "01"		+ "','"
-		cSql += cValToChar((cAlias)->VR_QUANT)	+ "','0')"
+		cSql += cValToChar(nQtde) + "','0')"
+		// cSql += cValToChar((cAlias)->VR_QUANT)	+ "','0')"
 
 		if TCSqlExec(cSql) < 0
 			MsgInfo("Erro na execução da query:", "Atenção")
@@ -248,6 +265,8 @@ Static Function Explosao(cProd, nQtde, dData)
 	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
 
 	cSql += " WHERE G1_COD 			= '" + cProd + "' "
+	cSql += "   AND G1_INI 		   <= '" + DTOS(Date()) + "' "
+	cSql += "   AND G1_FIM 		   >= '" + DTOS(Date()) + "' "
 	cSql += "   AND G1_FILIAL 		= '" + xFilial("SG1") + "' "
 	cSql += "   AND SG1.D_E_L_E_T_ 	= ' ' "
 	cSql += " ORDER BY G1_TRT, G1_COMP "
@@ -388,4 +407,3 @@ Static Function Calculo(oSay)
 
 	(cAliasTT1)->(DBCLOSEAREA())
 return
-

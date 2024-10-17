@@ -11,7 +11,7 @@ Função: Geração de pedido de venda com base no saldo de estoque
 
 Static cTitulo := "Geracao de Pedidos de Vendas"
 
-User Function PL210(cCli, cLoj, dLim)
+User Function PL210(cCli, cLoj)
 	Local aArea 		:= FWGetArea()
 
 	Local aCampos 		:= {}
@@ -22,7 +22,6 @@ User Function PL210(cCli, cLoj, dLim)
 	Private oBrowse
 	Private cCliente	:= cCli
 	Private cLoja		:= cLoj
-	Private dLimite		:= dLim
 	Private cTableName 	:= ""
 	Private aRotina 	:= {}
 	Private cMarca 		:= GetMark()

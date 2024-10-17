@@ -60,7 +60,7 @@ Static Function TrataOP(aLin)
 	Private cAliasOper  := ""
 
 	// Ler a OP e item
-	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_QUANT, "
+	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_QUANT, C2_ROTEIRO, "
 	cSql += "	 	CAST(C2_DATPRI AS DATE) C2_DATPRI, C2_PRIOR, C2_XPRTPL, "
 	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ "
 	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
@@ -89,7 +89,7 @@ Static Function TrataOP(aLin)
 	cSql := "SELECT G2_OPERAC, G2_RECURSO, G2_FERRAM, G2_DESCRI "
 	cSql += "  FROM " + RetSQLName("SG2") + " SG2 "
 
-	cSql += " WHERE G2_CODIGO  	 	= '01'"
+	cSql += " WHERE G2_CODIGO  	 	= '" + (cAliasOrd)->C2_ROTEIRO + "' "
 	cSql += "   AND G2_PRODUTO 	 	= '" + (cAliasOrd)->B1_COD + "' "
 	cSql += "   AND G2_FILIAL  	 	= '" + xFilial("SG2") + "' "
 	cSql += "   AND SG2.D_E_L_E_T_ 	= ' ' "

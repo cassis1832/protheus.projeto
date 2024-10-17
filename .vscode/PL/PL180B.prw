@@ -7,6 +7,7 @@
    Função que carrega a Estrutura do Produto para o Pedido de Venda
  	Itens a faturar		(produto[1], qtde[2], data[3], pedido[4], acao[5])
 	07/08/2024 - Tratar item bloqueado
+	14/10/2024 - Tratar data de inicio e fim da estrutura
 /*/
 //------------------------------------------------------------------------------
 User Function PL180B(aItensFat)
@@ -14,7 +15,7 @@ User Function PL180B(aItensFat)
 	Local aItensRet		:= {}
 
 	For nX := 1 To Len(aItensFat)
-		Estrutura(@aItensRet, nX, aItensFat[nX][1], aItensFat[nX][2])
+		Estrutura(@aItensRet, nX, aItensFat[nX][1], aItensFat[nX][2], aItensFat[nX][3])
 	next nX
 
 	//------------------------------------------------------------------------------
@@ -28,7 +29,7 @@ User Function PL180B(aItensFat)
 Return(aItensRet)
 
 
-Static Function	Estrutura(aItensRet, nX, cProduto, nQtPai)
+Static Function	Estrutura(aItensRet, nX, cProduto, nQtPai, dData)
 	Local cSql 		:= ""
 	Local nQtFilho 	:= 0
 	Local cAliasSG1
@@ -43,6 +44,8 @@ Static Function	Estrutura(aItensRet, nX, cProduto, nQtPai)
 	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
 
 	cSql += " WHERE G1_COD 			= '" + cProduto + "' "
+	cSql += "   AND G1_INI 		   <= '" + dtos(dData) + "' "
+	cSql += "   AND G1_FIM 		   >= '" + dtos(dData) + "' "
 	cSql += "   AND G1_FILIAL 		= '" + xFilial("SG1") + "' "
 	cSql += "   AND SG1.D_E_L_E_T_ 	= ' ' "
 	cSql += " ORDER BY G1_TRT, G1_COMP "
@@ -52,7 +55,7 @@ Static Function	Estrutura(aItensRet, nX, cProduto, nQtPai)
 		nQtFilho := nQtPai * (cAliasSG1)->G1_QUANT
 		aadd(aItensRet, {nX, (cAliasSG1)->G1_COMP, nQtFilho, (cAliasSG1)->B1_AGREGCU})
 
-		Estrutura(@aItensRet, nX, (cAliasSG1)->G1_COMP, nQtFilho)
+		Estrutura(@aItensRet, nX, (cAliasSG1)->G1_COMP, nQtFilho, dData)
 
 		(cAliasSG1)->(DbSkip())
 	EndDo

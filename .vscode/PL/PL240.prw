@@ -11,33 +11,18 @@
 User Function PL240()
 	Local aArea 		:= FWGetArea()
 	Local oBrowse
-	Local aPergs		:= {}
-	Local aResps		:= {}
-	Local cFiltro		:= "ZA2_TIPO == '2'"
 
 	Private cTitulo		:= "Carga Maquina Gerencial - MR"
 
+	Private cFiltro		:= ""
 	Private cRecurso 	:= .F.
 	Private dDtIni  	:= ""
 	Private dDtFim  	:= ""
-	Private cLinha		:= ""
 
-	AAdd(aPergs, {1, "Informe a data inicial "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
-	AAdd(aPergs, {1, "Informe a data final "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .F.})
-	AAdd(aPergs, {1, "Recurso"					, CriaVar("H1_CODIGO",.F.),,,"SH1",, 70, .F.})
-	AAdd(aPergs, {2, "Linha",               	cLinha, {"E=Estamparia","S=Solda"}, 70, ".T.", .F.})
-
-	If ParamBox(aPergs, "CARGA MAQUINA GERENCIAL - MR", @aResps,,,,,,,, .T., .T.)
-		dDtIni 		:= aResps[1]
-		dDtFim 		:= aResps[2]
-		cRecurso	:= aResps[3]
-		cLinha		:= aResps[4]
-		cFiltro	+= " .and. ZA2_LINPRD == '" + cLinha + "'"
-	Else
-		return
-	endif
+	ObterDados()
 
 	ZA2->(DBSetOrder(2))
+	ZA2->(DbGoTop())
 
 	If ! ZA2->(MsSeek(xFilial("ZA2") + "2"))
 		u_PL240Calculo()
@@ -127,6 +112,8 @@ Static Function	Estrutura(cProduto, nQtPai)
 	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
 
 	cSql += " WHERE G1_COD 			= '" + cProduto + "' "
+	cSql += "   AND G1_INI 		   <= '" + DTOS(Date()) + "' "
+	cSql += "   AND G1_FIM 		   >= '" + DTOS(Date()) + "' "
 	cSql += "   AND G1_FILIAL 		= '" + xFilial("SG1") + "' "
 	cSql += "   AND SG1.D_E_L_E_T_ 	= ' ' "
 	cAliasSG1 := MPSysOpenQuery(cSql)
@@ -155,4 +142,59 @@ return lRet
 
 User Function PL240Print()
 	u_PL250("2")
+return
+
+
+
+Static Function ObterDados
+	Local cSql 		:= ""
+	Local cAlias 	:= ''
+	Local xInd		:= 0
+
+	Local aPergs	:= {}
+	Local aResps	:= {}
+
+	Local aTipos	:= {}
+	Local cLinha	:= ""
+
+	Local cRecurso 	:= Nil
+
+	cSql := "SELECT DISTINCT H1_XLIN "
+	cSql += "  FROM " + RetSQLName("SH1") + " SH1 "
+	cSql += " WHERE H1_FILIAL         = '" + xFilial("SH1") + "' "
+	cSql += "   AND SH1.D_E_L_E_T_    <> '*' "
+	cSql += " ORDER BY H1_XLIN "
+	cAlias := MPSysOpenQuery(cSql)
+
+	Aadd(aTipos, "")
+
+	While (cAlias)->(!EOF())
+		xInd++
+		Aadd(aTipos, AllTrim((cAlias)->H1_XLIN))
+		(cAlias)->(DbSkip())
+	EndDo
+
+	(cAlias)->(DBCLOSEAREA())
+
+	AAdd(aPergs, {1, "Informe a data inicial "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .T.})
+	AAdd(aPergs, {1, "Informe a data final "	, CriaVar("C2_DATPRF",.F.),"",".T.","",".T.", 70, .T.})
+	AAdd(aPergs, {1, "Recurso"					, CriaVar("H1_CODIGO",.F.),,,"SH1",, 70, .F.})
+	AAdd(aPergs, {2, "Linha"					, cLinha, aTipos, 70, ".T.", .F.})
+
+	cFiltro := "ZA2_TIPO == '2'"
+
+	If ParamBox(aPergs, "PL240 - CARGA MAQUINA GERENCIAL - MR", @aResps,,,,,,,, .T., .T.)
+		dDtIni 		:= aResps[1]
+		dDtFim 		:= aResps[2]
+		cRecurso	:= aResps[3]
+		cLinha		:= aResps[4]
+		if cRecurso <> Nil .and. AllTrim(cRecurso) <> ""
+			cFiltro	+= " .and. ZA2_RECURS == '" + cRecurso + "'"
+		Endif
+		if cLinha <> Nil .and. AllTrim(cLinha) <> ""
+			cFiltro	+= " .and. ZA2_TIPLIN == '" + cLinha + "'"
+		Endif
+	Else
+		return
+	endif
 return

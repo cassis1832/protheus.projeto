@@ -133,6 +133,44 @@ Static Function SaldoComp()
 return
 
 /*---------------------------------------------------------------------*
+  Atualiza situacao da OP
+ *---------------------------------------------------------------------*/
+Static Function SituacaoOP()
+	Local cSql		:= ""
+	Local cAlias	:= ""
+
+	cSql := "SELECT C2_OP, C2_XPRTOP, C2_XPRTPL "
+	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
+
+	cSql += " INNER JOIN " + RetSQLName("ZA2") + " ZA2 "
+	csQL += "	 ON ZA2_OP			 =  C2_OP "
+	cSql += "   AND ZA2_TIPO 		 = '1'"
+	cSql += "   AND (ZA2_PRTOP 		<> C2_XPRTOP OR ZA2_PRTPL <> C2_XPRTPL) "
+	cSql += "   AND ZA2_FILIAL 		 = '" + xFilial("ZA2") + "' "
+	cSql += "   AND ZA2.D_E_L_E_T_ 	 = ' ' "
+
+	cSql += " WHERE C2_FILIAL 		 = '" + xFilial("SC2") + "' "
+	cSql += "   AND SC2.D_E_L_E_T_ 	 = ' ' "
+	cAlias := MPSysOpenQuery(cSql)
+
+	ZA2->(DBSetOrder(7)) // Tipo/OP/Operacao
+
+	While (cAlias)->(!EOF())
+
+		If ZA2->(MsSeek(xFilial("ZA2") + "1" + (cAlias)->C2_OP))
+			RecLock("ZA2", .F.)
+			ZA2->ZA2_PRTOP := (cAlias)->C2_XPRTOP
+			ZA2->ZA2_PRTPL := (cAlias)->C2_XPRTPL
+			ZA2->(MsUnLock())
+		EndIf
+
+		(cAlias)->(DbSkip())
+	EndDo
+
+	(cAlias)->(DBCLOSEAREA())
+return
+
+/*---------------------------------------------------------------------*
   Atualiza a ordem de producao
  *---------------------------------------------------------------------*/
 Static Function MVCMODELPOS(oModel)
@@ -185,6 +223,8 @@ Static Function	Estrutura(cProduto, nQtPai)
 	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
 
 	cSql += " WHERE G1_COD 			= '" + cProduto + "' "
+	cSql += "   AND G1_INI 		   <= '" + DTOS(Date()) + "' "
+	cSql += "   AND G1_FIM 		   >= '" + DTOS(Date()) + "' "
 	cSql += "   AND G1_FILIAL 		= '" + xFilial("SG1") + "' "
 	cSql += "   AND SG1.D_E_L_E_T_ 	= ' ' "
 	cAliasSG1 := MPSysOpenQuery(cSql)
@@ -246,6 +286,7 @@ User Function PL230Mark(cAcao)
 			RecLock('ZA2', .F.)
 			ZA2_OK := ''
 
+			// Libera a ordem
 			if cAcao == "L"
 				if ZA2->ZA2_STAT == 'L'
 					ZA2->ZA2_STAT := 'P'
@@ -256,7 +297,8 @@ User Function PL230Mark(cAcao)
 
 			ZA2->(MsUnlock())
 
-			if cAcao == "P"
+			// Imprimir a ordem
+			if cAcao == "P" .AND. ZA2->ZA2_PRTOP <> 'S'
 				u_PL010A(ZA2->ZA2_OP, .F., .F.)
 				Sleep(1000)
 			endif
@@ -328,4 +370,5 @@ Static Function ObterDados
 	endif
 
 	SaldoComp()
+	SituacaoOP()
 return

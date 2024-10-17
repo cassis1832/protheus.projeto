@@ -93,6 +93,7 @@ Static Function CargaInicial(oSay)
 
 	cSql += " INNER JOIN " + RetSQLName("SG2") + " SG2 "
 	cSql += "    ON G2_PRODUTO 		 = C2_PRODUTO"
+	cSql += "   AND G2_CODIGO 	 	 = C2_ROTEIRO"
 	cSql += "   AND G2_DTINI 	 	<= C2_DATPRI "
 	cSql += "   AND G2_DTFIM	 	>= C2_DATPRF "
 	cSql += "   AND G2_FILIAL		 = '" + xFilial("SG2") + "' "

@@ -11,16 +11,18 @@ Função: Geração de pedido de venda com base no pedido EDI - V02
 
 Static cTitulo := "Geracao de Pedidos de Vendas"
 
-User Function PL180()
+User Function PL180(cCli, cLoj)
 	Local cCondicao		:= ''
 
 	Private oBrowse
-	Private cCliente    := ''
-	Private cLoja       := ''
+	Private cCliente    := cCli
+	Private cLoja       := cLoj
 	Private dLimite     := Date()
 	Private cMarca 		:= GetMark()
 
-	u_PL180F12()
+	// u_PL180F12()
+
+	CalcSaldo()
 
 	oBrowse := FWMarkBrowse():New()
 	oBrowse:SetAlias("ZA0")
@@ -32,6 +34,7 @@ User Function PL180()
 	oBrowse:SetFieldMark( 'ZA0_OK' )
 	oBrowse:SetMark(cMarca, "ZA0", "ZA0_OK")
 	oBrowse:SetAllMark( { || oBrowse:AllMark() } )
+	oBrowse:SetMenuDef('PL180')
 
 	cCondicao := "ZA0_STATUS=='0' "
 	cCondicao += ".and. ZA0_CLIENT == '" + cCliente + "' "
@@ -179,7 +182,6 @@ User Function PL180F12()
 		EndIf
 	EndIf
 
-	CalcSaldo()
 return lRet
 
 

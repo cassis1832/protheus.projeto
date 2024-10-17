@@ -32,6 +32,8 @@ User Function PL010A(cOrdem, lOpera, lReimp)
 
 	Private cAliasOrd 	:= ""			   	// Dados da OP
 
+	cOrdem := AllTrim(cOrdem)
+
 	if cOrdem == "" .OR. cOrdem == NIL
 		return
 	endif
@@ -43,7 +45,7 @@ User Function PL010A(cOrdem, lOpera, lReimp)
 	// LER OP E ITEM
 	cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_TPPR,"
 	cQuery += "	 	  C2_QUANT, CAST(C2_DATPRI AS DATE) C2_DATPRI,"
-	cQuery += "	 	  CAST(C2_DATPRF AS DATE) C2_DATPRF, C2_XPRTOP,"
+	cQuery += "	 	  CAST(C2_DATPRF AS DATE) C2_DATPRF, C2_XPRTOP, C2_ROTEIRO, "
 	cQuery += "	  	  B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ"
 	cQuery += "  FROM " + RetSQLName("SC2") + " SC2 "
 
@@ -183,7 +185,7 @@ Static Function printOP(oSay)
 	cQuery += "		  G2_MAOOBRA, G2_SETUP, G2_LOTEPAD, G2_TEMPAD, G2_CTRAB, G2_TEMPEND "
 	cQuery += "  FROM " + RetSQLName("SG2") + " SG2 "
 
-	cQuery += " WHERE G2_CODIGO  	 = '01'"
+	cQuery += " WHERE G2_CODIGO  	 = '" + (cAliasOrd)->C2_ROTEIRO + "' "
 	cQuery += "   AND G2_PRODUTO 	 = '" + (cAliasOrd)->B1_COD + "' "
 	cQuery += "   AND G2_DTINI 	 	<= '" + dtos((cAliasOrd)->C2_DATPRI) + "' "
 	cQuery += "   AND G2_DTFIM	 	>= '" + dtos((cAliasOrd)->C2_DATPRF) + "' "
