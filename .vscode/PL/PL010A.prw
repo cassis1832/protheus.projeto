@@ -96,6 +96,8 @@ Static Function VerEstoque(cProduto, nQtdeNec)
 	cSql += "  FROM " + RetSQLName("SG1") + " SG1 "
 
 	cSql += " WHERE G1_COD 			= '" + cProduto + "' "
+	cSql += "   AND G1_INI 		   <= '" + DTOS(Date()) + "' "
+	cSql += "   AND G1_FIM 		   >= '" + DTOS(Date()) + "' "
 	cSql += "   AND G1_FILIAL 		= '" + xFilial("SG1") + "' "
 	cSql += "   AND SG1.D_E_L_E_T_ 	= ' ' "
 	cSql += " ORDER BY G1_COMP "
@@ -482,7 +484,7 @@ Static Function printApont()
 	oPrinter:Say(nLin, 420, "_____________________",oFont10)
 
 	nLin += 27
-	oPrinter:Say(nLin, 380, UsrFullName() + " " + DToc(Date()) + " " + Time(),oFont09)
+	oPrinter:Say(nLin, 360, UsrFullName() + " " + DToc(Date()) + " " + Time(),oFont09)
 Return
 
 
