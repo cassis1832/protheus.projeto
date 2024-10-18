@@ -44,8 +44,8 @@ Static Function	Estrutura(aItensRet, nX, cProduto, nQtPai, dData)
 	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
 
 	cSql += " WHERE G1_COD 			= '" + cProduto + "' "
-	cSql += "   AND G1_INI 		   <= '" + dtos(dData) + "' "
-	cSql += "   AND G1_FIM 		   >= '" + dtos(dData) + "' "
+	cSql += "   AND G1_INI 		   <= '" + dData 	+ "' "
+	cSql += "   AND G1_FIM 		   >= '" + dData 	+ "' "
 	cSql += "   AND G1_FILIAL 		= '" + xFilial("SG1") + "' "
 	cSql += "   AND SG1.D_E_L_E_T_ 	= ' ' "
 	cSql += " ORDER BY G1_TRT, G1_COMP "
