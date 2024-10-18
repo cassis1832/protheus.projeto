@@ -107,7 +107,8 @@ Static Function CargaInicial(oSay)
 	cSql += " WHERE C2_DATPRF 	   	>= '" + dtos(dDtIni) + "'"
 	cSql += "   AND C2_DATPRF	   	<= '" + dtos(dDtFim) + "'"
 	cSql += "   AND C2_DATRF   		 = ''"
-	cSql += "   AND C2_TPPR	   	     = 'I'"
+	cSql += "   AND C2_TPOP	   	     = 'F'"		// Firme
+	cSql += "   AND C2_TPPR	   	     = 'I'"		// Interna
 	cSql += "   AND C2_FILIAL 	 	 = '" + xFilial("SC2") + "' "
 	cSql += "	AND SC2.D_E_L_E_T_ 	 = ' ' "
 	cSql += "	ORDER BY G2_RECURSO, C2_DATPRI, C2_NUM, C2_ITEM, C2_SEQUEN "
@@ -153,7 +154,7 @@ Static Function CargaInicial(oSay)
 			ZA2_ITCLI	:= (cAlias)->B1_XITEM
 			ZA2_DATPRI	:= stod((cAlias)->C2_DATPRI)
 			ZA2_DATPRF	:= stod((cAlias)->C2_DATPRF)
-			ZA2_TPOP	:= (cAlias)->C2_TPOP
+			// ZA2_TPOP	:= (cAlias)->C2_TPOP
 			ZA2_LE		:= (cAlias)->B1_LE
 			ZA2_QUANT	:= (cAlias)->C2_QUANT
 			ZA2_QUJE	:= (cAlias)->C2_QUJE

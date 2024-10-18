@@ -18,8 +18,6 @@ User Function PL230()
 	Private dDtIni  := Nil
 	Private dDtFim  := Nil
 
-	ObterDados()
-
 	SetKey( VK_F12,  {|| u_PL230F12()} )
 
 	//Criando o browse da temporária
@@ -30,16 +28,19 @@ User Function PL230()
 	oBrowse:SetFieldMark( 'ZA2_OK' )
 	oBrowse:SetMark(cMarca, "ZA2", "ZA2_OK")
 	oBrowse:SetAllMark( { || oBrowse:AllMark() } )
+
+	ObterDados()
+
 	oBrowse:SetFilterDefault( cFiltro )
 
 	oBrowse:AddLegend("ZA2->ZA2_TPOP == 'P'", "YELLOW", "Ordem Prevista", "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'L' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Liberada", "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'L' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Liberada - sem saldo", "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Liberada", "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Liberada - sem saldo", "1")
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'S'"	, "BLUE"	, "Ordem Planejada", "1")
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'N'"	, "PINK"	, "Ordem Planejada - sem saldo", "1")
 	oBrowse:Activate()
 
-	SetKey( VK_F12,  Nil )
+
 	FWRestArea(aArea)
 return
 
@@ -288,10 +289,18 @@ User Function PL230Mark(cAcao)
 
 			// Libera a ordem
 			if cAcao == "L"
-				if ZA2->ZA2_STAT == 'L'
+				if ZA2->ZA2_STAT == 'C'
 					ZA2->ZA2_STAT := 'P'
 				else
-					ZA2->ZA2_STAT := 'L'
+					ZA2->ZA2_STAT := 'C'
+				endif
+
+				SC2->(dbSetOrder(1))
+
+				If SC2->(MsSeek(xFilial("SC2") + AllTrim(ZA2->ZA2_OP)))
+					RecLock("SC2", .F.)
+					SC2->C2_XCONF := ZA2->ZA2_STAT
+					MsUnLock()
 				endif
 			endif
 
@@ -313,6 +322,10 @@ Return NIL
 
 User Function PL230F12()
 	ObterDados()
+
+	oBrowse:CleanFilter()
+	oBrowse:SetFilterDefault(cFiltro)
+	oBrowse:Refresh()
 return
 
 
@@ -328,7 +341,6 @@ Static Function ObterDados
 	Local cLinha	:= ""
 
 	Local cRecurso 	:= Nil
-
 
 	cSql := "SELECT DISTINCT H1_XLIN "
 	cSql += "  FROM " + RetSQLName("SH1") + " SH1 "
