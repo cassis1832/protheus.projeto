@@ -107,18 +107,11 @@ Static Function ModelDef()
 
 	//Adiciona os campos da estrutura
 	oStTT:AddField("Produto"	,"Produto"		,"TT_PRODUTO"	,"C",06,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_PRODUTO,'')" ), .T., .F., .F.)
-	oStTT:AddField("Descricao"	,"Descricao"	,"TT_DESC"		,"C",40,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DESC,'')" ),.F.,.F.,.F.)
-	oStTT:AddField("Saldo"		,"Saldo"		,"TT_SALDO"		,"N",10,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_SALDO,'')" ),.F.,.F.,.F.)
-	oStTT:AddField("UM"			,"UM"			,"TT_UM"		,"C",02,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_UM,'')" ),.F.,.F.,.F.)
+	oStTT:AddField("Descricao"	,"Descricao"	,"TT_DESC"		,"C",40,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DESC,'')" ),.T.,.F.,.F.)
+	oStTT:AddField("Saldo"		,"Saldo"		,"TT_SALDO"		,"N",10,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_SALDO,'')" ),.T.,.F.,.F.)
+	oStTT:AddField("UM"			,"UM"			,"TT_UM"		,"C",02,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_UM,'')" ),.T.,.F.,.F.)
 	oStTT:AddField("Alocado"	,"Alocado"		,"TT_ALOC"		,"N",10,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_ALOC,'')" ), .T., .F., .F.)
-	oStTT:AddField("Quantidade"	,"Quantidade"	,"TT_QUANT"		,"N",10,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUANT,'')" ), .T., .F., .F.)
-
-	// Proteger de alteracoes
-	oStTT:SetProperty('TT_PRODUTO'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStTT:SetProperty('TT_DESC'		,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStTT:SetProperty('TT_SALDO'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStTT:SetProperty('TT_UM'		,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
-	oStTT:SetProperty('TT_ALOC'		,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStTT:AddField("Quantidade"	,"Quantidade"	,"TT_QUANT"		,"N",10,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUANT,'')" ), .F., .F., .F.)
 
 	oModel:=MPFormModel():New("PL210M", Nil, Nil, Nil, Nil)
 
@@ -184,7 +177,6 @@ User Function PL210Mark()
 
 	RestArea(aArea)
 Return NIL
-
 
 
 Static Function CargaTT()
