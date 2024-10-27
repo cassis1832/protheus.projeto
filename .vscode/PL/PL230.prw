@@ -33,13 +33,11 @@ User Function PL230()
 
 	oBrowse:SetFilterDefault( cFiltro )
 
-	oBrowse:AddLegend("ZA2->ZA2_TPOP == 'P'", "YELLOW", "Ordem Prevista", "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Liberada", "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Liberada - sem saldo", "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Confirmada", "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Confirmada - sem saldo", "1")
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'S'"	, "BLUE"	, "Ordem Planejada", "1")
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'N'"	, "PINK"	, "Ordem Planejada - sem saldo", "1")
 	oBrowse:Activate()
-
 
 	FWRestArea(aArea)
 return
@@ -81,7 +79,7 @@ Static Function ModelDef()
 
 	oModel:AddFields("FORMZA2",/*cOwner*/,oStZA2)
 	oModel:SetPrimaryKey({'ZA2_FILIAL', 'ZA2_TIPO', 'ZA2_RECURS', 'ZA2_DTINIP', 'ZA2_PROD', 'ZA2_OPER'})
-	oModel:SetDescription("Sequenciamento da producao ")
+	oModel:SetDescription("Dados da Ordem de Producao ")
 	oModel:GetModel("FORMZA2"):SetDescription("Ordem de Produção ")
 Return oModel
 
@@ -110,7 +108,7 @@ Static Function SaldoComp()
 	Local lRet		:= .T.
 	Local nQtNec	:= 0
 
-	ZA2->(DBSetOrder(2))
+	ZA2->(DBSetOrder(2)) // ZA2_FILIAL+ZA2_TIPO+ZA2_PRIOR+ZA2_DATPRI+ZA2_OP+ZA2_OPER
 	ZA2->(DbGoTop())
 	
 	While ("ZA2")->(! EOF()) .and. ZA2->ZA2_TIPO == "1"
@@ -201,6 +199,8 @@ Return lOk
  *---------------------------------------------------------------------*/
 User Function PL230Calculo()
 	u_PL230A(dDtIni, dDtFim)
+	SaldoComp()
+	SituacaoOP()
 return
 
 
@@ -264,7 +264,6 @@ return
  *---------------------------------------------------------------------*/
 User Function PL230Legenda()
     Local aLegenda := {}
-    AAdd(aLegenda,{"BR_AMARELO","Ordem prevista - nao deve ser produzida"})
     AAdd(aLegenda,{"BR_VERDE","Ordem confirmada"})
     AAdd(aLegenda,{"BR_VERMELHO","Ordem confirmada - sem saldo de componente ou MP"})
     AAdd(aLegenda,{"BR_AZUL","Ordem Planejada"})
