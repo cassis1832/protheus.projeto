@@ -10,6 +10,7 @@
 	27/08/2024 - Gerar demandas com 2 dias de diferença para a Gestamp
 	08/09/2024 - Gerar demanda de plano mestre para a Gestamp
 	22/09/2024 - Nao gravar T4j porque ele atualiza na sincronizacao
+	08/09/2024 - Gerar demanda manual para a Gestamp
 @author Assis
 @since 11/04/2024
 @version 1.0
@@ -102,12 +103,12 @@ Static Function TrataEDI()
 
 	While (cAlias)->(!EOF())
 
-		// Gestamp é plano mestre
 		if (cAlias)->ZA0_CLIENT == "000004" .or. ;
 			(cAlias)->ZA0_CLIENT == "000005" .or. ;
 			(cAlias)->ZA0_CLIENT == "000006" .or. ;
 			(cAlias)->ZA0_CLIENT == "000007" 
-			cTipo := "3"
+			// cTipo := "3"
+			cTipo := "9"
 		else
 			cTipo := "9"
 		endif

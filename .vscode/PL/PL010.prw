@@ -49,7 +49,10 @@ User Function PL010()
 
 	if lReimp == .T.
 		// Assis/Camila/Elisangela/Teste
-		if RetCodUsr() != "000001" .and. RetCodUsr() !="000019" .and. RetCodUsr() !="000037" .and. RetCodUsr() !="000040"
+		if RetCodUsr() != "000001" .and. ;
+				RetCodUsr() !="000019" .and. ;		// Teste.ti
+			RetCodUsr() !="000037" .and. ;		// Elisangela
+			RetCodUsr() !="000013"				// Jessica
 			FWAlertError("Usuario nao autorizado para reimprimir ordem","Impressao de ordem")
 			Return
 		endif
