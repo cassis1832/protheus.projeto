@@ -4,7 +4,7 @@
 #INCLUDE 'parmtype.ch'
 
 /*/{Protheus.doc}	PL230A
-	Distribuição da carga maquina
+	Distribuicao da carga maquina
 @author Carlos Assis
 @since 25/09/2024
 @version 1.0   
@@ -20,7 +20,7 @@ User Function PL230A(Inicio, Fim)
 	Private cTTName 	:= ""
 	Private cAliasTT 	:= GetNextAlias()
 
-	//Campos da temporária de maquinas
+	//Campos da temporaria de maquinas
 	aCampos := {}
 	aAdd(aCampos, {"TT_ID"			,"C", 36, 0})
 	aAdd(aCampos, {"TT_RECURS"		,"C", 06, 0})
@@ -201,10 +201,10 @@ Static Function CargaInicial(oSay)
 			ZA2_TIPLIN	:= (cAlias)->H1_XLIN
 			ZA2_HSTOT	:= nTotal
 			ZA2_QTHORA	:= (cAlias)->G2_LOTEPAD
-			ZA2_DTINIP	:= stod((cAlias)->C2_XDTINIP)
-			ZA2_DTFIMP	:= stod((cAlias)->C2_XDTFIMP)
-			ZA2_HRINIP	:= (cAlias)->C2_XHRINIP
-			ZA2_HRFIMP	:= (cAlias)->C2_XHRFIMP
+			// ZA2_DTINIP	:= stod((cAlias)->C2_XDTINIP)
+			// ZA2_DTFIMP	:= stod((cAlias)->C2_XDTFIMP)
+			// ZA2_HRINIP	:= (cAlias)->C2_XHRINIP
+			// ZA2_HRFIMP	:= (cAlias)->C2_XHRFIMP
 			ZA2_OPER	:= (cAlias)->G2_OPERAC
 			ZA2_PRIOR	:= cPrior
 			ZA2_SITSLD	:= "S"
@@ -223,7 +223,7 @@ Static Function CargaInicial(oSay)
 	SH1->(DbSeek(xFilial("SH1")))
 
 	While ! SH1->(EoF())
-		dData := dDtIni
+		dData := Date()
 
 		While dData <= dDtFim
 
@@ -270,12 +270,16 @@ Static Function Calculo(oSay)
 
 	While ("ZA2")->(! EOF()) .and. ZA2->ZA2_TIPO == "1"
 
+		// if AllTrim(ZA2->ZA2_PROD) == '10536330'
+		// 	dDtIniP := NIL
+		// endif
+
 		nQtNec 	:= ZA2->ZA2_HSTOT
 		dDtIniP := NIL
 		dDtFimP := NIL
 
 		(cAliasTT)->(DbGoTop())
-		(cAliasTT)->(DbSeek(ZA2->ZA2_RECURS + dtos(ZA2->ZA2_DATPRI)))
+		(cAliasTT)->(DbSeek(ZA2->ZA2_RECURS + dtos(ZA2->ZA2_DATPRI),.T.))
 
 		if ! (cAliasTT)->(EOF())
 			While nQtNec > 0
@@ -324,6 +328,11 @@ Static Function Calculo(oSay)
 				SC2->(MsUnLock())
 			endif
 		endif
+
+		RecLock("ZA2", .F.)
+		ZA2->ZA2_DTINIP	:= dDtIniP
+		ZA2->ZA2_DTFIMP	:= dDtIniP
+		ZA2->(MsUnLock())
 
 		ZA2->(DbSkip())
 	enddo
