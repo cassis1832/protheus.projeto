@@ -5,6 +5,7 @@
 Função: Consulta de estoque por tipo de item
 @author Assis
 @since 02/08/2024
+	29/10/2024 - Mostrar o consumo medio mensal
 @version 1.0
 	@return Nil, Fução não tem retorno
 	@example
@@ -42,6 +43,7 @@ User Function PL140()
 	aAdd(aCampos, {"TT_LE"		,"N", 12, 2})
 	aAdd(aCampos, {"TT_PE"		,"N",  5, 0})
 	aAdd(aCampos, {"TT_MRP"		,"C", 10, 0})
+	aAdd(aCampos, {"TT_CONS"	,"N", 14, 3})
 
 	//Cria a temporária
 	oTempTable := FWTemporaryTable():New(cAliasTT)
@@ -65,6 +67,7 @@ User Function PL140()
 	aAdd(aColunas, {"UM"			, "TT_UM"		, "C", 02, 0, "@!"})
 	aAdd(aColunas, {"Lote"			, "TT_LOTE"		, "C", 10, 0, "@!"})
 	aAdd(aColunas, {"Empenho"		, "TT_EMPENHO"	, "N", 10, 0, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Consumo Medio"	, "TT_CONS"		, "N", 10, 0, "@E 9,999,999.999"})
 
 	//Adiciona os indices para pesquisar
     /*
@@ -201,9 +204,12 @@ Static Function CargaTT()
 	cSql += " ORDER BY B8_PRODUTO, B8_LOTECTL "
 	cAlias := MPSysOpenQuery(cSql)
 
+	SB3->(dbSetOrder(1))
+
 	While (cAlias)->(!EOF())
+
 		cSql := "INSERT INTO " + cTableName + " ("
-		cSql += "	TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_SALDO, TT_LOTE, TT_EMPENHO, TT_TIPO, TT_ITEM, TT_UM) VALUES ('"
+		cSql += "	TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_SALDO, TT_LOTE, TT_EMPENHO, TT_TIPO, TT_ITEM, TT_CONS, TT_UM) VALUES ('"
 		cSql += FWUUIDv4() 			 				+ "','"
 		cSql += (cAlias)->B8_PRODUTO 				+ "','"
 		cSql += (cAlias)->B1_DESC    				+ "','"
@@ -213,6 +219,13 @@ Static Function CargaTT()
 		cSql += cValToChar((cAlias)->B8_EMPENHO) 	+ "','"
 		cSql += (cAlias)->B1_TIPO   				+ "','"
 		cSql += (cAlias)->B1_XITEM   				+ "','"
+
+		If SB3->(MsSeek(xFilial("SB3") + (cAlias)->B8_PRODUTO))
+			cSql += cValToChar(SB3->B3_MEDIA)		+ "','"
+		else
+			cSql += "0','"
+		endif
+
 		cSql += (cAlias)->B1_UM   					+ "')"
 
 		if TCSqlExec(cSql) < 0

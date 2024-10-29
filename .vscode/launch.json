@@ -61,6 +61,10 @@
 		},
 		{
 			"label": "sigaest"
+		},
+		{
+			"args": [],
+			"label": "U_zAssis"
 		}
 	],
 	"lastProgramExecuted": "sigapcp",
