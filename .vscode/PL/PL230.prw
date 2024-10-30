@@ -10,7 +10,7 @@
 User Function PL230()
 	Local aArea 	:= FWGetArea()
 
-	Private oBrowse
+	Private oBrowse	:= Nil
 	Private cMarca 	:= GetMark()
 	Private cTitulo	:= "Plano de Producao - MR"
 	Private cFiltro	:= ""
@@ -20,6 +20,12 @@ User Function PL230()
 
 	SetKey( VK_F12,  {|| u_PL230F12()} )
 
+
+	ZA2->(DBSetOrder(1))
+	If ! ZA2->(MsSeek(xFilial("ZA2") + "1"))
+		u_PL230A(dDtIni, dDtFim)
+	endif
+
 	//Criando o browse da temporária
 	oBrowse := FWMarkBrowse():New()
 	oBrowse:SetAlias('ZA2')
@@ -28,15 +34,15 @@ User Function PL230()
 	oBrowse:SetFieldMark( 'ZA2_OK' )
 	oBrowse:SetMark(cMarca, "ZA2", "ZA2_OK")
 	oBrowse:SetAllMark( { || oBrowse:AllMark() } )
-
-	ObterDados()
-
-	oBrowse:SetFilterDefault( cFiltro )
-
+	//oBrowse:SetFilterDefault( cFiltro )
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Confirmada", "1")
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Confirmada - sem saldo", "1")
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'S'"	, "BLUE"	, "Ordem Planejada", "1")
 	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'N'"	, "PINK"	, "Ordem Planejada - sem saldo", "1")
+
+	LerParametros()
+	CargaDados()
+
 	oBrowse:Activate()
 
 	FWRestArea(aArea)
@@ -101,75 +107,6 @@ Return oView
 
 
 /*---------------------------------------------------------------------*
-  Verifica se tem saldo dos componentes
- *---------------------------------------------------------------------*/
-Static Function SaldoComp()
-	Local lTem		:= .F.
-	Local lRet		:= .T.
-	Local nQtNec	:= 0
-
-	ZA2->(DBSetOrder(2)) // ZA2_FILIAL+ZA2_TIPO+ZA2_PRIOR+ZA2_DATPRI+ZA2_OP+ZA2_OPER
-	ZA2->(DbGoTop())
-	
-	While ("ZA2")->(! EOF()) .and. ZA2->ZA2_TIPO == "1"
-		lTem := .T.
-		nQtNec 	:= ZA2->ZA2_QUANT - ZA2->ZA2_QUJE
-
-		lRet := Estrutura(ZA2->ZA2_PROD, nQtNec)
-
-		if lRet	== .F.		// falta algum componente
-			RecLock("ZA2", .F.)
-			ZA2->ZA2_SITSLD := "N"
-			ZA2->(MsUnLock())
-		endif
-
-		ZA2->(DbSkip())
-	enddo
-
-	if lTem == .F.
-	 	u_PL230Calculo()
-	endif
-return
-
-/*---------------------------------------------------------------------*
-  Atualiza situacao da OP
- *---------------------------------------------------------------------*/
-Static Function SituacaoOP()
-	Local cSql		:= ""
-	Local cAlias	:= ""
-
-	cSql := "SELECT C2_OP, C2_XPRTOP, C2_XPRTPL "
-	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
-
-	cSql += " INNER JOIN " + RetSQLName("ZA2") + " ZA2 "
-	csQL += "	 ON ZA2_OP			 =  C2_OP "
-	cSql += "   AND ZA2_TIPO 		 = '1'"
-	cSql += "   AND (ZA2_PRTOP 		<> C2_XPRTOP OR ZA2_PRTPL <> C2_XPRTPL) "
-	cSql += "   AND ZA2_FILIAL 		 = '" + xFilial("ZA2") + "' "
-	cSql += "   AND ZA2.D_E_L_E_T_ 	 = ' ' "
-
-	cSql += " WHERE C2_FILIAL 		 = '" + xFilial("SC2") + "' "
-	cSql += "   AND SC2.D_E_L_E_T_ 	 = ' ' "
-	cAlias := MPSysOpenQuery(cSql)
-
-	ZA2->(DBSetOrder(7)) // Tipo/OP/Operacao
-
-	While (cAlias)->(!EOF())
-
-		If ZA2->(MsSeek(xFilial("ZA2") + "1" + (cAlias)->C2_OP))
-			RecLock("ZA2", .F.)
-			ZA2->ZA2_PRTOP := (cAlias)->C2_XPRTOP
-			ZA2->ZA2_PRTPL := (cAlias)->C2_XPRTPL
-			ZA2->(MsUnLock())
-		EndIf
-
-		(cAlias)->(DbSkip())
-	EndDo
-
-	(cAlias)->(DBCLOSEAREA())
-return
-
-/*---------------------------------------------------------------------*
   Atualiza a ordem de producao
  *---------------------------------------------------------------------*/
 Static Function MVCMODELPOS(oModel)
@@ -199,10 +136,70 @@ Return lOk
  *---------------------------------------------------------------------*/
 User Function PL230Calculo()
 	u_PL230A(dDtIni, dDtFim)
-	SaldoComp()
-	SituacaoOP()
+	CargaDados()
+	oBrowse:Refresh()
 return
 
+
+/*---------------------------------------------------------------------*
+  Carrega dados as OPs
+ *---------------------------------------------------------------------*/
+Static Function CargaDados()
+	Local cAlias	:= ""
+	Local lTemSaldo	:= .F.
+	Local lRet		:= .T.
+	Local nQtNec	:= 0
+
+	// Verificar saldos dos componentes das OPs
+	ZA2->(DBSetOrder(1))
+	ZA2->(MsSeek(xFilial("ZA2") + "1"),.T.)
+	
+	While ("ZA2")->(! EOF()) .and. ZA2->ZA2_TIPO == "1"
+		lTemSaldo := .T.
+		nQtNec 	:= ZA2->ZA2_QUANT - ZA2->ZA2_QUJE
+
+		lRet := Estrutura(ZA2->ZA2_PROD, nQtNec)
+
+		if lRet	== .F.		// falta algum componente
+			RecLock("ZA2", .F.)
+			ZA2->ZA2_SITSLD := "N"
+			ZA2->(MsUnLock())
+		endif
+
+		ZA2->(DbSkip())
+	enddo
+
+	// Dados das OPs
+	cSql := "SELECT C2_OP, C2_XPRTOP, C2_XPRTPL "
+	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
+
+	cSql += " INNER JOIN " + RetSQLName("ZA2") + " ZA2 "
+	cSql += "    ON ZA2_TIPO 		 = '1'"
+	csQL += "	AND ZA2_OP			 =  C2_OP "
+	cSql += "   AND (ZA2_PRTOP 		<> C2_XPRTOP OR ZA2_PRTPL <> C2_XPRTPL) "
+	cSql += "   AND ZA2_FILIAL 		 = '" + xFilial("ZA2") + "' "
+	cSql += "   AND ZA2.D_E_L_E_T_ 	 = ' ' "
+
+	cSql += " WHERE C2_FILIAL 		 = '" + xFilial("SC2") + "' "
+	cSql += "   AND SC2.D_E_L_E_T_ 	 = ' ' "
+	cAlias := MPSysOpenQuery(cSql)
+
+	ZA2->(DBSetOrder(7)) // Tipo/OP/Operacao
+
+	While (cAlias)->(!EOF())
+
+		If ZA2->(MsSeek(xFilial("ZA2") + "1" + (cAlias)->C2_OP))
+			RecLock("ZA2", .F.)
+			ZA2->ZA2_PRTOP := (cAlias)->C2_XPRTOP
+			ZA2->ZA2_PRTPL := (cAlias)->C2_XPRTPL
+			ZA2->(MsUnLock())
+		EndIf
+
+		(cAlias)->(DbSkip())
+	EndDo
+
+	(cAlias)->(DBCLOSEAREA())
+return
 
 /*---------------------------------------------------------------------*
   Explode a estrutura para calcular o saldo de materia prima
@@ -320,15 +317,13 @@ Return NIL
 
 
 User Function PL230F12()
-	ObterDados()
-
-	oBrowse:CleanFilter()
-	oBrowse:SetFilterDefault(cFiltro)
-	oBrowse:Refresh()
+	LerParametros()
 return
 
-
-Static Function ObterDados
+/*---------------------------------------------------------------------*
+  Ler os parametros do usuario
+ *---------------------------------------------------------------------*/
+Static Function LerParametros()
 	Local cSql 		:= ""
 	Local cAlias 	:= ''
 	Local xInd		:= 0
@@ -379,7 +374,8 @@ Static Function ObterDados
 	Else
 		return
 	endif
-
-	SaldoComp()
-	SituacaoOP()
+	
+	oBrowse:CleanFilter()
+	oBrowse:SetFilterDefault(cFiltro)
+	oBrowse:Refresh()
 return

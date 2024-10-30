@@ -21,6 +21,7 @@ User Function PL240A(Inicio, Fim)
 	Private cTT2Name 	:= ""
 	Private cAliasTT1 	:= GetNextAlias()
 	Private cAliasTT2 	:= GetNextAlias()
+	Private nSeq		:= 0
 
 	//Campos da temporaria de tempos disponiveis
 	aCampos := {}
@@ -52,6 +53,7 @@ User Function PL240A(Inicio, Fim)
 	oTT2:Create()
 	cTT2Name  := oTT2:GetRealName()
 
+	FwMsgRun(NIL, {|oSay| Demandas(oSay)}	, "Lendo as demandas ", "Preparando...")
 	FwMsgRun(NIL, {|oSay| CargaInicial(oSay)}	, "Preparando o calculo ", "Preparando...")
 
 	// FwMsgRun(NIL, {|oSay| Calculo(oSay)}		, "Calculando distribuicao", "Calculando...")
@@ -72,8 +74,6 @@ Static Function CargaInicial(oSay)
 	Local nQuant		:= 0
 	Local nSetup		:= 0
 
-	Private nSeq		:= 0
-
 	// Limpa a rodada anterior
 	cSql := "DELETE FROM "  + RetSQLName("ZA2")
 	cSql += " WHERE ZA2_FILIAL 	 	= '" + xFilial("ZA2") + "' "
@@ -84,8 +84,6 @@ Static Function CargaInicial(oSay)
 		MsgInfo("Erro na execução do delete tipo 2:", "Atenção")
 		MsgInfo(TcSqlError(), "Atenção")
 	endif
-
-	Demandas()
 
 	cSql := "SELECT TT2.*, "
 	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XITEM, B1_LE, B1_XPRIOR, "
@@ -173,7 +171,7 @@ Static Function CargaInicial(oSay)
 return
 
 
-Static Function Demandas()
+Static Function Demandas(oSay)
 	Local cSql 			:= ""
 	Local cAlias 		:= ""
 	Local nQtde			:= 0

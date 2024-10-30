@@ -10,22 +10,21 @@
 
 User Function PL240()
 	Local aArea 		:= FWGetArea()
-	Local oBrowse
 
+	Private oBrowse		:= Nil
 	Private cTitulo		:= "Carga Maquina Gerencial - MR"
-
 	Private cFiltro		:= ""
+
 	Private cRecurso 	:= .F.
-	Private dDtIni  	:= ""
-	Private dDtFim  	:= ""
 
-	ObterDados()
+	Private dDtIni  	:= DaySub(Date(), 30)
+	Private dDtFim  	:= DaySum(Date(), 90)
 
-	ZA2->(DBSetOrder(2))
-	ZA2->(DbGoTop())
+	SetKey( VK_F12,  {|| u_PL240F12()} )
 
+	ZA2->(DBSetOrder(1))
 	If ! ZA2->(MsSeek(xFilial("ZA2") + "2"))
-		u_PL240Calculo()
+		u_PL240A(dDtIni, dDtFim)
 	endif
 
 	//Criando o browse da temporária
@@ -34,6 +33,10 @@ User Function PL240()
 	oBrowse:SetDescription(cTitulo)
 	oBrowse:SetFilterDefault( cFiltro )
 	oBrowse:DisableDetails()
+	oBrowse:SetOnlyFields({'ZA2_RECURS','ZA2_PROD', 'ZA2_ITCLI', 'ZA2_CLIENT', 'ZA2_OP', 'ZA2_LE', 'ZA2_QUANT', 'ZA2_OPER', 'ZA2_DATPRI','ZA2_DATPRF','ZA2_QTHORA','ZA2_HSTOT'})
+
+	LerParametros()
+
 	oBrowse:Activate()
 
 	FWRestArea(aArea)
@@ -43,10 +46,8 @@ return
 Static Function MenuDef()
 	Local aRot := {}
 	ADD OPTION aRot TITLE 'Visualizar' 	  	ACTION 'VIEWDEF.PL240'  OPERATION 2 ACCESS 0
-	ADD OPTION aRot TITLE 'Alterar'    	  	ACTION 'VIEWDEF.PL240'  OPERATION 4 ACCESS 0
 	ADD OPTION aRot TITLE 'Legenda'    	  	ACTION 'u_PL240Legenda' OPERATION 8 ACCESS 0
 	ADD OPTION aRot TITLE 'Calcular'   	  	ACTION 'u_PL240Calculo' OPERATION 8 ACCESS 0
-	ADD OPTION aRot TITLE 'Imprimir Plano'  ACTION 'u_PL240Print' 	OPERATION 8 ACCESS 0
 Return aRot
 
 
@@ -92,6 +93,7 @@ Return oView
 
 User Function PL240Calculo()
 	u_PL240A(dDtIni, dDtFim)
+	oBrowse:Refresh()
 return
 
 
@@ -140,13 +142,11 @@ Static Function	Estrutura(cProduto, nQtPai)
 return lRet
 
 
-User Function PL240Print()
-	u_PL250("2")
+User Function PL240F12()
+	LerParametros()
 return
 
-
-
-Static Function ObterDados
+Static Function LerParametros()
 	Local cSql 		:= ""
 	Local cAlias 	:= ''
 	Local xInd		:= 0
@@ -197,4 +197,8 @@ Static Function ObterDados
 	Else
 		return
 	endif
+
+	oBrowse:CleanFilter()
+	oBrowse:SetFilterDefault(cFiltro)
+	oBrowse:Refresh()
 return
