@@ -9,13 +9,25 @@
 @since 25/09/2024
 @version 1.0   
 /*/
-User Function PL230A(Inicio, Fim)
+User Function PL230A(Opcao, Inicio, Fim)
 	Local aArea 		:= FWGetArea()
-	Local aCampos 		:= {}
-	Local oSay 			:= NIL
 
 	Private	dDtIni		:= Inicio
 	Private	dDtFim		:= Fim
+
+	if Opcao == "Calculo"
+		CalculaDatas()
+	endif
+
+	AtualizaDados()
+
+	FWRestArea(aArea)
+return
+
+
+Static Function CalculaDatas()
+	Local oSay 			:= NIL
+	Local aCampos 		:= {}
 
 	Private cTTName 	:= ""
 	Private cAliasTT 	:= GetNextAlias()
@@ -39,8 +51,6 @@ User Function PL230A(Inicio, Fim)
 	FwMsgRun(NIL, {|oSay| Calculo(oSay)}, "Calculando distribuicao", "Calculando...")
 
 	oTT:Delete()
-
-	FWRestArea(aArea)
 return
 
 
@@ -61,7 +71,7 @@ Static Function CargaInicial(oSay)
 
 	// Limpa as linhas planejadas e de ordens encerradas
 	SC2->(dbSetOrder(1))	// OP
-	ZA2->(DBSetOrder(1))	// Tipo/Codigo
+	ZA2->(DBSetOrder(1))	// Tipo
 	ZA2->(DbSeek(xFilial("ZA2") + "1"))
 
 	While ! ZA2->(EoF())
@@ -186,6 +196,9 @@ Static Function CargaInicial(oSay)
 			ZA2_TIPO	:= "1"
 			ZA2_COD		:= GETSXENUM("ZA2", "ZA2_COD", 1)
 			ZA2_OP		:= cOP
+			ZA2_NUM		:= (cAlias)->C2_NUM
+			ZA2_ITEM	:= (cAlias)->C2_ITEM
+			ZA2_SEQUEN	:= (cAlias)->C2_SEQUEN
 			ZA2_PROD	:= (cAlias)->C2_PRODUTO
 			ZA2_CLIENT	:= (cAlias)->B1_XCLIENT
 			ZA2_ITCLI	:= (cAlias)->B1_XITEM
@@ -201,10 +214,6 @@ Static Function CargaInicial(oSay)
 			ZA2_TIPLIN	:= (cAlias)->H1_XLIN
 			ZA2_HSTOT	:= nTotal
 			ZA2_QTHORA	:= (cAlias)->G2_LOTEPAD
-			// ZA2_DTINIP	:= stod((cAlias)->C2_XDTINIP)
-			// ZA2_DTFIMP	:= stod((cAlias)->C2_XDTFIMP)
-			// ZA2_HRINIP	:= (cAlias)->C2_XHRINIP
-			// ZA2_HRFIMP	:= (cAlias)->C2_XHRFIMP
 			ZA2_OPER	:= (cAlias)->G2_OPERAC
 			ZA2_PRIOR	:= cPrior
 			ZA2_SITSLD	:= "S"
@@ -348,3 +357,115 @@ Static Function LerAlternativo(cProd, cOper, cRec)
 	(ZA2)->(MsUnLock())
 
 return
+
+
+
+/*---------------------------------------------------------------------*
+  Carrega dados as OPs
+	Verificar saldos dos componentes das OPs
+	Dados das OPs
+ *---------------------------------------------------------------------*/
+Static Function AtualizaDados()
+	Local cAlias	:= ""
+	Local lTemSaldo	:= .F.
+	Local lRet		:= .T.
+	Local nQtNec	:= 0
+
+	// Verificar saldos dos componentes das OPs
+	ZA2->(DBSetOrder(1))
+	ZA2->(MsSeek(xFilial("ZA2") + "1"),.T.)
+	
+	While ("ZA2")->(! EOF()) .and. ZA2->ZA2_TIPO == "1"
+		lTemSaldo := .T.
+		nQtNec 	:= ZA2->ZA2_QUANT - ZA2->ZA2_QUJE
+
+		lRet := Estrutura(ZA2->ZA2_PROD, nQtNec)
+
+		if lRet	== .F.		// falta algum componente
+			RecLock("ZA2", .F.)
+			ZA2->ZA2_SITSLD := "N"
+			ZA2->(MsUnLock())
+		endif
+
+		ZA2->(DbSkip())
+	enddo
+
+	// Dados das OPs
+	cSql := "SELECT C2_OP, C2_XPRTOP, C2_XPRTPL, ZA2_PRTOP, ZA2_PRTPL "
+	cSql += "  FROM " + RetSQLName("ZA2") + " ZA2 "
+
+	cSql += " INNER JOIN " + RetSQLName("SC2") + " SC2 "
+	csQL += "    ON ZA2_OP			 =  C2_OP "
+	cSql += "   AND C2_FILIAL 		 = '" + xFilial("SC2") + "' "
+	cSql += "   AND SC2.D_E_L_E_T_ 	 = ' ' "
+
+	cSql += " WHERE ZA2_TIPO 		 = '1'"
+	cSql += "   AND ZA2_FILIAL 		 = '" + xFilial("ZA2") + "' "
+	cSql += "   AND ZA2.D_E_L_E_T_ 	 = ' ' "
+	cAlias := MPSysOpenQuery(cSql)
+
+	ZA2->(DBSetOrder(7)) // Tipo/OP/Operacao
+
+	While (cAlias)->(!EOF())
+
+		IF  (cAlias)->ZA2_PRTOP <> (cAlias)->C2_XPRTOP .OR. (cAlias)->ZA2_PRTPL <> (cAlias)->C2_XPRTPL 
+			If ZA2->(MsSeek(xFilial("ZA2") + "1" + (cAlias)->C2_OP), .T.)
+				RecLock("ZA2", .F.)
+				ZA2->ZA2_PRTOP := (cAlias)->C2_XPRTOP
+				ZA2->ZA2_PRTPL := (cAlias)->C2_XPRTPL
+				ZA2->(MsUnLock())
+			EndIf
+		EndIf
+
+		(cAlias)->(DbSkip())
+	EndDo
+
+	(cAlias)->(DBCLOSEAREA())
+return
+
+/*---------------------------------------------------------------------*
+  Explode a estrutura para calcular o saldo de materia prima
+ *---------------------------------------------------------------------*/
+Static Function	Estrutura(cProduto, nQtPai)
+	Local lRet		:= .T.
+	Local cSql 		:= ""
+	Local nQtNec 	:= 0
+	Local cAliasSG1
+	Local cAliasSB2
+
+	cSql := "SELECT G1_COD, G1_COMP, G1_QUANT, G1_INI, G1_FIM, G1_FANTASM "
+	cSql += "  FROM " + RetSQLName("SG1") + " SG1 "
+
+	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+	csQL += "	 ON B1_COD			=  G1_COMP "
+	cSql += "   AND B1_MSBLQL 		=  '2' "
+	cSql += "   AND B1_FILIAL 		= '" + xFilial("SB1") + "' "
+	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
+
+	cSql += " WHERE G1_COD 			= '" + cProduto + "' "
+	cSql += "   AND G1_INI 		   <= '" + DTOS(Date()) + "' "
+	cSql += "   AND G1_FIM 		   >= '" + DTOS(Date()) + "' "
+	cSql += "   AND G1_FILIAL 		= '" + xFilial("SG1") + "' "
+	cSql += "   AND SG1.D_E_L_E_T_ 	= ' ' "
+	cAliasSG1 := MPSysOpenQuery(cSql)
+
+	While (cAliasSG1)->(!EOF())
+		nQtNec := nQtPai * (cAliasSG1)->G1_QUANT
+
+		// Ler o saldo do componente
+		cSql := "SELECT B2_QATU FROM " + RetSQLName("SB2") + " SB2 "
+		cSql += " WHERE B2_COD    		=  '" + (cAliasSG1)->G1_COMP + "'"
+		cSql += "   AND B2_FILIAL 		=  '" + xFilial("SB2") + "'"
+		cSql += "   AND SB2.D_E_L_E_T_  <> '*' "
+		cAliasSB2 := MPSysOpenQuery(cSql)
+
+		if nQtNec > (cAliasSB2)->B2_QATU
+			lRet := .F.
+		endif
+
+		(cAliasSB2)->(DBCLOSEAREA())
+		(cAliasSG1)->(DbSkip())
+	EndDo
+
+	(cAliasSG1)->(DBCLOSEAREA())
+return lRet
