@@ -10,7 +10,6 @@ Função
 	19/07/2024 - Gerar previsão mensal
 	02/08/2024 - Desprezar previsao no passado
 	02/09/2024 - Não gravar pedidos no passado
-	22/09/2024 - Atualizar ES do item
 @author Assis
 @since 08/04/2024
 @version 1.0
@@ -166,11 +165,11 @@ Static Function RateiaMensal(aLinha)
 		SA7->A7_XCONSME := nQtde
 		SA7->(MsUnLock())
 
-		If SB1->(MsSeek(xFilial("SB1") + cProduto))
-			RecLock("SB1", .F.)	
-			SB1->B1_ESTSEG := Ceiling(nQtde / 20 * 3)
-			SB1->(MsUnLock())
-		endIf
+		// If SB1->(MsSeek(xFilial("SB1") + cProduto))
+		// 	RecLock("SB1", .F.)	
+		// 	SB1->B1_ESTSEG := Ceiling(nQtde / 20 * 3)
+		// 	SB1->(MsUnLock())
+		// endIf
 	endif
 
 	nMes := Month(dData)

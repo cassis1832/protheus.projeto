@@ -15,8 +15,8 @@ User Function PL230()
 	Private cTitulo	:= "Plano de Producao - MR"
 	Private cFiltro	:= ""
 
-	Private dDtIni  	:= DaySub(Date(), 30)
-	Private dDtFim  	:= DaySum(Date(), 15)
+	Private dDtIni 	:= DaySub(Date(), 30)
+	Private dDtFim 	:= DaySum(Date(), 07)
 
 	SetKey( VK_F12,  {|| u_PL230F12()} )
 
@@ -143,7 +143,7 @@ return
 /*---------------------------------------------------------------------*
   Emite Programa de Produca
  *---------------------------------------------------------------------*/
-User Function u_PL230Plano()
+User Function PL230Plano()
 	u_PL250()
 return
 
