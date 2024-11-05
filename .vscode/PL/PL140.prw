@@ -44,6 +44,8 @@ User Function PL140()
 	aAdd(aCampos, {"TT_PE"		,"N",  5, 0})
 	aAdd(aCampos, {"TT_MRP"		,"C", 10, 0})
 	aAdd(aCampos, {"TT_CONS"	,"N", 14, 3})
+	aAdd(aCampos, {"TT_DMOV"	,"D", 08, 0})
+	aAdd(aCampos, {"TT_DIAS"	,"N", 10, 2})
 
 	//Cria a temporária
 	oTempTable := FWTemporaryTable():New(cAliasTT)
@@ -68,6 +70,8 @@ User Function PL140()
 	aAdd(aColunas, {"UM"			, "TT_UM"		, "C", 02, 0, "@!"})
 	aAdd(aColunas, {"Empenho"		, "TT_EMPENHO"	, "N", 10, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Consumo Medio"	, "TT_CONS"		, "N", 10, 0, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Dt Movimento"	, "TT_DMOV"		, "D", 08, 0, "@!"})
+	aAdd(aColunas, {"Dias Estoque"	, "TT_DIAS"		, "N", 10, 2, "@E 9,999,999.99"})
 
 	//Adiciona os indices para pesquisar
     /*
@@ -141,7 +145,9 @@ Static Function ModelDef()
 	oStTmp:AddField("Est. Segur."	,"Est. Segur."	,"TT_ESTSEG"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_ESTSEG,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Saldo"			,"Saldo da OP"	,"TT_SALDO"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_SALDO,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("UM"			,"UM"			,"TT_UM"		,"C",02,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_UM,'')" ),.F.,.F.,.F.)
+	oStTmp:AddField("Dt Movimento"	,"Dt Movimento"	,"TT_DMOV"		,"D",08,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DMOV,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Empenho"		,"Empenho"		,"TT_EMPENHO"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_EMPENHO,'')" ),.F.,.F.,.F.)
+	oStTmp:AddField("Dias Estoque"	,"Dias Estoque"	,"TT_DIAS"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DIAS,'')" ),.F.,.F.,.F.)
 
 	//Instanciando o modelo
 	oModel := MPFormModel():New("PL140M",/*bPre*/, /*bPos*/,/*bCommit*/,/*bCancel*/)
@@ -172,7 +178,9 @@ Static Function ViewDef()
 	oStTmp:AddField("TT_ESTSEG"		,"07","Est. Segur."	,"Est. Segur."	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_SALDO"		,"08","Saldo"		,"Saldo"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_UM"			,"09","UM"			,"UM"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTmp:AddField("TT_EMPENHO"	,"11","Empenho"		,"Empenho"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_EMPENHO"	,"10","Empenho"		,"Empenho"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_DIAS"		,"11","Dias Estoque","Dias Estoque"	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_DMOV"		,"12","Dt Movimento","Dt Movimento"	,Nil,"D","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 
 	//Criando a view que será o retorno da função e setando o modelo da rotina
 	oView := FWFormView():New()
@@ -187,8 +195,9 @@ Return oView
 
 Static Function CargaTT()
 	Local cAlias, cSql
+	Local nDias	:= 0
 
-	cSql := "SELECT B2_COD, B2_QATU, B2_QEMP, "
+	cSql := "SELECT B2_COD, B2_QATU, B2_QEMP, B2_DMOV,"
 	cSql += "		B1_DESC, B1_XCLIENT, B1_TIPO, B1_XITEM, B1_LE, B1_PE, B1_MRP, B1_UM, B1_ESTSEG "
 	cSql += "  FROM " + RetSQLName("SB2") + " SB2 "
 
@@ -209,23 +218,34 @@ Static Function CargaTT()
 	While (cAlias)->(!EOF())
 
 		cSql := "INSERT INTO " + cTableName + " ("
-		cSql += "	TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ESTSEG, TT_SALDO, TT_EMPENHO, TT_TIPO, TT_ITEM, TT_CONS, TT_UM) VALUES ('"
+		cSql += "	TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ESTSEG, TT_SALDO, TT_EMPENHO, TT_TIPO, TT_ITEM, TT_DMOV, TT_CONS, TT_DIAS, TT_UM) VALUES ('"
 		cSql += FWUUIDv4() 			 				+ "','"
 		cSql += (cAlias)->B2_COD 				+ "','"
 		cSql += (cAlias)->B1_DESC    				+ "','"
 		cSql += (cAlias)->B1_XCLIENT 				+ "','"
 		cSql += cValToChar((cAlias)->B1_ESTSEG)		+ "','"
 		cSql += cValToChar((cAlias)->B2_QATU) 		+ "','"
-		cSql += cValToChar((cAlias)->B2_QEMP) 	+ "','"
+		cSql += cValToChar((cAlias)->B2_QEMP) 		+ "','"
 		cSql += (cAlias)->B1_TIPO   				+ "','"
 		cSql += (cAlias)->B1_XITEM   				+ "','"
+		cSql += (cAlias)->B2_DMOV   				+ "','"
+
+		nDias	:= 0
 
 		If SB3->(MsSeek(xFilial("SB3") + (cAlias)->B2_COD))
+			nDias := SB3->B3_MEDIA
 			cSql += cValToChar(SB3->B3_MEDIA)		+ "','"
 		else
 			cSql += "0','"
 		endif
 
+		if nDias <> 0
+			nDias := (cAlias)->B2_QATU / nDias * 30
+		else
+			ndias := 9999
+		endif
+
+		cSql += cValToChar(ndias)   				+ "','"
 		cSql += (cAlias)->B1_UM   					+ "')"
 
 		if TCSqlExec(cSql) < 0

@@ -47,16 +47,16 @@ User Function PL010()
 		return
 	endif
 
-	if lReimp == .T.
-		// Assis/Camila/Elisangela/Teste
-		if RetCodUsr() != "000001" .and. ;
-				RetCodUsr() !="000019" .and. ;		// Teste.ti
-			RetCodUsr() !="000037" .and. ;		// Elisangela
-			RetCodUsr() !="000013"				// Jessica
-			FWAlertError("Usuario nao autorizado para reimprimir ordem","Impressao de ordem")
-			Return
-		endif
-	endif
+	// if lReimp == .T.
+	// 	// Assis/Camila/Elisangela/Teste
+	// 	if RetCodUsr() != "000001" .and. ;
+		// 			RetCodUsr() !="000019" .and. ;		// Teste.ti
+	// 		RetCodUsr() !="000037" .and. ;		// Elisangela
+	// 		RetCodUsr() !="000013"				// Jessica
+	// 		FWAlertError("Usuario nao autorizado para reimprimir ordem","Impressao de ordem")
+	// 		Return
+	// 	endif
+	// endif
 
 	if len(allTrim(cOrdemIni)) == 6
 		cOrdemIni := allTrim(cOrdemIni) + "01001"
