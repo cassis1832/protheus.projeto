@@ -34,6 +34,7 @@ User Function PL140()
 	aAdd(aCampos, {"TT_PRODUTO"	,"C", 15, 0})
 	aAdd(aCampos, {"TT_DESC"	,"C", 60, 0})
 	aAdd(aCampos, {"TT_CLIENT"	,"C", 30, 0})
+	aAdd(aCampos, {"TT_ESTSEG"	,"N", 14, 3})
 	aAdd(aCampos, {"TT_SALDO"	,"N", 14, 3})
 	aAdd(aCampos, {"TT_UM"		,"C", 02, 3})
 	aAdd(aCampos, {"TT_LOTE"	,"C", 10, 0})
@@ -63,6 +64,7 @@ User Function PL140()
 	aAdd(aColunas, {"Tipo"			, "TT_TIPO"		, "C", 02, 0, "@!"})
 	aAdd(aColunas, {"Cliente"		, "TT_CLIENT"	, "C", 15, 0, "@!"})
 	aAdd(aColunas, {"Item Cliente"	, "TT_ITEM"		, "C", 20, 0, "@!"})
+	aAdd(aColunas, {"Est. Segur."	, "TT_ESTSEG"	, "N", 10, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Saldo"			, "TT_SALDO"	, "N", 10, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"UM"			, "TT_UM"		, "C", 02, 0, "@!"})
 	aAdd(aColunas, {"Lote"			, "TT_LOTE"		, "C", 10, 0, "@!"})
@@ -138,6 +140,7 @@ Static Function ModelDef()
 	oStTmp:AddField("Tipo"			,"Tipo"			,"TT_TIPO"		,"C",02,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_TIPO,'')" ), .T., .F., .F.)
 	oStTmp:AddField("Cliente"		,"Cliente"		,"TT_CLIENT"	,"C",06,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_CLIENT,'')" ), .T., .F., .F.)
 	oStTmp:AddField("Item Cliente"	,"Item Cliente"	,"TT_ITEM"		,"C",20,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_ITEM,'')" ), .T., .F., .F.)
+	oStTmp:AddField("Est. Segur."	,"Est. Segur."	,"TT_ESTSEG"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_ESTSEG,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Saldo"			,"Saldo da OP"	,"TT_SALDO"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_SALDO,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("UM"			,"UM"			,"TT_UM"		,"C",02,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_UM,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Lote"			,"Lote"			,"TT_LOTE"		,"C",30,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_LOTE,'')" ), .T., .F., .F.)
@@ -169,10 +172,11 @@ Static Function ViewDef()
 	oStTmp:AddField("TT_TIPO"		,"03","Tipo"		,"Tipo"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_CLIENT"		,"04","Cliente"		,"Cliente"		,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_ITEM"		,"05","Item Cliente","Item Cliente"	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTmp:AddField("TT_SALDO"		,"06","Saldo"		,"Saldo"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTmp:AddField("TT_UM"			,"07","UM"			,"UM"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTmp:AddField("TT_LOTE"		,"08","Lote"		,"Lote"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTmp:AddField("TT_EMPENHO"	,"09","Empenho"		,"Empenho"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_ESTSEG"		,"07","Est. Segur."	,"Est. Segur."	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_SALDO"		,"08","Saldo"		,"Saldo"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_UM"			,"09","UM"			,"UM"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_LOTE"		,"10","Lote"		,"Lote"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_EMPENHO"	,"11","Empenho"		,"Empenho"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 
 	//Criando a view que será o retorno da função e setando o modelo da rotina
 	oView := FWFormView():New()
@@ -189,7 +193,7 @@ Static Function CargaTT()
 	Local cAlias, cSql
 
 	cSql := "SELECT B8_PRODUTO, B8_SALDO, B8_EMPENHO, B8_LOTECTL, "
-	cSql += "		B1_DESC, B1_XCLIENT, B1_TIPO, B1_XITEM, B1_LE, B1_PE, B1_MRP, B1_UM "
+	cSql += "		B1_DESC, B1_XCLIENT, B1_TIPO, B1_XITEM, B1_LE, B1_PE, B1_MRP, B1_UM, B1_ESTSEG "
 	cSql += "  FROM " + RetSQLName("SB8") + " SB8 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
@@ -209,12 +213,13 @@ Static Function CargaTT()
 	While (cAlias)->(!EOF())
 
 		cSql := "INSERT INTO " + cTableName + " ("
-		cSql += "	TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_SALDO, TT_LOTE, TT_EMPENHO, TT_TIPO, TT_ITEM, TT_CONS, TT_UM) VALUES ('"
+		cSql += "	TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ESTSEG, TT_SALDO, TT_LOTE, TT_EMPENHO, TT_TIPO, TT_ITEM, TT_CONS, TT_UM) VALUES ('"
 		cSql += FWUUIDv4() 			 				+ "','"
 		cSql += (cAlias)->B8_PRODUTO 				+ "','"
 		cSql += (cAlias)->B1_DESC    				+ "','"
 		cSql += (cAlias)->B1_XCLIENT 				+ "','"
 		cSql += cValToChar((cAlias)->B8_SALDO) 		+ "','"
+		cSql += cValToChar((cAlias)->B1_ESTSEG)		+ "','"
 		cSql += (cAlias)->B8_LOTECTL   				+ "','"
 		cSql += cValToChar((cAlias)->B8_EMPENHO) 	+ "','"
 		cSql += (cAlias)->B1_TIPO   				+ "','"

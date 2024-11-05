@@ -345,9 +345,9 @@ Static Function printOper()
 	oPrinter:Say(nLin, 180, "Maquina",oFont09)
 	oPrinter:Say(nLin, 260, "Qtde/Hr",oFont09)
 	oPrinter:Say(nLin, 360, "Qtde Real.",oFont09)
-	oPrinter:Say(nLin, 460, "Ganho de Producao",oFont09)
 
-	oPrinter:Box(nLin+10, 500, nLin+30, 520)		   // Box(row, col, bottom, right)
+	oPrinter:Say(nLin, 435, "Ganho de Producao",oFont09)
+	oPrinter:Box(nLin-10, 535, nLin+5, 550)		   // Box(row, col, bottom, right)
 
 	if lOper
 		if (cAliasOper)->(EOF())
