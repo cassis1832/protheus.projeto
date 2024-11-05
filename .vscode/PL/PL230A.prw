@@ -84,6 +84,8 @@ Static Function CargaInicial(oSay)
 				if AllTrim(dtos(SC2->C2_DATRF)) <> ''
 					ZA2->(DbDelete())
 				endif
+			else
+				ZA2->(DbDelete())
 			endif
 		endif
 
