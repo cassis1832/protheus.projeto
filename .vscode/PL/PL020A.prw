@@ -14,8 +14,9 @@ Função
 @since 08/04/2024
 @version 1.0
 	@return Nil, Função não tem retorno
-/*/
 
+
+/*/
 User Function PL020A()
 	Local aArea   		:= GetArea()
 	Local cFunBkp 		:= FunName()
@@ -27,7 +28,7 @@ User Function PL020A()
 	Private cProduto  	:= ""
 	Private cCodCli  	:= ""
 
-	Private dtProcesso 	:= Date()
+	Private dtProcesso 	:= GetdDataBase()
 	Private hrProcesso 	:= Time()
 
 	SetFunName("PL020A")
@@ -203,7 +204,7 @@ Return
 Static Function GravaRegistro(aLinha)
 	Local dData 	:= ctod(aLinha[4])
 
-	if dData <= Date()
+	if dData <= GetdDataBase()
 		return
 	endif
 
@@ -286,28 +287,19 @@ return Nil
   Deleta da tabela ZA0 todos os registros que não foram atualizados
  *---------------------------------------------------------------------*/
 Static Function LimpaDados(oSay)
+	Local cSql	:= ''
 
-   	dbSelectArea("ZA0")
-   	ZA0->(DBSetOrder(3))  
-   
-   	DBSeek(xFilial("ZA0") + cCliente + cLoja)
-	
-	Do While ! Eof() 
+	cSql := "DELETE FROM "  + RetSQLName("ZA0")
+	cSql += " WHERE ZA0_FILIAL  = '" + xFilial("ZA0") + "' "
+	cSql += "	AND ZA0_CLIENT  = '" + cCliente + "'"
+	cSql += "	AND	ZA0_LOJA    = '" + cLoja + "'"
+	cSql += "	AND	ZA0_STATUS <> '9'" 
+	cSql += "	AND	ZA0_TIPOPE <> 'M'"
+	cSql += "	AND ZA0_DTCRIA <> '" + dtProcesso + "'"
+	cSql += "	AND ZA0_HRCRIA <> '" + hrProcesso + "'"
 
-		if ZA0->ZA0_CLIENT == cCliente 	.AND. ;
-			ZA0_STATUS 		<> "9" 		.AND. ;
-			ZA0_TIPOPE 		<> "M" 
-
-			if ZA0->ZA0_DTCRIA <> dtProcesso .or. ;
-				ZA0->ZA0_HRCRIA <> hrProcesso
-
-				RecLock("ZA0", .F.)
-				DbDelete()
-				ZA0->(MsUnlock())
-			endif
-		endif
-
-		DbSkip()
-   	EndDo
-
+	if TCSqlExec(cSql) < 0
+		MsgInfo("Erro na delete do ZA0:", "Atenção")
+		MsgInfo(TcSqlError(), "Atenção2")
+	endif
 Return
