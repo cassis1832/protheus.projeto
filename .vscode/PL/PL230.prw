@@ -81,7 +81,7 @@ Static Function ModelDef()
 	oStZA2:SetProperty('ZA2_QUANT',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA2:SetProperty('ZA2_QUJE',MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 
-	oModel:=MPFormModel():New  ("PL230M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil)
+	oModel:=MPFormModel():New  ("PL230M", Nil, Nil, Nil, Nil)
 
 	oModel:AddFields("FORMZA2",/*cOwner*/,oStZA2)
 	oModel:SetPrimaryKey({'ZA2_FILIAL', 'ZA2_TIPO', 'ZA2_RECURS', 'ZA2_DTINIP', 'ZA2_PROD', 'ZA2_OPER'})
@@ -104,31 +104,6 @@ Static Function ViewDef()
 	oView:SetCloseOnOk({||.T.})
 	oView:SetOwnerView("VIEW_ZA2","TELA")
 Return oView
-
-
-/*---------------------------------------------------------------------*
-  Atualiza a ordem de producao
- *---------------------------------------------------------------------*/
-Static Function MVCMODELPOS(oModel)
-	Local aArea   		:= GetArea()
-	Local lOk			:= .T.
-	Local nOperation 	:=	oModel:GetOperation()
- 
-	If nOperation == MODEL_OPERATION_UPDATE
-		SC2->(dbSetOrder(1))
-
-		If SC2->(MsSeek(xFilial("SC2") + M->ZA2_OP))
-			RecLock("SC2", .F.)
-			SC2->C2_XDTINIP := M->ZA2_DTINIP
-			SC2->C2_XDTFIMP := M->ZA2_DTFIMP
-			SC2->C2_XHRINIP := M->ZA2_HRINIP
-			SC2->C2_XHRFIMP := M->ZA2_HRFIMP
-			MsUnLock()
-		endif
-	EndIf
-
-	RestArea(aArea)
-Return lOk
 
 
 /*---------------------------------------------------------------------*
@@ -180,14 +155,6 @@ User Function PL230Mark(cAcao)
 					ZA2->ZA2_STAT := 'P'
 				else
 					ZA2->ZA2_STAT := 'C'
-				endif
-
-				SC2->(dbSetOrder(1))
-
-				If SC2->(MsSeek(xFilial("SC2") + AllTrim(ZA2->ZA2_OP)))
-					RecLock("SC2", .F.)
-					SC2->C2_XCONF := ZA2->ZA2_STAT
-					MsUnLock()
 				endif
 			endif
 

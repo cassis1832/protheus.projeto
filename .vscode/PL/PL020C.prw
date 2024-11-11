@@ -316,20 +316,6 @@ return
  *---------------------------------------------------------------------*/
 Static Function LimpaDemandas()
 
-	// dbSelectArea("T4J")
-	// T4J->(DBSetOrder(1))  // 
-	// DBGoTop()
-
-    // While T4J->( !Eof() )
-	// 	if T4J_CODE = 'AUTO'
-    //   		RecLock("T4J", .F.)
-    //   		DbDelete()
-    //   		SVR->(MsUnlock())
-	// 	EndIf
-
-	// 	T4J->( dbSkip() )
-  	// End While
-
 	dbSelectArea("SVR")
 
 	SVR->(DBSetOrder(1))  // 

@@ -28,7 +28,7 @@ User Function PL020A()
 	Private cProduto  	:= ""
 	Private cCodCli  	:= ""
 
-	Private dtProcesso 	:= GetdDataBase()
+	Private dtProcesso 	:= Date()
 	Private hrProcesso 	:= Time()
 
 	SetFunName("PL020A")
@@ -204,7 +204,7 @@ Return
 Static Function GravaRegistro(aLinha)
 	Local dData 	:= ctod(aLinha[4])
 
-	if dData <= GetdDataBase()
+	if dData <= dDataBase
 		return
 	endif
 
@@ -216,10 +216,9 @@ Static Function GravaRegistro(aLinha)
 	if (MsSeek(xFilial("ZA0") + cCliente + cLoja + cProduto + dtos(dData))) 
 			RecLock("ZA0", .F.)
 			ZA0->ZA0_ARQUIV   	:= cArquivo
-			ZA0->ZA0_DTCRIA   	:= dtProcesso
-			ZA0->ZA0_HRCRIA   	:= hrProcesso
 			ZA0->ZA0_TIPOPE   	:= aLinha[7]
 			ZA0->ZA0_QTDE    	:= Val(StrTran(aLinha[6],",","."))
+			ZA0->ZA0_HRCRIA   	:= dtos(dtProcesso) + hrProcesso
 			ZA0->ZA0_STATUS		:= "0"
 		else
 			// Inclusão
@@ -236,8 +235,7 @@ Static Function GravaRegistro(aLinha)
 			ZA0->ZA0_HRENTR 	:= aLinha[5]
 			ZA0->ZA0_ARQUIV 	:= cArquivo
 			ZA0->ZA0_ORIGEM 	:= "PL020A"
-			ZA0->ZA0_DTCRIA 	:= dtProcesso
-			ZA0->ZA0_HRCRIA 	:= hrProcesso
+			ZA0->ZA0_HRCRIA   	:= dtos(dtProcesso) + hrProcesso
 			if (lErro)
 				ZA0->ZA0_STATUS := "1"
 			else
@@ -295,8 +293,7 @@ Static Function LimpaDados(oSay)
 	cSql += "	AND	ZA0_LOJA    = '" + cLoja + "'"
 	cSql += "	AND	ZA0_STATUS <> '9'" 
 	cSql += "	AND	ZA0_TIPOPE <> 'M'"
-	cSql += "	AND ZA0_DTCRIA <> '" + dtProcesso + "'"
-	cSql += "	AND ZA0_HRCRIA <> '" + hrProcesso + "'"
+	cSql += "	AND ZA0_HRCRIA <> '" + dtos(dtProcesso) + hrProcesso + "'"
 
 	if TCSqlExec(cSql) < 0
 		MsgInfo("Erro na delete do ZA0:", "Atenção")

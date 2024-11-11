@@ -96,8 +96,6 @@ Static Function CargaInicial(oSay)
 	// Carrega os dados
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_STATUS, C2_PRIOR,"
 	cSql += "	    C2_QUANT, C2_QUJE, C2_DATPRI, C2_DATPRF, C2_TPOP, C2_TPPR, "
-	cSql += "	    C2_XDTINIP, C2_XDTFIMP, C2_XHRINIP, C2_XHRFIMP, "
-	cSql += "	    C2_XSITEMP, C2_XOBSEMP, C2_XOBSPRD, "
 	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XITEM, B1_LE, B1_XPRIOR, B1_XTPPR, "
 	cSql += "	    G2_OPERAC, G2_RECURSO, G2_MAOOBRA, G2_SETUP, G2_TEMPAD, G2_LOTEPAD, "
 	cSql += "	  	H1_XLIN, H1_XLOCLIN, H1_XTIPO, H1_XSETUP, H1_XNOME, H1_XLINPRD "
@@ -321,23 +319,6 @@ Static Function Calculo(oSay)
 					nQtNec := 0
 				endif
 			enddo
-
-			SC2->(dbSetOrder(1))
-
-			If SC2->(MsSeek(xFilial("SC2") + ZA2->ZA2_OP))
-				RecLock("SC2", .F.)
-				SC2->C2_XDTINIP := dDtIniP
-
-				if dDtFimP > SC2->C2_DATPRF
-					SC2->C2_XDTFIMP := NIL
-					SC2->C2_XOBSPRD := "Data calculada fora da data de termino"
-				else
-					SC2->C2_XDTFIMP := dDtFimP
-					SC2->C2_XOBSPRD := ""
-				endif
-
-				SC2->(MsUnLock())
-			endif
 		endif
 
 		RecLock("ZA2", .F.)
@@ -393,7 +374,7 @@ Static Function AtualizaDados()
 	enddo
 
 	// Dados das OPs
-	cSql := "SELECT C2_OP, C2_XPRTOP, C2_XPRTPL, ZA2_PRTOP, ZA2_PRTPL "
+	cSql := "SELECT C2_OP, C2_XPRTOP, ZA2_PRTOP, ZA2_PRTPL "
 	cSql += "  FROM " + RetSQLName("ZA2") + " ZA2 "
 
 	cSql += " INNER JOIN " + RetSQLName("SC2") + " SC2 "
@@ -410,11 +391,10 @@ Static Function AtualizaDados()
 
 	While (cAlias)->(!EOF())
 
-		IF  (cAlias)->ZA2_PRTOP <> (cAlias)->C2_XPRTOP .OR. (cAlias)->ZA2_PRTPL <> (cAlias)->C2_XPRTPL 
+		IF  (cAlias)->ZA2_PRTOP <> (cAlias)->C2_XPRTOP
 			If ZA2->(MsSeek(xFilial("ZA2") + "1" + (cAlias)->C2_OP), .T.)
 				RecLock("ZA2", .F.)
 				ZA2->ZA2_PRTOP := (cAlias)->C2_XPRTOP
-				ZA2->ZA2_PRTPL := (cAlias)->C2_XPRTPL
 				ZA2->(MsUnLock())
 			EndIf
 		EndIf
