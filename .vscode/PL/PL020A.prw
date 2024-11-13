@@ -103,11 +103,12 @@ Static Function TrataLinhas(oSay, aLinhas)
 					CriaPrevisao(aLinha)
 				else
 					// Gestamp rateia quantidade mensal
-					if (cCliente >= '000004' .and. cCliente <= '000007')
-						RateiaMensal(aLinha)
-					else
-						GravaRegistro(aLinha)
-					endif
+					// if (cCliente >= '000004' .and. cCliente <= '000007')
+					// 	RateiaMensal(aLinha)
+					// else
+					// 	GravaRegistro(aLinha)
+					// endif
+					GravaRegistro(aLinha)
 				endif
 			EndIf
         next	

@@ -70,6 +70,15 @@ Static Function CargaInicial(oSay)
 	Private lMsErroAuto := .F.
 
 	// Limpa as linhas planejadas e de ordens encerradas
+	cSql := "DELETE FROM "  + RetSQLName("ZA2")
+	cSql += " WHERE ZA2_FILIAL  = '" + xFilial("ZA2") + "' "
+	cSql += "	AND ZA2_STAT    = 'P'"
+
+	if TCSqlExec(cSql) < 0
+		MsgInfo("Erro na delete do ZA2:", "Atenção")
+		MsgInfo(TcSqlError(), "Atenção2")
+	endif
+
 	SC2->(dbSetOrder(1))	// OP
 	ZA2->(DBSetOrder(1))	// Tipo
 	ZA2->(DbSeek(xFilial("ZA2") + "1"))
@@ -77,16 +86,16 @@ Static Function CargaInicial(oSay)
 	While ! ZA2->(EoF())
 		RecLock("ZA2", .F.)
 
-		if ZA2->ZA2_STAT == 'P'
-			ZA2->(DbDelete())
-		else
-			If SC2->(MsSeek(xFilial("SC2") + ZA2->ZA2_OP))
-				if AllTrim(dtos(SC2->C2_DATRF)) <> ''
-					ZA2->(DbDelete())
-				endif
-			else
+		If SC2->(MsSeek(xFilial("SC2") + ;
+				AvKey(Substring(ZA2->ZA2_OP, 1, 6), "C2_NUM")  + ;
+				AvKey(Substring(ZA2->ZA2_OP, 7, 2), "C2_ITEM") + ;
+				AvKey(Substring(ZA2->ZA2_OP, 9, 3), "C2_SEQUEN")))
+
+			if AllTrim(dtos(SC2->C2_DATRF)) <> ''
 				ZA2->(DbDelete())
 			endif
+		else
+			ZA2->(DbDelete())
 		endif
 
 		ZA2->(MsUnLock())

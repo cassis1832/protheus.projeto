@@ -36,6 +36,7 @@ User Function PL140()
 	aAdd(aCampos, {"TT_CLIENT"	,"C", 30, 0})
 	aAdd(aCampos, {"TT_ESTSEG"	,"N", 14, 3})
 	aAdd(aCampos, {"TT_SALDO"	,"N", 14, 3})
+	aAdd(aCampos, {"TT_VLSALDO"	,"N", 14, 3})
 	aAdd(aCampos, {"TT_UM"		,"C", 02, 3})
 	aAdd(aCampos, {"TT_EMPENHO"	,"N", 14, 3})
 	aAdd(aCampos, {"TT_TIPO"	,"C",  3, 0})
@@ -67,6 +68,7 @@ User Function PL140()
 	aAdd(aColunas, {"Item Cliente"	, "TT_ITEM"		, "C", 20, 0, "@!"})
 	aAdd(aColunas, {"Est. Segur."	, "TT_ESTSEG"	, "N", 10, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Saldo"			, "TT_SALDO"	, "N", 10, 0, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Vl.Saldo"		, "TT_VLSALDO"	, "N", 10, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"UM"			, "TT_UM"		, "C", 02, 0, "@!"})
 	aAdd(aColunas, {"Empenho"		, "TT_EMPENHO"	, "N", 10, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Consumo Medio"	, "TT_CONS"		, "N", 10, 0, "@E 9,999,999.999"})
@@ -143,7 +145,8 @@ Static Function ModelDef()
 	oStTmp:AddField("Cliente"		,"Cliente"		,"TT_CLIENT"	,"C",06,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_CLIENT,'')" ), .T., .F., .F.)
 	oStTmp:AddField("Item Cliente"	,"Item Cliente"	,"TT_ITEM"		,"C",20,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_ITEM,'')" ), .T., .F., .F.)
 	oStTmp:AddField("Est. Segur."	,"Est. Segur."	,"TT_ESTSEG"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_ESTSEG,'')" ),.F.,.F.,.F.)
-	oStTmp:AddField("Saldo"			,"Saldo da OP"	,"TT_SALDO"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_SALDO,'')" ),.F.,.F.,.F.)
+	oStTmp:AddField("Saldo Estoq."	,"Saldo Estoq."	,"TT_SALDO"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_SALDO,'')" ),.F.,.F.,.F.)
+	oStTmp:AddField("Vl.Saldo"		,"Valor"		,"TT_VLSALDO"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_VLSALDO,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("UM"			,"UM"			,"TT_UM"		,"C",02,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_UM,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Dt Movimento"	,"Dt Movimento"	,"TT_DMOV"		,"D",08,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DMOV,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Empenho"		,"Empenho"		,"TT_EMPENHO"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_EMPENHO,'')" ),.F.,.F.,.F.)
@@ -177,10 +180,11 @@ Static Function ViewDef()
 	oStTmp:AddField("TT_ITEM"		,"05","Item Cliente","Item Cliente"	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_ESTSEG"		,"07","Est. Segur."	,"Est. Segur."	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_SALDO"		,"08","Saldo"		,"Saldo"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTmp:AddField("TT_UM"			,"09","UM"			,"UM"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTmp:AddField("TT_EMPENHO"	,"10","Empenho"		,"Empenho"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTmp:AddField("TT_DIAS"		,"11","Dias Estoque","Dias Estoque"	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTmp:AddField("TT_DMOV"		,"12","Dt Movimento","Dt Movimento"	,Nil,"D","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_VLSALDO"	,"09","Vl.Saldo"	,"Vl.Saldo"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_UM"			,"10","UM"			,"UM"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_EMPENHO"	,"11","Empenho"		,"Empenho"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_DIAS"		,"12","Dias Estoque","Dias Estoque"	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_DMOV"		,"13","Dt Movimento","Dt Movimento"	,Nil,"D","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 
 	//Criando a view que será o retorno da função e setando o modelo da rotina
 	oView := FWFormView():New()
@@ -197,7 +201,7 @@ Static Function CargaTT()
 	Local cAlias, cSql
 	Local nDias	:= 0
 
-	cSql := "SELECT B2_COD, B2_QATU, B2_QEMP, B2_DMOV,"
+	cSql := "SELECT B2_COD, B2_QATU, B2_QEMP, B2_DMOV, B2_VATU1, "
 	cSql += "		B1_DESC, B1_XCLIENT, B1_TIPO, B1_XITEM, B1_LE, B1_PE, B1_MRP, B1_UM, B1_ESTSEG "
 	cSql += "  FROM " + RetSQLName("SB2") + " SB2 "
 
@@ -218,13 +222,14 @@ Static Function CargaTT()
 	While (cAlias)->(!EOF())
 
 		cSql := "INSERT INTO " + cTableName + " ("
-		cSql += "	TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ESTSEG, TT_SALDO, TT_EMPENHO, TT_TIPO, TT_ITEM, TT_DMOV, TT_CONS, TT_DIAS, TT_UM) VALUES ('"
+		cSql += "	TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ESTSEG, TT_SALDO, TT_VLSALDO, TT_EMPENHO, TT_TIPO, TT_ITEM, TT_DMOV, TT_CONS, TT_DIAS, TT_UM) VALUES ('"
 		cSql += FWUUIDv4() 			 				+ "','"
 		cSql += (cAlias)->B2_COD 				+ "','"
 		cSql += (cAlias)->B1_DESC    				+ "','"
 		cSql += (cAlias)->B1_XCLIENT 				+ "','"
 		cSql += cValToChar((cAlias)->B1_ESTSEG)		+ "','"
 		cSql += cValToChar((cAlias)->B2_QATU) 		+ "','"
+		cSql += cValToChar((cAlias)->B2_VATU1) 		+ "','"
 		cSql += cValToChar((cAlias)->B2_QEMP) 		+ "','"
 		cSql += (cAlias)->B1_TIPO   				+ "','"
 		cSql += (cAlias)->B1_XITEM   				+ "','"
