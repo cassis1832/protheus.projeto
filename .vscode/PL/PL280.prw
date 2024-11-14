@@ -48,6 +48,8 @@ User Function PL280()
 	aAdd(aCampos, {"TT_SALDO"	,"N", 10, 2})
 	aAdd(aCampos, {"TT_CONS"	,"N", 10, 2})
 
+	aAdd(aCampos, {"TT_DTENT"	,"D", 08, 0})
+
 	aAdd(aCampos, {"TT_FORNECE"	,"C", 06, 0})
 	aAdd(aCampos, {"TT_LOJA"	,"C", 02, 0})
 	aAdd(aCampos, {"TT_NOME"	,"C", 30, 0})
@@ -64,6 +66,7 @@ User Function PL280()
 	SolCompra()
 	PedCompra()
 	Consumo()
+	UltimaEntrada()
 
 	//Definindo as colunas que serão usadas no browse
 	aAdd(aColunas, {"Num. SC"		, "TT_NUMSC"	, "C", 06, 0, "@!"})
@@ -81,7 +84,9 @@ User Function PL280()
 	aAdd(aColunas, {"Qt. Entregue"	, "TT_QUJE"		, "N", 08, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Sld. Estoque"	, "TT_SALDO"	, "N", 08, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Cons. Mes"		, "TT_CONS"		, "N", 08, 0, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Ult. Ent."		, "TT_DTENT"	, "D", 06, 0, "@!"})
 	aAdd(aColunas, {"Fornec."		, "TT_FORNECE"	, "C", 05, 0, "@!"})
+
 
 	aAdd(aPesquisa, {"Produto"	, {{"", "C",  15, 0, "Produto" 	, "@!", "TT_PRODUTO"}} } )
 	aAdd(aPesquisa, {"Cliente"	, {{"", "C",  06, 0, "Cliente" 	, "@!", "TT_CLIENT"}} } )
@@ -136,6 +141,7 @@ Static Function ModelDef()
 	oStTmp:AddField("Qt. Entregue"	,"Qt. Entregue"	,"TT_QUJE"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUJE,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Sld. Estoque"	,"Sld. Estoque"	,"TT_SALDO"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUJE,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Cons. Mes"		,"Cons. Mes"	,"TT_CONS"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUJE,'')" ),.F.,.F.,.F.)
+	oStTmp:AddField("Ult. Ent."		,"Ult. Ent."	,"TT_DTENT"		,"D",08,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DTENT,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Cod. Forn."	,"Cod. Forn."	,"TT_FORNECE"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_FORNECE,'')" ),.F.,.F.,.F.)
 
 	//Instanciando o modelo
@@ -168,7 +174,8 @@ Static Function ViewDef()
 	oStTmp:AddField("TT_QUJE"		,"18","Qt. Entregue","Qt. Entregue"	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_SALDO"		,"19","Sld. Estoque","Sld. Estoque"	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_CONS"		,"20","Cons. Mes"	,"Cons. Mes"	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTmp:AddField("TT_FORNECE"	,"21","Cod. Forn."	,"Cod. Forn."	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_DTENT"		,"21","Ult. Ent."	,"Ult. Ent."	,Nil,"D","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_FORNECE"	,"22","Cod. Forn."	,"Cod. Forn."	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 
 	//Criando a view que será o retorno da função e setando o modelo da rotina
 	oView := FWFormView():New()
@@ -330,6 +337,29 @@ Static Function Consumo()
 	if TCSqlExec(cSql) < 0
 		MsgInfo("Erro na execução da query update 4:", "Atenção 4")
 		MsgInfo(TcSqlError(), "Atenção 4")
+	endif
+
+return
+
+
+Static Function UltimaEntrada()
+	Local cSql	:= ''
+
+	cSql := "UPDATE " + cTableName
+	cSql += "   SET TT_DTENT = "
+	cSql += " (SELECT TOP 1 DS_EMISSA "
+	cSql += "	 FROM " + RetSQLName("SDS") + " SDS, " + RetSQLName("SDT") + " SDT
+	cSql += "   WHERE DS_DOC 		 = DT_DOC "
+	cSql += "     AND DT_COD         = TT_PRODUTO "
+	cSql += "     AND DS_FILIAL    	 = '" + xFilial("SDS") + "'"
+	cSql += "     AND DT_FILIAL    	 = '" + xFilial("SDT") + "'"
+	cSql += "     AND SDS.D_E_L_E_T_  <> '*' "
+	cSql += "     AND SDT.D_E_L_E_T_  <> '*' "
+	cSql += "   ORDER BY DS_EMISSA DESC) "
+
+	if TCSqlExec(cSql) < 0
+		MsgInfo("Erro na execução da query update xml", "Atenção XML")
+		MsgInfo(TcSqlError(), "Atenção XML")
 	endif
 
 return
