@@ -14,16 +14,17 @@ Função: Follow-up de aquisicoes
 Static cTitulo := "Follow-up de Materia Prima e Componentes"
 
 User Function PL280()
-	Local aArea 	:= FWGetArea()
-	Local aCampos 	:= {}
-	Local aColunas 	:= {}
-	Local aPesquisa := {}
-	Local aIndex 	:= {}
+	Local aArea 		:= FWGetArea()
+	Local aCampos 		:= {}
+	Local aColunas 		:= {}
+	Local aPesquisa 	:= {}
+	Local aIndex 		:= {}
 	Local oBrowse
 
 	Private aRotina 	:= {}
 	Private cTableName 	:= ""
 	Private cAliasTT 	:= GetNextAlias()
+	Private nSeq		:= 0
 
 	//Definicao do menu
 	aRotina := MenuDef()
@@ -44,6 +45,8 @@ User Function PL280()
 	aAdd(aCampos, {"TT_DATPRF"	,"D", 08, 0})
 	aAdd(aCampos, {"TT_QUANT"	,"N", 10, 2})
 	aAdd(aCampos, {"TT_QUJE"	,"N", 10, 2})
+	aAdd(aCampos, {"TT_SALDO"	,"N", 10, 2})
+	aAdd(aCampos, {"TT_CONS"	,"N", 10, 2})
 
 	aAdd(aCampos, {"TT_FORNECE"	,"C", 06, 0})
 	aAdd(aCampos, {"TT_LOJA"	,"C", 02, 0})
@@ -58,7 +61,9 @@ User Function PL280()
 
 	cTableName  := oTempTable:GetRealName()
 
-	CargaTT()
+	SolCompra()
+	PedCompra()
+	Consumo()
 
 	//Definindo as colunas que serão usadas no browse
 	aAdd(aColunas, {"Num. SC"		, "TT_NUMSC"	, "C", 06, 0, "@!"})
@@ -74,6 +79,8 @@ User Function PL280()
 	aAdd(aColunas, {"Entrega"		, "TT_DATPRF"	, "D", 06, 0, "@!"})
 	aAdd(aColunas, {"Qt. Pedida"	, "TT_QUANT"	, "N", 08, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Qt. Entregue"	, "TT_QUJE"		, "N", 08, 0, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Sld. Estoque"	, "TT_SALDO"	, "N", 08, 0, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Cons. Mes"		, "TT_CONS"		, "N", 08, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Fornec."		, "TT_FORNECE"	, "C", 05, 0, "@!"})
 
 	aAdd(aPesquisa, {"Produto"	, {{"", "C",  15, 0, "Produto" 	, "@!", "TT_PRODUTO"}} } )
@@ -126,7 +133,9 @@ Static Function ModelDef()
 	oStTmp:AddField("Dt. Emissao"	,"Dt. Emissao"	,"TT_EMISSAO"	,"D",08,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DATPRF,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Dt. Entrega"	,"Dt. Entrega"	,"TT_DATPRF"	,"D",08,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DATPRF,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Qt. Pedida"	,"Qt. Pedids"	,"TT_QUANT"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUANT,'')" ),.F.,.F.,.F.)
-	oStTmp:AddField("Qt. Entregue","Qt. Entregue","TT_QUJE"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUJE,'')" ),.F.,.F.,.F.)
+	oStTmp:AddField("Qt. Entregue"	,"Qt. Entregue"	,"TT_QUJE"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUJE,'')" ),.F.,.F.,.F.)
+	oStTmp:AddField("Sld. Estoque"	,"Sld. Estoque"	,"TT_SALDO"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUJE,'')" ),.F.,.F.,.F.)
+	oStTmp:AddField("Cons. Mes"		,"Cons. Mes"	,"TT_CONS"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_QUJE,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Cod. Forn."	,"Cod. Forn."	,"TT_FORNECE"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_FORNECE,'')" ),.F.,.F.,.F.)
 
 	//Instanciando o modelo
@@ -157,6 +166,8 @@ Static Function ViewDef()
 	oStTmp:AddField("TT_DATPRF"		,"16","Dt. Entrega"	,"Dt. Entrega"	,Nil,"D","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_QUANT"		,"17","Qt. Pedida"	,"Qt. Pedida"	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_QUJE"		,"18","Qt. Entregue","Qt. Entregue"	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_SALDO"		,"19","Sld. Estoque","Sld. Estoque"	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_CONS"		,"20","Cons. Mes"	,"Cons. Mes"	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_FORNECE"	,"21","Cod. Forn."	,"Cod. Forn."	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 
 	//Criando a view que será o retorno da função e setando o modelo da rotina
@@ -170,11 +181,9 @@ Static Function ViewDef()
 Return oView
 
 
-Static Function CargaTT()
+Static Function SolCompra()
 	Local cAlias, cSql, cModo
-	Local nSeq	:= 0
 
-	// SC
 	cSql := "SELECT C1_NUM, C1_PRODUTO, C1_QUANT, C1_DATPRF, C1_EMISSAO, C1_PEDIDO, C1_QUJE, "
 	cSql += "		B1_COD, B1_DESC, B1_XCLIENT, B1_TIPO, B1_XITEM, B1_LE, B1_PE, B1_MRP, B1_UM, B1_ESTSEG, B1_TIPO, B1_AGREGCU "
 	cSql += "  FROM " + RetSQLName("SC1") + " SC1 "
@@ -227,7 +236,10 @@ Static Function CargaTT()
 	End While
 
 	(cAlias)->(DBCLOSEAREA())
+return
 
+
+Static Function PedCompra()
 	// PC
 	cSql := "SELECT C7_NUM, C7_TIPO, C7_PRODUTO, C7_QUANT, C7_QUJE, C7_RESIDUO, C7_ENCER, C7_PRECO, C7_TOTAL, C7_NUMSC, C7_DATPRF, C7_FORNECE, C7_EMISSAO,  "
 	cSql += "		B1_COD, B1_DESC, B1_XCLIENT, B1_TIPO, B1_XITEM, B1_UM, B1_AGREGCU  "
@@ -282,4 +294,42 @@ Static Function CargaTT()
 
 		(cAlias)->(DbSkip())
 	End While
+
+	(cAlias)->(DBCLOSEAREA())
+return
+
+
+Static Function Consumo()
+	Local cSql	:= ''
+
+	// Consumo medio mensal
+	cSql := "UPDATE " + cTableName
+	cSql += "   SET TT_CONS = B3_MEDIA "
+	cSql += "  FROM " + cTableName
+
+	cSql += " INNER JOIN " + RetSQLName("SB3") + " SB3 "
+	cSql += "    ON B3_COD           = TT_PRODUTO "
+	cSql += "   AND B3_FILIAL      	 = '" + xFilial("SB3") + "'"
+	cSql += "   AND SB3.D_E_L_E_T_  <> '*' "
+
+	if TCSqlExec(cSql) < 0
+		MsgInfo("Erro na execução da query update 3:", "Atenção 3")
+		MsgInfo(TcSqlError(), "Atenção 3")
+	endif
+
+	// Saldo atual de estoque
+	cSql := "UPDATE " + cTableName
+	cSql += "   SET TT_SALDO = B2_QATU "
+	cSql += "  FROM " + cTableName
+
+	cSql += " INNER JOIN " + RetSQLName("SB2") + " SB2 "
+	cSql += "    ON B2_COD           = TT_PRODUTO "
+	cSql += "   AND B2_FILIAL      	 = '" + xFilial("SB2") + "'"
+	cSql += "   AND SB2.D_E_L_E_T_  <> '*' "
+
+	if TCSqlExec(cSql) < 0
+		MsgInfo("Erro na execução da query update 4:", "Atenção 4")
+		MsgInfo(TcSqlError(), "Atenção 4")
+	endif
+
 return
