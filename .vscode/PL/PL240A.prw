@@ -78,7 +78,6 @@ Static Function CargaInicial(oSay)
 	cSql := "DELETE FROM "  + RetSQLName("ZA2")
 	cSql += " WHERE ZA2_FILIAL 	 	= '" + xFilial("ZA2") + "' "
 	cSql += "	AND ZA2_TIPO  	    = '2' "
-	cSql += "	AND D_E_L_E_T_  	= ' ' "
 
 	if TCSqlExec(cSql) < 0
 		MsgInfo("Erro na execução do delete tipo 2:", "Atenção")
@@ -148,6 +147,7 @@ Static Function CargaInicial(oSay)
 		ZA2_LE		:= (cAlias)->B1_LE
 		ZA2_QUANT	:= (cAlias)->TT2_QUANT
 		ZA2_LINPRD	:= (cAlias)->H1_XLINPRD
+		ZA2_TIPLIN	:= (cAlias)->H1_XLIN
 		ZA2_OPER	:= (cAlias)->G2_OPERAC
 		ZA2_RECURS	:= AllTrim((cAlias)->G2_RECURSO)
 		ZA2_PRIOR	:= cValToChar((cAlias)->B1_XPRIOR)

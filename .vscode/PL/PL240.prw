@@ -14,9 +14,7 @@ User Function PL240()
 	Private oBrowse		:= Nil
 	Private cTitulo		:= "Carga Maquina Gerencial - MR"
 	Private cFiltro		:= ""
-
 	Private cRecurso 	:= .F.
-
 	Private dDtIni  	:= DaySub(Date(), 30)
 	Private dDtFim  	:= DaySum(Date(), 90)
 
@@ -33,7 +31,7 @@ User Function PL240()
 	oBrowse:SetDescription(cTitulo)
 	oBrowse:SetFilterDefault( cFiltro )
 	oBrowse:DisableDetails()
-	oBrowse:SetOnlyFields({'ZA2_RECURS','ZA2_PROD', 'ZA2_ITCLI', 'ZA2_CLIENT', 'ZA2_OP', 'ZA2_LE', 'ZA2_QUANT', 'ZA2_OPER', 'ZA2_DATPRI','ZA2_DATPRF','ZA2_QTHORA','ZA2_HSTOT'})
+	oBrowse:SetOnlyFields({'ZA2_TIPLIN','ZA2_LINPRD','ZA2_RECURS','ZA2_PROD','ZA2_ITCLI','ZA2_CLIENT','ZA2_QUANT','ZA2_OPER','ZA2_DATPRI','ZA2_QTHORA','ZA2_HSTOT','ZA2_HSTOTI'})
 
 	LerParametros()
 
@@ -69,7 +67,7 @@ Static Function ModelDef()
 	oModel:=MPFormModel():New  ("PL240M", Nil, Nil, Nil, Nil)
 
 	oModel:AddFields("FORMZA2",/*cOwner*/,oStZA2)
-	oModel:SetPrimaryKey({'ZA2_FILIAL', 'ZA2_TIPO', 'ZA2_RECURS', 'ZA2_DTINIP', 'ZA2_PROD', 'ZA2_OPER'})
+	oModel:SetPrimaryKey({'ZA2_TIPLIN','ZA2_LINPRD','ZA2_RECURS', 'ZA2_DTINIP', 'ZA2_PROD', 'ZA2_OPER'})
 	oModel:SetDescription("Modelo de Dados do Cadastro ")
 	oModel:GetModel("FORMZA2"):SetDescription("Formulário do Cadastro ")
 Return oModel
