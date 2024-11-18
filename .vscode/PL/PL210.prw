@@ -243,8 +243,12 @@ Static Function CargaTT()
 			endif
 		endif
 
+		(cAliasSB8)->(DBCLOSEAREA())
+
 		(cAliasSA7)->(DbSkip())
 	End While
+
+	(cAliasSA7)->(DBCLOSEAREA())
 return
 
 

@@ -72,6 +72,7 @@ Static Function CargaInicial(oSay)
 	Local cSql 			:= ""
 	Local cAlias 		:= ""
 	Local nQuant		:= 0
+	Local nQtHora		:= 0
 	Local nSetup		:= 0
 
 	// Limpa a rodada anterior
@@ -116,8 +117,10 @@ Static Function CargaInicial(oSay)
 
 		// Se for direita e esquerda deve dobrar a quantidade/hora
 		if (cAlias)->G2_XDIRESQ == 'S'
-			nQuant := (cAlias)->TT2_QUANT / ((cAlias)->G2_LOTEPAD * 2)
+			nQtHora := (cAlias)->G2_LOTEPAD * 2
+			nQuant := (cAlias)->TT2_QUANT / nQtHora
 		else
+			nQtHora := (cAlias)->G2_LOTEPAD 
 			nQuant := (cAlias)->TT2_QUANT / (cAlias)->G2_LOTEPAD
 		endif
 
@@ -155,7 +158,7 @@ Static Function CargaInicial(oSay)
 		ZA2_DATPRF	:= stod((cAlias)->TT2_DATA)
 		ZA2_TPOP	:= "p"
 		ZA2_QUJE	:= 0
-		ZA2_QTHORA	:= nQuant
+		ZA2_QTHORA	:= nQtHora
 		ZA2_HSTOT	:= nSetup + nQuant
 		ZA2_HSTOTI	:= nSetup + (nQuant * 1.2)
 		ZA2_STAT	:= "P"

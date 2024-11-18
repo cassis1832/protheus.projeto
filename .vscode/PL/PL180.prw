@@ -12,6 +12,7 @@ Função: Geração de pedido de venda com base no pedido EDI - V02
 Static cTitulo := "Geracao de Pedidos de Vendas"
 
 User Function PL180(cCli, cLoj)
+	Local aArea:=GetArea()
 	Local cCondicao		:= ''
 
 	Private oBrowse
@@ -19,8 +20,6 @@ User Function PL180(cCli, cLoj)
 	Private cLoja       := cLoj
 	Private dLimite     := Date()
 	Private cMarca 		:= GetMark()
-
-	// u_PL180F12()
 
 	CalcSaldo()
 
@@ -48,9 +47,11 @@ User Function PL180(cCli, cLoj)
 	oBrowse:AddLegend( "ZA0->ZA0_SLDEST >= ZA0->ZA0_QTDE - ZA0->ZA0_QTCONF"	, "GREEN"	,"Saldo suficiente" )
 	oBrowse:AddLegend( "ZA0->ZA0_SLDEST <  ZA0->ZA0_QTDE - ZA0->ZA0_QTCONF"	, "YELLOW"	,"Saldo insuficiente" )
 
+	SetKey( VK_F12,  {|| u_PL180F12()    } )
+
 	oBrowse:Activate()
 
-	SetKey( VK_F12,  {|| u_PL180F12()    } )
+	RestArea(aArea)
 Return Nil
 
 /*---------------------------------------------------------------------*
