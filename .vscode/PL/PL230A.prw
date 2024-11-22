@@ -63,7 +63,6 @@ Static Function CargaInicial(oSay)
 	Local nSetup		:= 0
 	Local nSeq			:= 0
 	Local dData			:= Date()
-	Local cPrior		:= ""
 	Local cTppr			:= ""
 	Local aDados 		:= {}
 
@@ -105,7 +104,7 @@ Static Function CargaInicial(oSay)
 	// Carrega os dados
 	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_STATUS, C2_PRIOR,"
 	cSql += "	    C2_QUANT, C2_QUJE, C2_DATPRI, C2_DATPRF, C2_TPOP, C2_TPPR, "
-	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XITEM, B1_LE, B1_XPRIOR, B1_XTPPR, "
+	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XITEM, B1_LE, B1_XTPPR, "
 	cSql += "	    G2_OPERAC, G2_RECURSO, G2_MAOOBRA, G2_SETUP, G2_TEMPAD, G2_LOTEPAD, "
 	cSql += "	  	H1_XLIN, H1_XLOCLIN, H1_XTIPO, H1_XSETUP, H1_XNOME, H1_XLINPRD "
 	cSql += "  FROM " + RetSQLName("SC2") + " SC2 "
@@ -141,7 +140,6 @@ Static Function CargaInicial(oSay)
 
 	While (cAlias)->(! EOF())
 		cOP		:= Transform((cAlias)->C2_NUM, "999999") + AllTrim((cAlias)->C2_ITEM) + AllTrim((cAlias)->C2_SEQUEN)
-		cPrior := (cAlias)->C2_PRIOR
 		nQuant := (cAlias)->C2_QUANT / (cAlias)->G2_LOTEPAD
 
 		if (cAlias)->G2_SETUP > 0
@@ -156,19 +154,13 @@ Static Function CargaInicial(oSay)
 
 		nTotal 	:= nSetup + nQuant
 
-		if AllTrim((cAlias)->B1_XPRIOR) == ''
-			cPrior := '500'
-		else
-			cPrior := (cAlias)->B1_XPRIOR
-		endif
-
 		if AllTrim((cAlias)->B1_XTPPR) == ''
 			cTppr := 'I'
 		else
 			cTppr := (cAlias)->B1_XTPPR
 		endif
 
-		if (cAlias)->C2_TPPR  != cTppr .or. (cAlias)->C2_PRIOR  != cPrior
+		if (cAlias)->C2_TPPR  != cTppr
 
 			SC2->(DbSetOrder(1))
 			SC2->(DbSeek(xFilial("SC2")+(cAlias)->C2_NUM+(cAlias)->C2_ITEM+(cAlias)->C2_SEQUEN)) //FILIAL + NUM + ITEM + SEQUEN + ITEMGRD
@@ -180,7 +172,6 @@ Static Function CargaInicial(oSay)
 					{'C2_ITEM' 		,(cAlias)->C2_ITEM 		,NIL},;
 					{'C2_SEQUEN' 	,(cAlias)->C2_SEQUEN 	,NIL},;
 					{'C2_PRODUTO'   ,(cAlias)->C2_PRODUTO	,NIL},;
-					{'C2_PRIOR' 	,cPrior 				,NIL},;
 					{'C2_TPPR' 		,cTppr 					,NIL};
 					}
 
@@ -224,7 +215,7 @@ Static Function CargaInicial(oSay)
 			ZA2_HSTOT	:= nTotal
 			ZA2_QTHORA	:= (cAlias)->G2_LOTEPAD
 			ZA2_OPER	:= (cAlias)->G2_OPERAC
-			ZA2_PRIOR	:= cPrior
+			ZA2_PRIOR	:= (cAlias)->C2_PRIOR
 			ZA2_SITSLD	:= "S"
 			ZA2_STAT	:= "P"
 			ZA2->(MsUnLock())

@@ -86,7 +86,7 @@ Static Function CargaInicial(oSay)
 	endif
 
 	cSql := "SELECT TT2.*, "
-	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XITEM, B1_LE, B1_XPRIOR, "
+	cSql += "	  	B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XITEM, B1_LE, "
 	cSql += "	    G2_OPERAC, G2_RECURSO, G2_MAOOBRA, G2_SETUP, G2_TEMPAD, G2_LOTEPAD, G2_XDIRESQ,"
 	cSql += "	  	H1_XLIN, H1_XLOCLIN, H1_XTIPO, H1_XSETUP, H1_XNOME, H1_XLINPRD "
 	cSql += "  FROM " + cTT2Name + " TT2 "
@@ -153,7 +153,6 @@ Static Function CargaInicial(oSay)
 		ZA2_TIPLIN	:= (cAlias)->H1_XLIN
 		ZA2_OPER	:= (cAlias)->G2_OPERAC
 		ZA2_RECURS	:= AllTrim((cAlias)->G2_RECURSO)
-		ZA2_PRIOR	:= cValToChar((cAlias)->B1_XPRIOR)
 		ZA2_DATPRI	:= stod((cAlias)->TT2_DATA)
 		ZA2_DATPRF	:= stod((cAlias)->TT2_DATA)
 		ZA2_TPOP	:= "p"

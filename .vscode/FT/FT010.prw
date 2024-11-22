@@ -48,6 +48,8 @@ User Function FT010()
 
 	//Campos da temporária
 	aAdd(aCampos, {"TT_ID"		,"C", 36, 0})
+	aAdd(aCampos, {"TT_CLIENTE"	,"C", 06, 0})
+	aAdd(aCampos, {"TT_NOME"	,"C", 30, 0})
 	aAdd(aCampos, {"TT_PRODUTO"	,"C", 15, 0})
 	aAdd(aCampos, {"TT_DESC"	,"C", 60, 0})
 	aAdd(aCampos, {"TT_ITCLI"	,"C", 30, 0})
@@ -75,6 +77,8 @@ User Function FT010()
 	FwMsgRun(NIL, {|oSay| CargaTT(oSay)}, "Processando Notas Fiscais", "Extraindo dados...")
 
 	//Definindo as colunas que serão usadas no browse
+	aAdd(aColunas, {"Cliente"			, "TT_CLIENTE"	, "C", 06, 0, "@!"})
+	aAdd(aColunas, {"Nome"				, "TT_NOME"		, "C", 30, 0, "@!"})
 	aAdd(aColunas, {"Produto"			, "TT_PRODUTO"	, "C", 08, 0, "@!"})
 	aAdd(aColunas, {"Descricao"			, "TT_DESC"		, "C", 30, 0, "@!"})
 	aAdd(aColunas, {"Item Cliente"		, "TT_ITCLI"	, "C", 15, 0, "@!"})
@@ -91,7 +95,7 @@ User Function FT010()
 	// Para aparecer caixa de filtrar
 	aAdd(aPesquisa, {"Produto"		, {{"", "C", 15, 0, "Produto" 	 , "@!", "TT_PRODUTO"}} } )
 
-	aAdd(aIndex, {"TT_PRODUTO"} )
+	aAdd(aIndex, {"TT_CLIENTE", "TT_PRODUTO"} )
 
 	//Criando o browse da temporária
 	oBrowse := FWMBrowse():New()
@@ -123,6 +127,8 @@ Static Function ModelDef()
 	oStTT:AddTable(cAliasTT, {'TT_ID'}, "Temporaria")
 
 	//Adiciona os campos da estrutura
+	oStTT:AddField("Cliente"			,"Cliente"			,"TT_CLIENTE"	,"C",06,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_CLIENTE,'')" ), .T., .F., .F.)
+	oStTT:AddField("Nome"				,"Nome"				,"TT_NOME"		,"C",30,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_NOME,'')" ), .T., .F., .F.)
 	oStTT:AddField("Produto"			,"Produto"			,"TT_PRODUTO"	,"C",07,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_PRODUTO,'')" ), .T., .F., .F.)
 	oStTT:AddField("Descricao"			,"Descricao"		,"TT_DESC"		,"C",40,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DESC,'')" ), .T., .F., .F.)
 	oStTT:AddField("Item do Cliente"	,"Item do Cliente"	,"TT_ITCLI"		,"C",15,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_ITCLI,'')" ), .T., .F., .F.)
@@ -136,6 +142,8 @@ Static Function ModelDef()
 	oStTT:AddField("Docto."	            ,"Docto."	        ,"TT_DOC"		,"C",09,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DOC,'')" ), .T., .F., .F.)
 	oStTT:AddField("Serie"	            ,"Serie"	        ,"TT_SERIE"		,"C",03,00,Nil,Nil,{},.T.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_SERIE,'')" ), .T., .F., .F.)
 
+	oStTT:SetProperty('TT_CLIENTE'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
+	oStTT:SetProperty('TT_NOME'		,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStTT:SetProperty('TT_PRODUTO'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStTT:SetProperty('TT_DESC'	    ,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStTT:SetProperty('TT_ITCLI'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
@@ -165,18 +173,20 @@ Static Function ViewDef()
 	Local oStTT := FWFormViewStruct():New()
 
 	//Adicionando campos da estrutura
-	oStTT:AddField("TT_PRODUTO"	,"01","Produto"			,"Produto"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_DESC"	,"02","Descricao"		,"Descricao"		,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_ITCLI"	,"03","Item do Cliente"	,"Item do Cliente"	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_DATFAT"	,"04","Dt. Fatur."		,"Dt. Fatur."		,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_QTFAT"	,"05","Quantidade"		,"Quantidade"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_PRCVEN"	,"06","Vl. Unit."       ,"Vl. Unit."  		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_VLFAT"	,"07","Vl. Total"       ,"Vl. Total"  		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_TES"	    ,"08","TES "		    ,"TES"		        ,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_CF"	    ,"09","CFOP"		    ,"CFOP"		        ,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_PEDIDO"  ,"10","Pedido"		    ,"Pedido"		    ,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_DOC"	    ,"11","Docto."		    ,"Docto."		    ,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
-	oStTT:AddField("TT_SERIE"	,"12","Serie"		    ,"Serie"		    ,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_CLIENTE"	,"01","Cliente"			,"Cliente"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_NOME"	,"02","Nome"			,"Nome"				,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_PRODUTO"	,"03","Produto"			,"Produto"			,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_DESC"	,"04","Descricao"		,"Descricao"		,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_ITCLI"	,"05","Item do Cliente"	,"Item do Cliente"	,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_DATFAT"	,"06","Dt. Fatur."		,"Dt. Fatur."		,Nil,"D","@D",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_QTFAT"	,"07","Quantidade"		,"Quantidade"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_PRCVEN"	,"08","Vl. Unit."       ,"Vl. Unit."  		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_VLFAT"	,"09","Vl. Total"       ,"Vl. Total"  		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_TES"	    ,"10","TES "		    ,"TES"		        ,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_CF"	    ,"11","CFOP"		    ,"CFOP"		        ,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_PEDIDO"  ,"12","Pedido"		    ,"Pedido"		    ,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_DOC"	    ,"13","Docto."		    ,"Docto."		    ,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTT:AddField("TT_SERIE"	,"14","Serie"		    ,"Serie"		    ,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 
 	//Criando a view que será o retorno da função e setando o modelo da rotina
 	oView := FWFormView():New()
@@ -195,7 +205,8 @@ Static Function CargaTT(oSay)
 
 	cSql := "SELECT D2_COD, D2_QUANT, D2_TOTAL, D2_TES, D2_CF, D2_PEDIDO, "
 	cSql += "	    D2_CLIENTE, D2_LOJA, D2_DOC, D2_SERIE, D2_EMISSAO, D2_PRCVEN, "
-	cSql += "	  	B1_DESC, B1_UM, B1_XITEM "
+	cSql += "	  	B1_DESC, B1_UM, B1_XITEM, "
+	cSql += "	  	A1_NREDUZ "
 	cSql += "  FROM " + RetSQLName("SD2") + " D2 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
@@ -209,9 +220,19 @@ Static Function CargaTT(oSay)
 	cSql += "   AND F4_FILIAL 	 	 = '" + xFilial("SF4") + "' "
 	cSql += "	AND SF4.D_E_L_E_T_ 	 = ' ' "
 
+	cSql += " INNER JOIN " + RetSQLName("SA1") + " SA1 "
+	cSql += "	 ON A1_COD 	 	 	= D2_CLIENTE"
+	cSql += "   AND A1_LOJA	 	 	= D2_LOJA"
+	cSql += "   AND A1_FILIAL 	 	 = '" + xFilial("SA1") + "' "
+	cSql += "	AND SA1.D_E_L_E_T_ 	 = ' ' "
+
 	cSql += " WHERE D2_EMISSAO 	   	>= '" + dtos(dDtIni) + "'"
 	cSql += "   AND D2_EMISSAO	   	<= '" + dtos(dDtFim) + "'"
-	cSql += "   AND D2_CLIENTE 		 = '" + cCliente     + "'"
+
+	if allTrim(cCliente) != ''
+		cSql += " AND D2_CLIENTE 	 = '" + cCliente     + "'"
+	endif
+
 	cSql += "   AND D2_FILIAL 	 	 = '" + xFilial("SD2") + "' "
 	cSql += "	AND D2.D_E_L_E_T_ 	 = ' ' "
 	cSql += "	ORDER BY D2_COD, D2_EMISSAO, D2_DOC "
@@ -220,7 +241,7 @@ Static Function CargaTT(oSay)
 	While (cAlias)->(! EOF())
 		cSql := "INSERT INTO " + cTableName + " ("
 		cSql += " TT_ID, TT_PRODUTO, TT_DESC, TT_ITCLI, TT_DATFAT, TT_QTFAT, TT_PRCVEN, TT_VLFAT, "
-		cSql += " TT_PEDIDO, TT_TES, TT_CF, TT_DOC, TT_SERIE) "
+		cSql += " TT_PEDIDO, TT_TES, TT_CF, TT_DOC, TT_SERIE, TT_CLIENTE, TT_NOME) "
 		cSql += " VALUES ('"
 		cSql += FWUUIDv4() 			 				+ "','"
 		cSql += (cAlias)->D2_COD 				    + "','"
@@ -234,7 +255,9 @@ Static Function CargaTT(oSay)
 		cSql += (cAlias)->D2_TES 					+ "','"
 		cSql += (cAlias)->D2_CF 					+ "','"
 		cSql += (cAlias)->D2_DOC 					+ "','"
-		cSql += (cAlias)->D2_SERIE 					+ "')"
+		cSql += (cAlias)->D2_SERIE 					+ "','"
+		cSql += (cAlias)->D2_CLIENTE				+ "','"
+		cSql += (cAlias)->A1_NREDUZ 				+ "')"
 
 		if TCSqlExec(cSql) < 0
 			MsgInfo("Erro na execução da query:", "Atenção")

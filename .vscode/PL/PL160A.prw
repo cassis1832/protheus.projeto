@@ -94,7 +94,7 @@ Static Function CargaTT1()
 		cLinPrd := "02"
 	Endif
 
-	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_STATUS, C2_PRIOR, B1_XPRIOR, "
+	cSql := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_STATUS, C2_PRIOR, "
 	cSql += "	    C2_QUANT, C2_QUJE, C2_DATPRI, C2_DATPRF, C2_TPOP, "
 	cSql += "	    G2_OPERAC, G2_RECURSO, G2_MAOOBRA, G2_SETUP, "
 	cSql += "	  	G2_TEMPAD, G2_LOTEPAD, G2_XDIRESQ, "
@@ -148,10 +148,6 @@ Static Function CargaTT1()
 		nTotal := nSetup + nQuant
 
 		cPrior := (cAlias)->C2_PRIOR
-
-		if (cAlias)->B1_XPRIOR <> "0"
-			cPrior := (cAlias)->B1_XPRIOR
-		endif
 
 		cSql := "INSERT INTO " + cTT1Name + " ("
 		cSql += " TT1_ID, TT1_PRODUT, TT1_OP, TT1_RECURS, TT1_PRIOR, "
