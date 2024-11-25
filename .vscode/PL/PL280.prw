@@ -203,6 +203,7 @@ Static Function SolCompra()
 
 	cSql += " WHERE C1_FILIAL      	 = '" + xFilial("SC1") + "'"
 	cSql += "   AND C1_PEDIDO  		 = '' "
+	cSql += "   AND C1_RESIDUO 		 = '' "
 	cSql += "   AND SC1.D_E_L_E_T_  <> '*' "
 	cSql += " ORDER BY C1_PRODUTO, C1_DATPRF "
 	cAlias := MPSysOpenQuery(cSql)

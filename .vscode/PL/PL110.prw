@@ -123,7 +123,7 @@ Static Function EmiteEtiqueta(nNumEtq, nQtdeEmb)
 	Local nUltima   := (cAliasOrd)->C2_QUANT
 
 	// Campos para imprimir
-	Local cNumOp	:= (cAliasOrd)->C2_NUM
+	Local cNumOp	:= (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN
 	Local cData		:= cValToChar(Stod((cAliasOrd)->C2_DATPRF))
 	Local cItem     := (cAliasOrd)->B1_COD
 	Local cDescr    := (cAliasOrd)->B1_XITEM
@@ -194,7 +194,7 @@ Static Function EmiteEtiqueta(nNumEtq, nQtdeEmb)
 		aAdd(aZPL, "^XA" )
 		aAdd(aZPL, "~TA000" )
 		aAdd(aZPL, "~JSN" )
-		aAdd(aZPL, "^LT0^MNW^MTT^PON^PMN^LH0,0^JMA^PR4,4~SD30^JUS^LRN^CI27^PA0,1,1,0^XZ" )
+		aAdd(aZPL, "^LT0^MNW^MTT^PON^PMN^LH0,0^PR5,5~SD15^JUS^LRN^CI27^PA0,1,1,0^XZ" )
 		aAdd(aZPL, "^XA^MMT^PW799^LL599^LS0" )
 
 		aAdd(aZPL, "^FT30,72^A0,40^FDMETALREZENDE^FS" )
@@ -216,7 +216,7 @@ Static Function EmiteEtiqueta(nNumEtq, nQtdeEmb)
 		aAdd(aZPL, "^FT350,280^A0,35^FD" + cData + "^FS")
 		aAdd(aZPL, "^FO540,210^GB250,96,1^FS")
 		aAdd(aZPL, "^FT550,230^A0,17^FDORDEM^FS")
-		aAdd(aZPL, "^FT560,280^A0,48^FD" + cNumOp + "^FS")
+		aAdd(aZPL, "^FT550,280^A0,35^FD" + cNumOp + "^FS")
 
 		aAdd(aZPL, "^FO20,312^GB250,96,1^FS")
 		aAdd(aZPL, "^FT30,330^A0,17^FDOPER.ATUAL^FS")

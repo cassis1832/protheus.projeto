@@ -204,7 +204,6 @@ Static Function CargaInicial(oSay)
 			ZA2_ITCLI	:= (cAlias)->B1_XITEM
 			ZA2_DATPRI	:= stod((cAlias)->C2_DATPRI)
 			ZA2_DATPRF	:= stod((cAlias)->C2_DATPRF)
-			// ZA2_TPOP	:= (cAlias)->C2_TPOP
 			ZA2_LE		:= (cAlias)->B1_LE
 			ZA2_QUANT	:= (cAlias)->C2_QUANT
 			ZA2_QUJE	:= (cAlias)->C2_QUJE

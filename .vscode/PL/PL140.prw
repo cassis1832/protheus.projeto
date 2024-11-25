@@ -47,6 +47,7 @@ User Function PL140()
 	aAdd(aCampos, {"TT_CONS"	,"N", 14, 3})
 	aAdd(aCampos, {"TT_DMOV"	,"D", 08, 0})
 	aAdd(aCampos, {"TT_DIAS"	,"N", 10, 2})
+	aAdd(aCampos, {"TT_SIT"		,"C", 10, 0})
 
 	//Cria a temporária
 	oTempTable := FWTemporaryTable():New(cAliasTT)
@@ -74,6 +75,7 @@ User Function PL140()
 	aAdd(aColunas, {"Consumo Medio"	, "TT_CONS"		, "N", 10, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Dt Movimento"	, "TT_DMOV"		, "D", 08, 0, "@!"})
 	aAdd(aColunas, {"Dias Estoque"	, "TT_DIAS"		, "N", 10, 2, "@E 9,999,999.99"})
+	aAdd(aColunas, {"Situacao"		, "TT_SIT"		, "C", 10, 0, "@!"})
 
 	//Adiciona os indices para pesquisar
     /*
@@ -151,6 +153,7 @@ Static Function ModelDef()
 	oStTmp:AddField("Dt Movimento"	,"Dt Movimento"	,"TT_DMOV"		,"D",08,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DMOV,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Empenho"		,"Empenho"		,"TT_EMPENHO"	,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_EMPENHO,'')" ),.F.,.F.,.F.)
 	oStTmp:AddField("Dias Estoque"	,"Dias Estoque"	,"TT_DIAS"		,"N",10,02,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_DIAS,'')" ),.F.,.F.,.F.)
+	oStTmp:AddField("Situacao"		,"Situacao"		,"TT_SIT"		,"C",10,00,Nil,Nil,{},.F.,FwBuildFeature(STRUCT_FEATURE_INIPAD, "Iif(!INCLUI,"+cAliasTT+"->TT_SIT,'')" ),.F.,.F.,.F.)
 
 	//Instanciando o modelo
 	oModel := MPFormModel():New("PL140M",/*bPre*/, /*bPos*/,/*bCommit*/,/*bCancel*/)
@@ -185,6 +188,7 @@ Static Function ViewDef()
 	oStTmp:AddField("TT_EMPENHO"	,"11","Empenho"		,"Empenho"		,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_DIAS"		,"12","Dias Estoque","Dias Estoque"	,Nil,"N","@E 9,999,999.99",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 	oStTmp:AddField("TT_DMOV"		,"13","Dt Movimento","Dt Movimento"	,Nil,"D","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
+	oStTmp:AddField("TT_SIT"		,"14","Situacao"	,"Situacao"		,Nil,"C","@!",Nil,Nil,.T.,Nil,Nil,Nil,Nil,Nil,Nil,Nil,Nil)
 
 	//Criando a view que será o retorno da função e setando o modelo da rotina
 	oView := FWFormView():New()
@@ -200,9 +204,10 @@ Return oView
 Static Function CargaTT()
 	Local cAlias, cSql
 	Local nDias	:= 0
+	Local cSit	:= ''
 
 	cSql := "SELECT B2_COD, B2_QATU, B2_QEMP, B2_DMOV, B2_VATU1, "
-	cSql += "		B1_DESC, B1_XCLIENT, B1_TIPO, B1_XITEM, B1_LE, B1_PE, B1_MRP, B1_UM, B1_ESTSEG "
+	cSql += "		B1_DESC, B1_XCLIENT, B1_TIPO, B1_XITEM, B1_LE, B1_PE, B1_MRP, B1_UM, B1_ESTSEG, B1_XSIT "
 	cSql += "  FROM " + RetSQLName("SB2") + " SB2 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
@@ -222,7 +227,7 @@ Static Function CargaTT()
 	While (cAlias)->(!EOF())
 
 		cSql := "INSERT INTO " + cTableName + " ("
-		cSql += "	TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ESTSEG, TT_SALDO, TT_VLSALDO, TT_EMPENHO, TT_TIPO, TT_ITEM, TT_DMOV, TT_CONS, TT_DIAS, TT_UM) VALUES ('"
+		cSql += "	TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ESTSEG, TT_SALDO, TT_VLSALDO, TT_EMPENHO, TT_TIPO, TT_ITEM, TT_DMOV, TT_SIT, TT_CONS, TT_DIAS, TT_UM) VALUES ('"
 		cSql += FWUUIDv4() 			 				+ "','"
 		cSql += (cAlias)->B2_COD 				+ "','"
 		cSql += (cAlias)->B1_DESC    				+ "','"
@@ -234,6 +239,16 @@ Static Function CargaTT()
 		cSql += (cAlias)->B1_TIPO   				+ "','"
 		cSql += (cAlias)->B1_XITEM   				+ "','"
 		cSql += (cAlias)->B2_DMOV   				+ "','"
+
+		cSit := ''
+		if (cAlias)->B1_XSIT == 'A'
+			cSit := "PA"
+		elseif (cAlias)->B1_XSIT == 'I'
+			cSit := "Inativo"
+		elseif (cAlias)->B1_XSIT == 'D'
+			cSit := "Desenv."
+		endif
+		cSql += cSit   								+ "','"
 
 		nDias	:= 0
 
