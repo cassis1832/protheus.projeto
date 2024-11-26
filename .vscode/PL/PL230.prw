@@ -35,10 +35,10 @@ User Function PL230()
 	oBrowse:SetFieldMark( 'ZA2_OK' )
 	oBrowse:SetMark(cMarca, "ZA2", "ZA2_OK")
 	oBrowse:SetAllMark( { || oBrowse:AllMark() } )
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Confirmada", "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Confirmada - sem saldo", "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'S'"	, "BLUE"	, "Ordem Planejada", "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'N'"	, "PINK"	, "Ordem Planejada - sem saldo", "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Confirmada"			, "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Confirmada sem saldo"	, "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'S'"	, "YELLOW"	, "Ordem Planejada"				, "1")
+	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'N'"	, "PINK"	, "Ordem Planejada sem saldo"	, "1")
 
 	LerParametros()
 
@@ -126,11 +126,11 @@ return
  *---------------------------------------------------------------------*/
 User Function PL230Legenda()
     Local aLegenda := {}
-    AAdd(aLegenda,{"BR_VERDE","Ordem confirmada"})
+    AAdd(aLegenda,{"BR_VERDE"	,"Ordem confirmada"})
     AAdd(aLegenda,{"BR_VERMELHO","Ordem confirmada - sem saldo de componente ou MP"})
-    AAdd(aLegenda,{"BR_AZUL","Ordem Planejada"})
-    AAdd(aLegenda,{"BR_PINK","Ordem Planejada - sem saldo"})
-    BrwLegenda("Registros", "Tipo", aLegenda)
+    AAdd(aLegenda,{"BR_AMARELO"	,"Ordem Planejada"})
+    AAdd(aLegenda,{"BR_PINK"	,"Ordem Planejada - sem saldo de componete ou MP"})
+    BrwLegenda("Legenda", "Tipo", aLegenda)
 return
 
 

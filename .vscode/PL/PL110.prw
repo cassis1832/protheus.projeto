@@ -14,7 +14,7 @@ User Function PL110(cOp)
 	Local aPergs    	:= {}
 	Local aResps		:= {}
 
-	Private cOrdem		:= ''
+	Private cOrdem		:= Space(11)
 	Private nNumEtq 	:= 0
 	Private nQtdeEmb	:= 0
 	Private cAliasOrd 	:= Nil
@@ -48,35 +48,25 @@ User Function PL110(cOp)
 		if (cAliasOrd)->(EOF())
 			Alert("ORDEM DE PRODUCAO NAO ENCONTRADA!")
 			return
-		else
-			nQtdeEmb := (cAliasOrd)->B1_XQEMB
 		endif
+
+		nQtdeEmb := (cAliasOrd)->B1_XQEMB
 
 		if nQtdeEmb != 0
 			nNumEtq := Ceiling(C2_QUANT / nQtdeEmb)
 		endif
+	endif
 
-		aAdd(aPergs, {1, "Numero de Etiquetas"		, nNumEtq, "@E 999", "Positivo()", "", ".T.", 40,  .T.})
-		aAdd(aPergs, {1, "Quantidade por Etiqueta"	, nQtdeEmb, "@E 99,999", "Positivo()", "", ".T.", 40,  .T.})
+	aAdd(aPergs, {1, "Numero da Ordem"			, cOrdem,,,"SC2",, 60, .T.})
+	aAdd(aPergs, {1, "Quantidade por Embalagem"	, nQtdeEmb, "@E 99,999", "Positivo()", "", ".T.", 40,  .T.})
+	aAdd(aPergs, {1, "Numero de Etiquetas"		, nNumEtq,  "@E 999",    "Positivo()", "", ".T.", 40,  .T.})
 
-		If ParamBox(aPergs, "ETIQUETA DE PROCESSO", @aResps,,,,,,,, .T., .T.)
-			nNumEtq   := aResps[1]
-			nQtdeEmb  := aResps[2]
-		Else
-			return
-		endif
-	else
-		aAdd(aPergs, {1, "Numero da Ordem"			, Space(11),,,"SC2",, 60, .T.})
-		aAdd(aPergs, {1, "Numero de Etiquetas"		, nNumEtq, "@E 999", "Positivo()", "", ".T.", 40,  .T.})
-		aAdd(aPergs, {1, "Quantidade por Etiqueta"	, nQtdeEmb, "@E 99,999", "Positivo()", "", ".T.", 40,  .T.})
-
-		If ParamBox(aPergs, "ETIQUETA DE PROCESSO", @aResps,,,,,,,, .T., .T.)
-			cOrdem    := aResps[1]
-			nNumEtq   := aResps[2]
-			nQtdeEmb  := aResps[3]
-		Else
-			return
-		endif
+	If ParamBox(aPergs, "ETIQUETA DE PROCESSO", @aResps,,,,,,,, .F., .T.)
+		cOrdem    := aResps[1]
+		nQtdeEmb  := aResps[2]
+		nNumEtq   := aResps[3]
+	Else
+		return
 	endif
 
 	TrataOrdem()
