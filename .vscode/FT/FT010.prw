@@ -4,7 +4,9 @@
 #Include 'FWMVCDef.ch'
 
 /*/{Protheus.doc}	FT010
-	Faturamento por cliente
+	
+	Consulta de faturamento por cliente
+
 @author Carlos Assis
 @since 12/09/2024
 @version 1.0   
