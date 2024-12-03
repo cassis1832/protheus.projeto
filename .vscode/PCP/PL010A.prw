@@ -400,6 +400,9 @@ Static Function printOper()
 			oPrinter:Say(nLin, 260, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999.999"), oFont10)
 		endif
 
+		// Bar code operacao
+		oPrinter:Code128(nlin-10/*nRow*/ ,470/*nCol*/,(cAliasOper)->G2_OPERAC/*cCode*/,1/*nWidth*/,20/*nHeigth*/,.F./*lSay*/,,50)
+
 		OperAlternativa()
 
 		While (cAliasAlt)->(! EOF())
