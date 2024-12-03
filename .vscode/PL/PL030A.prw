@@ -29,7 +29,6 @@ User Function PL030A(cCliente1, cLoja1)
 
 	Private aColumns   	:= {}
 
-
 	ObterDados()
 
 	CalculaSaldos()
@@ -50,13 +49,14 @@ Static Function ObterDados()
 	// Carrega os itens e os saldos iniciais
 	cSql := "SELECT A7_PRODUTO, B1_LOCPAD, A7_CODCLI "
 	cSql += "  FROM " + RetSQLName("SA7") + " SA7, " + RetSQLName("SB1") + " SB1"
-	cSql += " WHERE A7_FILIAL         = '" + xFilial("SA7") + "' "
-	cSql += "   AND B1_FILIAL         = '" + xFilial("SB1") + "' "
-	cSql += "   AND A7_CLIENTE        = '" + cCliente + "'"
-	cSql += "   AND A7_LOJA           = '" + cLoja + "'"
-	cSql += "   AND A7_PRODUTO        = B1_COD"
-	cSql += "   AND SA7.D_E_L_E_T_    <> '*' "
-	cSql += "   AND SB1.D_E_L_E_T_    <> '*' "
+	cSql += " WHERE A7_FILIAL         			= '" + xFilial("SA7") 		+ "' "
+	cSql += "   AND B1_FILIAL       			= '" + xFilial("SB1") 		+ "' "
+	cSql += "   AND A7_CLIENTE        			= '" + cCliente 			+ "'"
+	cSql += "   AND A7_LOJA           			= '" + cLoja 				+ "'"
+	cSql += "   AND SUBSTRING(A7_XNATUR,1,1) 	=  'F" 						+ "'"
+	cSql += "   AND A7_PRODUTO        			= B1_COD"
+	cSql += "   AND SA7.D_E_L_E_T_    			<> '*' "
+	cSql += "   AND SB1.D_E_L_E_T_    			<> '*' "
 	cSql += " ORDER BY A7_PRODUTO "
 	cAliasSA7 := MPSysOpenQuery(cSql)
 

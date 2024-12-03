@@ -3,8 +3,8 @@
 
 /*/{Protheus.doc} FT020
 Função: Geração de pedido de venda 
-		Com base no pedido EDI 	- PL180
-		Com base no estoque 	- PL210 (Gestamp)
+		Com base no pedido EDI 	- FT030
+		Com base no estoque 	- FT040 (Gestamp)
 @author Assis
 @since 08/09/2024	
 @version 1.0

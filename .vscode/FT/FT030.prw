@@ -18,7 +18,7 @@ User Function FT030(cCli, cLoj)
 	Private oBrowse
 	Private cCliente    := cCli
 	Private cLoja       := cLoj
-	Private dLimite     := Date()
+	Private dLimite     := dDataBase
 	Private cMarca 		:= GetMark()
 
 	CalcSaldo()

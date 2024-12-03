@@ -9,7 +9,6 @@
 	29/07/2024 - não imprimir OP prevista
 	04/09/2024 - alteracao do xprint pelo xprtop
 	20/09/2024 - se a ordem for externa imprimir "Ordem Externa"
-	21/11/2024 - imprimir bar code
 @author Carlos Assis
 @since 04/11/2023
 @version 1.0   
@@ -23,7 +22,7 @@ Static oFont12 	:= TFont():New( "Arial",, -12, .T.)
 Static oFont12b := TFont():New( "Arial",, -12, .T.,.T.)
 Static oFont16b := TFont():New( "Arial",, -16, .T.,.T.)
 
-User Function PL010AX(cOrdem, lOpera, lReimp)
+User Function PL010AV01(cOrdem, lOpera, lReimp)
 	Local aArea   		:= GetArea()
 	Local cFunBkp 		:= FunName()
 
@@ -47,7 +46,7 @@ User Function PL010AX(cOrdem, lOpera, lReimp)
 	cQuery := "SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PRODUTO, C2_TPPR,"
 	cQuery += "	 	  C2_QUANT, CAST(C2_DATPRI AS DATE) C2_DATPRI,"
 	cQuery += "	 	  CAST(C2_DATPRF AS DATE) C2_DATPRF, C2_XPRTOP, C2_ROTEIRO, "
-	cQuery += "	  	  B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ, B1_XITEM"
+	cQuery += "	  	  B1_COD, B1_DESC, B1_UM, B1_XCLIENT, B1_XPROJ"
 	cQuery += "  FROM " + RetSQLName("SC2") + " SC2 "
 
 	cQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
@@ -236,7 +235,6 @@ return
 //-----------------------------------------------------------------------------
 Static Function printCabec()
 	Local cNumOp	:= ''
-	Local cOrdem	:= ''
 
 	oPrinter := FWMSPrinter():New(cFilePrint,	IMP_PDF,.F.,cDir,.T.,,,,.T.,.F.,,.T.)
 	oFont1 := TFont():New('Courier new',,-18,.T.)
@@ -267,24 +265,19 @@ Static Function printCabec()
 	oPrinter:Say(nLin, 15, "Cod. Item:" ,oFont10)
 	oPrinter:Say(nLin, 75, (cAliasOrd)->B1_COD, oFont12b)
 	oPrinter:Say(nLin, 150, "Descricao:",oFont10)
-	oPrinter:Say(nLin, 210, (cAliasOrd)->B1_XITEM, oFont10)
-
-	cOrdem := (cAliasOrd)->C2_NUM + (cAliasOrd)->C2_ITEM + (cAliasOrd)->C2_SEQUEN
-
-	// Bar code OP
-	oPrinter:Code128(nlin-10/*nRow*/ ,380/*nCol*/,cOrdem/*cCode*/,1/*nWidth*/,20/*nHeigth*/,.F./*lSay*/,,170)
+	oPrinter:Say(nLin, 210, SUBSTR((cAliasOrd)->B1_DESC,1,55), oFont10)
 
 	nLin +=20
 	oPrinter:Say(nLin, 15, "Data Inicio:",oFont10)
 	oPrinter:Say(nLin, 75, DTOC((cAliasOrd)->C2_DATPRI), oFont11b)
 	oPrinter:Say(nLin, 150, "Data Termino:",oFont10)
 	oPrinter:Say(nLin, 220, DTOC((cAliasOrd)->C2_DATPRF), oFont11b)
-	oPrinter:Say(nLin+10, 400, "Quantidade:",oFont10)
+	oPrinter:Say(nLin, 400, "Quantidade:",oFont10)
 
 	if (cAliasOrd)->C2_QUANT - int((cAliasOrd)->C2_QUANT) == 0
-		oPrinter:Say(nLin+10, 450, TRANSFORM((cAliasOrd)->C2_QUANT, "@E 999,999") + " " + (cAliasOrd)->B1_UM, oFont12b)
+		oPrinter:Say(nLin, 450, TRANSFORM((cAliasOrd)->C2_QUANT, "@E 999,999") + " " + (cAliasOrd)->B1_UM, oFont12b)
 	else
-		oPrinter:Say(nLin+10, 450, TRANSFORM((cAliasOrd)->C2_QUANT, "@E 999,999.999") + " " + (cAliasOrd)->B1_UM, oFont12b)
+		oPrinter:Say(nLin, 450, TRANSFORM((cAliasOrd)->C2_QUANT, "@E 999,999.999") + " " + (cAliasOrd)->B1_UM, oFont12b)
 	endif
 
 	nLin +=20
@@ -372,9 +365,6 @@ Static Function printOper()
 			else
 				oPrinter:Say(nLin, 260, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999.999"), oFont10)
 			endif
-
-			// Bar code operacao
-			oPrinter:Code128(nlin-10/*nRow*/ ,470/*nCol*/,(cAliasOper)->G2_OPERAC/*cCode*/,1/*nWidth*/,20/*nHeigth*/,.F./*lSay*/,,50)
 
 			OperAlternativa()
 

@@ -16,7 +16,6 @@ Static cTitulo := "EDI - Pedidos de Clientes"
 User Function PL020()
 	Local oBrowse
 
-	chkFile("ZA0")
 	oBrowse := FWMBrowse():New()
 	oBrowse:SetAlias("ZA0")
 	oBrowse:SetDescription(cTitulo)

@@ -199,10 +199,11 @@ Static Function CargaTT()
 	cSql += "   AND B1_FILIAL      	=  '" + xFilial("SB1") 	+ "'"
 	cSql += "   AND SB1.D_E_L_E_T_  <> '*' "
 
-	cSql += " WHERE A7_CLIENTE 		 = '" + cCliente 		+ "'"
-	cSql += "   AND A7_LOJA 		 = '" + cLoja 			+ "'"
-	cSql += "   AND A7_FILIAL 		=  '" + xFILIAL("SA7") 	+ "'"
-	cSql += "   AND SA7.D_E_L_E_T_  <> '*' "
+	cSql += " WHERE A7_CLIENTE 		 			=  '" + cCliente 		+ "'"
+	cSql += "   AND A7_LOJA 		 			=  '" + cLoja 			+ "'"
+	cSql += "   AND SUBSTRING(A7_XNATUR,1,1) 	=  'F" 					+ "'"
+	cSql += "   AND A7_FILIAL 					=  '" + xFILIAL("SA7") 	+ "'"
+	cSql += "   AND SA7.D_E_L_E_T_  			<> '*' "
 	cSql += " ORDER BY A7_PRODUTO "
 	cAliasSA7 := MPSysOpenQuery(cSql)
 
@@ -224,23 +225,21 @@ Static Function CargaTT()
 			nQtde := 0
 		endif
 
-		if nSaldo > nAloc
-			cSql := "INSERT INTO " + cTableName + " ("
-			cSql += " TT_ID, TT_PRODUTO, TT_DESC, TT_UM, TT_NATUR, TT_GRUPV, TT_SALDO, TT_ALOC, TT_QUANT) VALUES ('"
-			cSql += FWUUIDv4() 			 				+ "','"
-			cSql += (cAliasSA7)->A7_PRODUTO 			+ "','"
-			cSql += (cAliasSA7)->B1_DESC    			+ "','"
-			cSql += (cAliasSA7)->B1_UM   				+ "','"
-			cSql += (cAliasSA7)->A7_XNATUR  			+ "','"
-			cSql += (cAliasSA7)->A7_XGRUPV  			+ "','"
-			cSql += cValToChar(nSaldo) 					+ "','"
-			cSql += cValToChar(nAloc) 					+ "','"
-			cSql += cValToChar(nSaldo - nAloc) 			+ "')"
+		cSql := "INSERT INTO " + cTableName + " ("
+		cSql += " TT_ID, TT_PRODUTO, TT_DESC, TT_UM, TT_NATUR, TT_GRUPV, TT_SALDO, TT_ALOC, TT_QUANT) VALUES ('"
+		cSql += FWUUIDv4() 			 				+ "','"
+		cSql += (cAliasSA7)->A7_PRODUTO 			+ "','"
+		cSql += (cAliasSA7)->B1_DESC    			+ "','"
+		cSql += (cAliasSA7)->B1_UM   				+ "','"
+		cSql += (cAliasSA7)->A7_XNATUR  			+ "','"
+		cSql += (cAliasSA7)->A7_XGRUPV  			+ "','"
+		cSql += cValToChar(nSaldo) 					+ "','"
+		cSql += cValToChar(nAloc) 					+ "','"
+		cSql += cValToChar(nSaldo - nAloc) 			+ "')"
 
-			if TCSqlExec(cSql) < 0
-				MsgInfo("Erro no insert da TT:", "Atenção")
-				MsgInfo(TcSqlError(), "Atenção")
-			endif
+		if TCSqlExec(cSql) < 0
+			MsgInfo("Erro no insert da TT:", "Atenção")
+			MsgInfo(TcSqlError(), "Atenção")
 		endif
 
 		(cAliasSB8)->(DBCLOSEAREA())

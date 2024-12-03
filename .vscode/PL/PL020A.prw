@@ -10,6 +10,7 @@ Função
 	19/07/2024 - Gerar previsão mensal
 	02/08/2024 - Desprezar previsao no passado
 	02/09/2024 - Não gravar pedidos no passado
+	02/12/2024 - Não deletar pedidos em atraso
 @author Assis
 @since 08/04/2024
 @version 1.0
@@ -102,12 +103,6 @@ Static Function TrataLinhas(oSay, aLinhas)
 				if aLinha[7] == 'V'
 					CriaPrevisao(aLinha)
 				else
-					// Gestamp rateia quantidade mensal
-					// if (cCliente >= '000004' .and. cCliente <= '000007')
-					// 	RateiaMensal(aLinha)
-					// else
-					// 	GravaRegistro(aLinha)
-					// endif
 					GravaRegistro(aLinha)
 				endif
 			EndIf
@@ -145,61 +140,6 @@ Static Function CriaPrevisao(aLinha)
 	aLin[4] := dtoc(dData)
 	GravaRegistro(aLin)
 return
-
-
-/*---------------------------------------------------------------------*
-  Rateia a quantidade mensal nos dias uteis que faltam ate o fim do mes
- *---------------------------------------------------------------------*/
-Static Function RateiaMensal(aLinha)
-	Local aLin		:= aLinha
-	Local dData		:= firstDate(ctod(aLin[4]))
-	Local nQtde		:= Ceiling(Val(StrTran(aLin[6],",",".")))
-	Local nQtdeLin	:= 0
-	Local nDias		:= 0
-	Local nMes		:= 0
-
-	dbSelectArea("SB1")
-	SB1->(DBSetOrder(1))  // Filial/codigo
-
-	// Atualiza o consumo mensal e o estoque de seguranca
-	if SA7->A7_XCONSME != nQtde
-		RecLock("SA7", .F.)	
-		SA7->A7_XCONSME := nQtde
-		SA7->(MsUnLock())
-
-		// If SB1->(MsSeek(xFilial("SB1") + cProduto))
-		// 	RecLock("SB1", .F.)	
-		// 	SB1->B1_ESTSEG := Ceiling(nQtde / 20 * 3)
-		// 	SB1->(MsUnLock())
-		// endIf
-	endif
-
-	nMes := Month(dData)
-
-	// Conta os dias uteis do mes
-	Do While Month(dData) == nMes
-		if (dow(dData) > 1 .and. dow(dData) < 7)
-			nDias++
-		endif
-
-		dData := daySum(dData, 1)
-	EndDo
-
-	nQtdeLin := nQtde / nDias
-	nQtdeLin := Ceiling(nQtdeLin / 100) * 100
-
-	aLin[6] := Str(nQtdeLin)
-	dData 	:= firstDate(ctod(aLinha[4]))
-
-	// Grava somente os dias uteis futuros
-	Do While Month(dData) == nMes
-		if (dow(dData) > 1 .and. dow(dData) < 7)
-			aLin[4] := dtoc(dData)
-			GravaRegistro(aLin)
-		endif
-		dData := daySum(dData, 1)
-	EndDo
-Return
 
 
 Static Function GravaRegistro(aLinha)
@@ -284,17 +224,19 @@ return Nil
 
 /*---------------------------------------------------------------------*
   Deleta da tabela ZA0 todos os registros que não foram atualizados
+  Nao deleta os registros em atraso
  *---------------------------------------------------------------------*/
 Static Function LimpaDados(oSay)
 	Local cSql	:= ''
 
 	cSql := "DELETE FROM "  + RetSQLName("ZA0")
-	cSql += " WHERE ZA0_FILIAL  = '" + xFilial("ZA0") + "' "
-	cSql += "	AND ZA0_CLIENT  = '" + cCliente + "'"
-	cSql += "	AND	ZA0_LOJA    = '" + cLoja + "'"
-	cSql += "	AND	ZA0_STATUS <> '9'" 
-	cSql += "	AND	ZA0_TIPOPE <> 'M'"
-	cSql += "	AND ZA0_HRCRIA <> '" + dtos(dtProcesso) + hrProcesso + "'"
+	cSql += " WHERE ZA0_FILIAL  	=  '" + xFilial("ZA0") + "' "
+	cSql += "	AND ZA0_CLIENT  	=  '" + cCliente + "'"
+	cSql += "	AND	ZA0_LOJA    	=  '" + cLoja + "'"
+	cSql += "	AND	ZA0_DTENTR 		>= '" + dtos(dDataBase) + "'"
+	cSql += "	AND	ZA0_STATUS 		<> '9'" 
+	cSql += "	AND	ZA0_TIPOPE 		<> 'M'"
+	cSql += "	AND ZA0_HRCRIA 		<> '" + dtos(dtProcesso) + hrProcesso + "'"
 
 	if TCSqlExec(cSql) < 0
 		MsgInfo("Erro na delete do ZA0:", "Atenção")
