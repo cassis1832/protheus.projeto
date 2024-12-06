@@ -19,15 +19,14 @@ User Function PL030A(cCliente1, cLoja1)
 
 	Private aDatas 		:= {}
 	Private aPedidos 	:= {}
-
-	Private cAliasZA0
-	Private cAliasSC6
+	Private aColumns   	:= {}
 
 	Private oDlg       	:= Nil
 	Private oFwBrowse  	:= Nil
 	Private oBrw  		:= Nil
 
-	Private aColumns   	:= {}
+	Private cAliasZA0	:= ''
+	Private cAliasSC6	:= ''
 
 	ObterDados()
 
@@ -74,7 +73,6 @@ Static Function ObterDados()
 			EndIf
 
 			Aadd(aPedidos,{(cAliasSA7)->A7_PRODUTO, (cAliasSA7)->A7_CODCLI, cValToChar(nSaldo), "0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0"})
-
 		EndIf
 
 		(cAliasSA7)->(DbSkip())

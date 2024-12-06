@@ -12,10 +12,10 @@ Função: Geração de pedido de venda com base no pedido EDI - V02
 Static cTitulo := "Geracao de Pedidos de Vendas"
 
 User Function FT030(cCli, cLoj)
-	Local aArea:=GetArea()
+	Local aArea			:=GetArea()
 	Local cCondicao		:= ''
 
-	Private oBrowse
+	Private oBrowse	 	:= ''
 	Private cCliente    := cCli
 	Private cLoja       := cLoj
 	Private dLimite     := dDataBase
@@ -54,6 +54,7 @@ User Function FT030(cCli, cLoj)
 	RestArea(aArea)
 Return Nil
 
+
 /*---------------------------------------------------------------------*
 	Criação do menu MVC
  *---------------------------------------------------------------------*/
@@ -87,7 +88,7 @@ Static Function ModelDef()
 	oStZA0:SetProperty('ZA0_STATUS'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 	oStZA0:SetProperty('ZA0_QTCONF'	,MODEL_FIELD_WHEN,FwBuildFeature(STRUCT_FEATURE_WHEN,'.F.'))
 
-	oModel:=MPFormModel():New("FT030M", Nil, {|oModel| MVCMODELPOS(oModel)}, Nil, Nil)
+	oModel:=MPFormModel():New("FT030M", Nil, Nil, Nil, Nil)
 	oModel:AddFields("FORMZA0",/*cOwner*/,oStZA0)
 	oModel:SetPrimaryKey({'ZA0_FILIAL','ZA0_CODPED'})
 	oModel:SetDescription(cTitulo)
@@ -113,14 +114,6 @@ Static Function ViewDef()
     oView:SetOwnerView("VIEW_ZA0","TELA")
 
 Return oView
-
-
-Static Function MVCMODELPOS(oModel)
-	Local aArea   		:= GetArea()
-	Local lOk	:= .T.
-
-	RestArea(aArea)
-Return lOk
 
 
 /*---------------------------------------------------------------------*
@@ -156,7 +149,7 @@ User Function FT030F12()
 		return lRet
 	endif
 
-	if dLimite > DaySum(date(),3)
+	if dLimite > DaySum(dDataBase,3)
 		FWAlertError("EM PERIODO DE HOMOLOGACAO NAO GERAR PEDIDOS PARA MAIS DE 3 DIAS")
 		lRet := .f.
 	endif
@@ -248,8 +241,6 @@ User Function FT030Mark()
 
 		ZA0->(DbSkip())
 	EndDo
-
-	//MsgInfo('Foram marcadas <b>' + cValToChar( nCt ) + ' linhas</b>.', "Atenção")
 
 	if len(aPedidos) > 0
 		u_FT030A(aPedidos)

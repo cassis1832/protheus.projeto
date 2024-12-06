@@ -5,18 +5,19 @@
 /*/{Protheus.doc} PL020C
 	Atualização das demandas do MRP com base no EDI e nos pedidos de vendas
     Atualizar tabelas SVB e SVR - demandas do MRP (cliente/loja)
-	02/08/2024 - Desprezar previsao no passado
-	07/08/2024 - Tratar item bloqueado
-	27/08/2024 - Gerar demandas com 2 dias de diferença para a Gestamp
-	08/09/2024 - Gerar demanda de plano mestre para a Gestamp
-	22/09/2024 - Nao gravar T4j porque ele atualiza na sincronizacao
-	08/09/2024 - Gerar demanda manual para a Gestamp
 @author Assis
 @since 11/04/2024
 @version 1.0
 	@return Nil, Função não tem retorno
 	@example
 	u_PL020C()
+
+	02/08/2024 - Desprezar previsao no passado
+	07/08/2024 - Tratar item bloqueado
+	27/08/2024 - Gerar demandas com 2 dias de diferença para a Gestamp
+	08/09/2024 - Gerar demanda de plano mestre para a Gestamp
+	22/09/2024 - Nao gravar T4j porque ele atualiza na sincronizacao
+	08/09/2024 - Gerar demanda manual para a Gestamp
 /*/
 
 User Function PL020C()
@@ -34,7 +35,9 @@ User Function PL020C()
 	RestArea(aArea)
 Return
 
+
 Static Function Processa(oSay)
+
 	Private cAliasTT
 	Private cTableName
 
@@ -71,13 +74,10 @@ Static Function Processa(oSay)
 	GravaDemandas()
 
 	oTempTable:Delete()
-
 Return
 
 /*---------------------------------------------------------------------*
 	Grava tabela temporaria com base nos pedidos EDI
-	Para o cliente Gestamp a demanda deve ser 2 dias antes
-	Para os demais clientes a demanda deve ser para o dia anterior
  *---------------------------------------------------------------------*/
 Static Function TrataEDI()
     Local dData, cAlias, cTipo
@@ -102,16 +102,7 @@ Static Function TrataEDI()
 	cAlias := MPSysOpenQuery(cSQL)
 
 	While (cAlias)->(!EOF())
-
-		if (cAlias)->ZA0_CLIENT == "000004" .or. ;
-			(cAlias)->ZA0_CLIENT == "000005" .or. ;
-			(cAlias)->ZA0_CLIENT == "000006" .or. ;
-			(cAlias)->ZA0_CLIENT == "000007" 
-			// cTipo := "3"
-			cTipo := "9"
-		else
-			cTipo := "9"
-		endif
+		cTipo := "9"
 
 		if (cAlias)->ZA0_TIPOPE == "V"
         	dData := Stod((cAlias)->ZA0_DTENTR)
@@ -146,13 +137,15 @@ Static Function TrataEDI()
 			cSql += "ZA0" 							+ "')"
 
 			if TCSqlExec(cSql) < 0
-			MsgInfo("Erro na execução da query:", "Atenção")
-			MsgInfo(TcSqlError(), "Atenção2")
+				MsgInfo("Erro na execução da query:", "Atenção")
+				MsgInfo(TcSqlError(), "Atenção2")
 			endif
 		endif
 		
 		(cAlias)->(DbSkip())
   	End While
+
+	(cAlias)->(DBCloseArea())
 Return
 
 /*---------------------------------------------------------------------*
@@ -217,6 +210,8 @@ Static Function TrataPV()
 
 		(cAlias)->(DbSkip())
   	End While
+
+	(cAlias)->(DBCloseArea())
 Return
 
 
@@ -225,10 +220,11 @@ Return
     Agrupa por dias entre ordens
  *---------------------------------------------------------------------*/
 Static Function GravaDemandas()
-    Local cAlias
-	Local dDtFim
+	Local cSql		:= ''
+    Local cAlias	:= ''
+	Local dDtFim	:= ''
 
-	Private dDtIni
+	Private dDtIni	
 	Private	cProd       := ""
 	Private cLocal      := ""
 	Private cDoc        := ""
@@ -236,8 +232,14 @@ Static Function GravaDemandas()
 	Private cTipo       := ""
 	Private nSequencia  := 0
 
-	// Limpar as demandas existentes - manuais - "AUTO"
-	LimpaDemandas()
+	cSql := "DELETE FROM "  + RetSQLName("SVR")
+	cSql += " WHERE VR_FILIAL  	=  '" + xFilial("SVR") + "' "
+	cSql += "	AND VR_CODIGO  	=  'AUTO'"
+
+	if TCSqlExec(cSql) < 0
+		MsgInfo("Erro na delete do SVR:", "Atenção")
+		MsgInfo(TcSqlError(), "Atenção")
+	endif
 
     cAlias := GetNextAlias()
 
@@ -309,40 +311,4 @@ Static Function GravaReg()
 		SVR->VR_XHRCRI 	:= hrProcesso
 		SVR->(MsUnlock())
 
-return
-
-/*---------------------------------------------------------------------*
-	Elimina todas as demandas do codigo "AUTO"
- *---------------------------------------------------------------------*/
-Static Function LimpaDemandas()
-
-	dbSelectArea("SVR")
-
-	SVR->(DBSetOrder(1))  // 
-	DBGoTop()
-
-    While SVR->( !Eof() )
-        if VR_CODIGO = 'AUTO' 
-			if VR_XDTCRI != dtProcesso .or. VR_XHRCRI != hrProcesso
-				RecLock("SVR", .F.)
-				DbDelete()
-				SVR->(MsUnlock())
-			else
-				// RecLock("T4J", .T.)
-				// T4J->T4J_FILIAL	:= xFilial("T4J") 
-				// T4J->T4J_DATA 	:= SVR->VR_DATA
-				// T4J->T4J_PROD 	:= SVR->VR_PROD
-				// T4J->T4J_ORIGEM := SVR->VR_TIPO
-				// T4J->T4J_DOC 	:= SVR->VR_DOC
-				// T4J->T4J_QUANT 	:= SVR->VR_QUANT
-				// T4J->T4J_LOCAL  := SVR->VR_LOCAL
-				// T4J->T4J_IDREG  := SVR->VR_FILIAL + SVR->VR_CODIGO + SVR->VR_SEQUEN
-				// T4J->T4J_CODE   := SVR->VR_CODIGO
-				// T4J->T4J_PROC	:= '2'
-				// T4J->(MsUnlock())
-			endif
-        EndIf
-
-        SVR->( dbSkip() )
-  	End While
 return

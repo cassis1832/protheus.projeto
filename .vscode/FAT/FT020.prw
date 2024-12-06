@@ -3,8 +3,7 @@
 
 /*/{Protheus.doc} FT020
 Função: Geração de pedido de venda 
-		Com base no pedido EDI 	- FT030
-		Com base no estoque 	- FT040 (Gestamp)
+		Mostra lista de clientes para geracao do pedido de venda
 @author Assis
 @since 08/09/2024	
 @version 1.0
@@ -69,13 +68,5 @@ Return oView
 	Geracao dos pedidos de vendas do cliente selecionado
  *---------------------------------------------------------------------*/
 User Function FT020Gerar()
-	// Gestamp
-	if SA1->A1_COD == '000004' .or. ;
-		SA1->A1_COD == '000005' .or. ;
-		SA1->A1_COD == '000006' .or. ;
-		SA1->A1_COD == '000007'
-		u_PL210(SA1->A1_COD, SA1->A1_LOJA)
-	else
-		u_PL180(SA1->A1_COD, SA1->A1_LOJA)
-	endif
+	u_FT030(SA1->A1_COD, SA1->A1_LOJA)		// com bsae no pedido EDI
 return

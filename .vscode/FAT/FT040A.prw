@@ -80,7 +80,7 @@ Static Function GeraPedido()
 	endif
 
 	// Explosão para carregar tabela de itens a retornar
-	aItensRet := u_PL210B(@aItensFat)
+	aItensRet := u_FT040B(@aItensFat)
 
 	if Len(aItensRet) > 0
 		TrataSaldoTerc()
@@ -98,7 +98,7 @@ Static Function	TrataSaldoTerc()
 	Local nIndRet	:= 0
 	Local nIndTerc	:= 0
 
-	aSaldoTerc := U_PL210C(aItensRet)
+	aSaldoTerc := U_FT040C(aItensRet)
 
 	// Percorre os itens a faturar e verifica se existe saldo suficiente para os retornos
 	For nIndFat := 1 To Len(aItensFat)	
