@@ -14,16 +14,19 @@ Função: Consulta de ordens de producaoi
 Static cTitulo := "Ordens de Producao"
 
 User Function PL300()
-	Local aArea 	:= FWGetArea()
-	Local aCampos 	:= {}
-	Local aColunas 	:= {}
-	Local aPesquisa := {}
-	Local aIndex 	:= {}
+	Local aArea 		:= FWGetArea()
+	Local aCampos 		:= {}
+	Local aColunas 		:= {}
+	Local aPesquisa 	:= {}
+	Local aIndex 		:= {}
 
 	Private oBrowse		:= ''
-	Private cTipo 		:= 'I'
+	Private cFiltro		:= ''
+	Private cTpop 		:= ''
+	Private cLinprd 	:= ''
+	Private cTppr 		:= ''
 	Private aRotina 	:= {}
-	Private cTableName 	:= ""
+	Private cTableName 	:= ''
 	Private cAliasTT 	:= GetNextAlias()
 
 	//Definicao do menu
@@ -41,7 +44,7 @@ User Function PL300()
 	aAdd(aCampos, {"TT_CLIENT"	,"C", 30, 0})
 	aAdd(aCampos, {"TT_LINPRD"	,"C", 01, 0})
 	aAdd(aCampos, {"TT_XITEM"	,"C", 20, 0})
-	aAdd(aCampos, {"TT_UM"		,"C", 02, 3})
+	aAdd(aCampos, {"TT_UM"		,"C", 02, 0})
 	aAdd(aCampos, {"TT_ESTSEG"	,"N", 14, 3})
 	aAdd(aCampos, {"TT_LE"		,"N", 12, 2})
 	aAdd(aCampos, {"TT_SIT"		,"C", 10, 0})
@@ -63,10 +66,12 @@ User Function PL300()
 	aAdd(aCampos, {"TT_CONS"	,"N", 14, 3})
 	aAdd(aCampos, {"TT_DMOV"	,"D", 08, 0})
 	aAdd(aCampos, {"TT_DIAS"	,"N", 10, 2})
+	aAdd(aCampos, {"TT_FALTA"	,"C", 01, 0})
 
 	//Cria a temporária
 	oTempTable := FWTemporaryTable():New(cAliasTT)
 	oTempTable:SetFields(aCampos)
+
 	oTempTable:AddIndex("1", {"TT_ID"} )
 	oTempTable:AddIndex("2", {"TT_PRODUTO"} )
 	oTempTable:AddIndex("3", {"TT_CLIENT" , "TT_PRODUTO"} )
@@ -76,8 +81,6 @@ User Function PL300()
 
 	cTableName  := oTempTable:GetRealName()
 
-	CargaTT()
-
 	aAdd(aCampos, {"TT_ID"			,"C", 10, 0})
 
 	//Definindo as colunas que serão usadas no browse
@@ -85,25 +88,24 @@ User Function PL300()
 	aAdd(aColunas, {"Item"			, "TT_ITEM"		, "C", 02, 0, "@!"})
 	aAdd(aColunas, {"Seq."			, "TT_SEQUEN"	, "C", 03, 0, "@!"})
 	aAdd(aColunas, {"Prt."			, "TT_PRTOP"	, "C", 01, 0, "@!"})
-	aAdd(aColunas, {"Tp."			, "TT_TPOP"		, "C", 01, 0, "@!"})
 	aAdd(aColunas, {"Produto"		, "TT_PRODUTO"	, "C", 08, 0, "@!"})
-	aAdd(aColunas, {"Descricao"		, "TT_DESC"		, "C", 30, 0, "@!"})
 	aAdd(aColunas, {"Tipo"			, "TT_TIPO"		, "C", 02, 0, "@!"})
 	aAdd(aColunas, {"Lin."			, "TT_LINPRD"	, "C", 01, 0, "@!"})
 	aAdd(aColunas, {"Cliente"		, "TT_CLIENT"	, "C", 10, 0, "@!"})
 	aAdd(aColunas, {"Item Cli."		, "TT_XITEM"	, "C", 10, 0, "@!"})
-	aAdd(aColunas, {"Sit."			, "TT_SIT"		, "C", 01, 0, "@!"})
-	aAdd(aColunas, {"UM"			, "TT_UM"		, "C", 01, 0, "@!"})
 	aAdd(aColunas, {"Inicio"		, "TT_DATPRI"	, "D", 06, 0, "@!"})
 	aAdd(aColunas, {"Fim"			, "TT_DATPRF"	, "D", 06, 0, "@!"})
 	aAdd(aColunas, {"Quant."		, "TT_QUANT"	, "N", 08, 0, "@E 9,999,999.999"})
+	aAdd(aColunas, {"UM"			, "TT_UM"		, "C", 01, 0, "@!"})
 	aAdd(aColunas, {"Produzida"		, "TT_QUJE"		, "N", 08, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Saldo"			, "TT_SALDO"	, "N", 08, 0, "@E 9,999,999.999"})
-	aAdd(aColunas, {"Segur."		, "TT_ESTSEG"	, "N", 08, 0, "@E 9,999,999.999"})
-	aAdd(aColunas, {"Lote Econ."	, "TT_LE"		, "N", 08, 0, "@E 9,999,999.999"})
-	aAdd(aColunas, {"Cons. Med."	, "TT_CONS"		, "N", 08, 0, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Lote"			, "TT_LE"		, "N", 08, 0, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Consumo"		, "TT_CONS"		, "N", 08, 0, "@E 9,999,999.999"})
 	aAdd(aColunas, {"Ult.Mov."		, "TT_DMOV"		, "D", 06, 0, "@!"})
 	aAdd(aColunas, {"Dias"			, "TT_DIAS"		, "N", 06, 2, "@E 999,999.99"})
+	aAdd(aColunas, {"Segur."		, "TT_ESTSEG"	, "N", 08, 0, "@E 9,999,999.999"})
+	aAdd(aColunas, {"Sit."			, "TT_SIT"		, "C", 01, 0, "@!"})
+	aAdd(aColunas, {"Descricao"		, "TT_DESC"		, "C", 30, 0, "@!"})
 
 	aAdd(aPesquisa, {"Entrega"	, {{"", "D",  08, 0, "Entrega" 	, "@!", "TT_DATPRF"}} } )
 	aAdd(aPesquisa, {"Produto"	, {{"", "C",  15, 0, "Produto" 	, "@!", "TT_PRODUTO"}} } )
@@ -113,6 +115,7 @@ User Function PL300()
 	aAdd(aIndex, {"TT_LINPRD" , "TT_DATPRF" , "TT_PRODUTO"} )
 	aAdd(aIndex, {"TT_PRODUTO"} )
 	aAdd(aIndex, {"TT_CLIENT" , "TT_PRODUTO"} )
+
 
 	//Criando o browse da temporária
 	oBrowse := FWMBrowse():New()
@@ -124,6 +127,15 @@ User Function PL300()
 	oBrowse:DisableDetails()
 	oBrowse:SetDescription(cTitulo)
 	oBrowse:SetUseFilter(.T.)
+
+	oBrowse:AddLegend("TT_TPOP == 'F' .and. TT_FALTA != 'F'", "GREEN" , "Ordem Firme", "1")
+	oBrowse:AddLegend("TT_TPOP == 'P' .and. TT_FALTA != 'F'", "YELLOW", "Ordem Prevista", "1")
+	oBrowse:AddLegend("TT_TPOP == 'F' .and. TT_FALTA == 'F'", "RED"   , "Ordem Firme - Sem saldo de materia prima", "1")
+	oBrowse:AddLegend("TT_TPOP == 'P' .and. TT_FALTA == 'F'", "PINK"  , "Ordem Prevista - Sem saldo de materia prima", "1")
+
+	CargaTT()
+
+	u_PL300F12()
 
 	oBrowse:Activate()
 
@@ -140,9 +152,9 @@ Menu de opcoes na funcao PL300
 /*/
 Static Function MenuDef()
 	Local aRotina := {}
-	ADD OPTION aRotina TITLE "Visualizar" ACTION "VIEWDEF.PL300" OPERATION 2 ACCESS 0
+	ADD OPTION aRotina TITLE "Visualizar" ACTION "VIEWDEF.PL300" 	OPERATION 2 ACCESS 0
+	ADD OPTION aRotina TITLE 'Legenda'    ACTION 'u_PL300Legenda' 	OPERATION 8 ACCESS 0
 Return aRotina
-
 
 /*/{Protheus.doc} ModelDef
 Modelo de dados na funcao PL300
@@ -217,8 +229,10 @@ Return oView
 
 Static Function CargaTT()
 	Local cAlias, cSql
-	Local nDias	:= 0
-	Local cSit	:= ''
+	Local nQtNec 	:= 0
+	Local nDias		:= 0
+	Local cSit		:= ''
+	Local lRet		:= .T.
 
 	cSql := "SELECT B1_COD, B1_DESC, B1_XCLIENT, B1_TIPO, B1_XITEM, B1_LE, B1_PE, B1_UM, B1_ESTSEG, B1_XSIT, B1_XLINPRD, "
 	cSql += "		 C2_NUM, C2_ITEM, C2_SEQUEN, C2_DATPRI, C2_DATPRF, C2_QUANT, C2_QUJE, C2_TPOP, C2_TPPR, C2_XPRTOP, "
@@ -238,7 +252,6 @@ Static Function CargaTT()
 	cSql += "   AND SB2.D_E_L_E_T_  <> '*' "
 
 	cSql += " WHERE C2_FILIAL      	 = '" + xFilial("SC2") + "'"
-	cSql += "   AND C2_TPPR       	 = '" + cTipo + "'"
 	cSql += "   AND C2_DATRF       	 = ''"
 	cSql += "   AND C2_QUANT		 > C2_QUJE "
 	cSql += "   AND SC2.D_E_L_E_T_  <> '*' "
@@ -249,9 +262,13 @@ Static Function CargaTT()
 
 	While (cAlias)->(!EOF())
 
+		nQtNec := (cAlias)->C2_QUANT - (cAlias)->C2_QUJE
+
+		lRet := Estrutura((cAlias)->B1_COD, nQtNec)
+
 		cSql := "INSERT INTO " + cTableName + " ("
 		cSql += "	TT_ID, TT_PRODUTO, TT_DESC, TT_CLIENT, TT_ESTSEG, TT_LE, TT_SALDO, TT_TIPO, TT_XITEM, TT_DMOV, TT_SIT, TT_CONS, TT_DIAS, TT_UM, TT_TPOP, TT_TPPR, TT_LINPRD, "
-		cSql += "	TT_NUM, TT_ITEM, TT_SEQUEN, TT_DATPRI, TT_DATPRF, TT_QUANT, TT_QUJE, TT_PRTOP ) VALUES ('"
+		cSql += "	TT_NUM, TT_ITEM, TT_SEQUEN, TT_DATPRI, TT_DATPRF, TT_QUANT, TT_QUJE, TT_PRTOP, TT_FALTA ) VALUES ('"
 		cSql += FWUUIDv4() 			 				+ "','"
 		cSql += (cAlias)->B1_COD 					+ "','"
 		cSql += (cAlias)->B1_DESC    				+ "','"
@@ -301,7 +318,13 @@ Static Function CargaTT()
 		cSql += (cAlias)->C2_DATPRF   				+ "','"
 		cSql += cValToChar((cAlias)->C2_QUANT)   	+ "','"
 		cSql += cValToChar((cAlias)->C2_QUJE)   	+ "','"
-		cSql += (cAlias)->C2_XPRTOP   				+ "')"
+		cSql += (cAlias)->C2_XPRTOP   				+ "','"
+
+		if lRet == .F.
+			cSql += "F')"
+		else
+			cSql += "')"
+		endif
 
 		if TCSqlExec(cSql) < 0
 			MsgInfo("Erro na execução da query:", "Atenção")
@@ -317,31 +340,108 @@ return
   Ler os parametros do usuario
  *---------------------------------------------------------------------*/
 User Function PL300F12()
-	Local cSql		:= ''
 	Local aPergs	:= {}
 	Local aResps	:= {}
 
-	Local aTipos	:= {'Interna', 'Externa'}
+	Local aTppr		:= {'Interna', 'Externa'}
+	Local aLinprd	:= {'Estamparia', 'Solda'}
 	
-	AAdd(aPergs, {2, "Tipo de Producao"		, cTipo, aTipos, 70, ".T.", .F.})
+	AAdd(aPergs, {2, "Tipo de Producao"		, cTpop,  aTppr,  70, ".T.", .F.})
+	AAdd(aPergs, {2, "Linha de producao"	, cLinprd, aLinprd, 70, ".T.", .F.})
+
+	cFiltro := ""
 
 	If ParamBox(aPergs, "PL300 - ORDENS DE PRODUCAO", @aResps,,,,,,,, .T., .T.)
-		cTipo := aResps[1]
+		cTpop 	:= aResps[1]
+		cLinprd 	:= aResps[2]
 
-		cSql := "Delete from " + cTableName 
-
-		if TCSqlExec(cSql) < 0
-			MsgInfo("Erro na execução da query:", "DELETE")
-			MsgInfo(TcSqlError(), "Atenção2")
-		endif
-
-		IF cTipo == 'Interna'
-			cTipo := 'I'
+		IF cTpop == 'Interna'
+			cTpop := 'I'
 		else
-			cTipo := 'E'
+			cTpop := 'E'
 		endif
 
-		CargaTT()
+		IF cLinprd == 'Estamparia'
+			cLinprd := 'E'
+		else
+			cLinprd := 'S'
+		endif
+
+		if cFiltro	<> ''
+			cFiltro += " .and. "
+		endif
+
+		cFiltro += "TT_TPPR == '" + cTpop + "'"
+
+		if cFiltro	<> ''
+			cFiltro += " .and. "
+		endif
+
+		cFiltro += "TT_LINPRD == '" + cLinprd + "'"
+
+		oBrowse:CleanFilter()
+		oBrowse:SetFilterDefault(cFiltro)
 		oBrowse:Refresh()
 	endif
+return
+
+
+/*---------------------------------------------------------------------*
+  Explode a estrutura para calcular o saldo de materia prima
+ *---------------------------------------------------------------------*/
+Static Function	Estrutura(cProduto, nQtPai)
+	Local lRet		:= .T.
+	Local cSql 		:= ""
+	Local nQtNec 	:= 0
+	Local cAliasSG1
+	Local cAliasSB2
+
+	cSql := "SELECT G1_COD, G1_COMP, G1_QUANT, G1_INI, G1_FIM, G1_FANTASM "
+	cSql += "  FROM " + RetSQLName("SG1") + " SG1 "
+
+	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
+	csQL += "	 ON B1_COD			=  G1_COMP "
+	cSql += "   AND B1_MSBLQL 		=  '2' "
+	cSql += "   AND B1_FILIAL 		= '" + xFilial("SB1") + "' "
+	cSql += "   AND SB1.D_E_L_E_T_ 	= ' ' "
+
+	cSql += " WHERE G1_COD 			= '" + cProduto + "' "
+	cSql += "   AND G1_INI 		   <= '" + DTOS(Date()) + "' "
+	cSql += "   AND G1_FIM 		   >= '" + DTOS(Date()) + "' "
+	cSql += "   AND G1_FILIAL 		= '" + xFilial("SG1") + "' "
+	cSql += "   AND SG1.D_E_L_E_T_ 	= ' ' "
+	cAliasSG1 := MPSysOpenQuery(cSql)
+
+	While (cAliasSG1)->(!EOF())
+		nQtNec := nQtPai * (cAliasSG1)->G1_QUANT
+
+		// Ler o saldo do componente
+		cSql := "SELECT B2_QATU FROM " + RetSQLName("SB2") + " SB2 "
+		cSql += " WHERE B2_COD    		=  '" + (cAliasSG1)->G1_COMP + "'"
+		cSql += "   AND B2_FILIAL 		=  '" + xFilial("SB2") + "'"
+		cSql += "   AND SB2.D_E_L_E_T_  <> '*' "
+		cAliasSB2 := MPSysOpenQuery(cSql)
+
+		if nQtNec > (cAliasSB2)->B2_QATU
+			lRet := .F.
+		endif
+
+		(cAliasSB2)->(DBCLOSEAREA())
+		(cAliasSG1)->(DbSkip())
+	EndDo
+
+	(cAliasSG1)->(DBCLOSEAREA())
+return lRet
+
+
+/*---------------------------------------------------------------------*
+  Legendas
+ *---------------------------------------------------------------------*/
+User Function PL300Legenda()
+    Local aLegenda := {}
+    AAdd(aLegenda,{"BR_VERDE"   	,"Ordem firme"})
+    AAdd(aLegenda,{"BR_VERMELHO"	,"Ordem firme - Sem saldo de componente ou MP"})
+    AAdd(aLegenda,{"BR_AMARELO"   	,"Ordem prevista"})
+    AAdd(aLegenda,{"BR_PINK"		,"Ordem prevista - Sem saldo de componente ou MP"})
+    BrwLegenda("Legenda", "Tipo", aLegenda)
 return
