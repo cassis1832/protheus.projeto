@@ -22,9 +22,9 @@ User Function PL300()
 
 	Private oBrowse		:= ''
 	Private cFiltro		:= ''
+	Private cTppr 		:= ''
 	Private cTpop 		:= ''
 	Private cLinprd 	:= ''
-	Private cTppr 		:= ''
 	Private aRotina 	:= {}
 	Private cTableName 	:= ''
 	Private cAliasTT 	:= GetNextAlias()
@@ -345,22 +345,33 @@ User Function PL300F12()
 
 	Local aTppr		:= {'Interna', 'Externa'}
 	Local aLinprd	:= {'Estamparia', 'Solda'}
+	Local aTpop		:= {'Todas', 'Firmes', 'Previstas'}
 	
-	AAdd(aPergs, {2, "Tipo de Producao"		, cTpop,  aTppr,  70, ".T.", .F.})
+	AAdd(aPergs, {2, "Tipo de Producao"		, cTpop,   aTppr,   70, ".T.", .F.})
 	AAdd(aPergs, {2, "Linha de producao"	, cLinprd, aLinprd, 70, ".T.", .F.})
+	AAdd(aPergs, {2, "Tipo de OP"			, cTpop,   aTpop,   70, ".T.", .F.})
 
 	cFiltro := ""
 
 	If ParamBox(aPergs, "PL300 - ORDENS DE PRODUCAO", @aResps,,,,,,,, .T., .T.)
-		cTpop 	:= aResps[1]
+		cTppr 		:= aResps[1]
 		cLinprd 	:= aResps[2]
+		cTpop 		:= aResps[3]
 
-		IF cTpop == 'Interna'
-			cTpop := 'I'
+		// TPPR
+		IF cTppr == 'Interna'
+			cTppr := 'I'
 		else
-			cTpop := 'E'
+			cTppr := 'E'
 		endif
 
+		if cFiltro	<> ''
+			cFiltro += " .and. "
+		endif
+
+		cFiltro += "TT_TPPR == '" + cTppr + "'"
+
+		// LINPRD
 		IF cLinprd == 'Estamparia'
 			cLinprd := 'E'
 		else
@@ -371,13 +382,24 @@ User Function PL300F12()
 			cFiltro += " .and. "
 		endif
 
-		cFiltro += "TT_TPPR == '" + cTpop + "'"
+		cFiltro += "TT_LINPRD == '" + cLinprd + "'"
 
-		if cFiltro	<> ''
-			cFiltro += " .and. "
+		// TPOP
+		if cTpop == 'Todas'
+			cTpop := ''
+		elseif cTpop == 'Firmes'
+			cTpop := 'F'
+		elseif cTpop == 'Previstas'
+			cTpop := 'P'
 		endif
 
-		cFiltro += "TT_LINPRD == '" + cLinprd + "'"
+		if cTpop <> ''
+			if cFiltro	<> ''
+				cFiltro += " .and. "
+			endif
+
+			cFiltro += "TT_TPOP == '" + cTpop + "'"
+		endif
 
 		oBrowse:CleanFilter()
 		oBrowse:SetFilterDefault(cFiltro)
