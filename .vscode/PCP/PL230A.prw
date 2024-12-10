@@ -64,7 +64,7 @@ Static Function CargaInicial(oSay)
 	Local nSeq			:= 0
 	Local dData			:= Date()
 	Local cTppr			:= ""
-	Local aDados 		:= {}
+	//Local aDados 		:= {}
 
 	Private lMsErroAuto := .F.
 
@@ -160,29 +160,29 @@ Static Function CargaInicial(oSay)
 			cTppr := (cAlias)->B1_XTPPR
 		endif
 
-		if (cAlias)->C2_TPPR  != cTppr
+		// if (cAlias)->C2_TPPR  != cTppr
 
-			SC2->(DbSetOrder(1))
-			SC2->(DbSeek(xFilial("SC2")+(cAlias)->C2_NUM+(cAlias)->C2_ITEM+(cAlias)->C2_SEQUEN)) //FILIAL + NUM + ITEM + SEQUEN + ITEMGRD
+		// 	SC2->(DbSetOrder(1))
+		// 	SC2->(DbSeek(xFilial("SC2")+(cAlias)->C2_NUM+(cAlias)->C2_ITEM+(cAlias)->C2_SEQUEN)) //FILIAL + NUM + ITEM + SEQUEN + ITEMGRD
 
-			Begin Transaction
-				aDados := { ;
-					{'C2_FILIAL' 	,xFilial("SC2") 		,NIL},;
-					{'C2_NUM' 		,(cAlias)->C2_NUM 		,NIL},;
-					{'C2_ITEM' 		,(cAlias)->C2_ITEM 		,NIL},;
-					{'C2_SEQUEN' 	,(cAlias)->C2_SEQUEN 	,NIL},;
-					{'C2_PRODUTO'   ,(cAlias)->C2_PRODUTO	,NIL},;
-					{'C2_TPPR' 		,cTppr 					,NIL};
-					}
+		// 	Begin Transaction
+		// 		aDados := { ;
+			// 			{'C2_FILIAL' 	,xFilial("SC2") 		,NIL},;
+			// 			{'C2_NUM' 		,(cAlias)->C2_NUM 		,NIL},;
+			// 			{'C2_ITEM' 		,(cAlias)->C2_ITEM 		,NIL},;
+			// 			{'C2_SEQUEN' 	,(cAlias)->C2_SEQUEN 	,NIL},;
+			// 			{'C2_PRODUTO'   ,(cAlias)->C2_PRODUTO	,NIL},;
+			// 			{'C2_TPPR' 		,cTppr 					,NIL};
+			// 			}
 
-				MSExecAuto({|x,y| Mata650(x,y)},aDados,4)
+		// 		MSExecAuto({|x,y| Mata650(x,y)},aDados,4)
 
-				If lMsErroAuto
-					ConOut("Erro Execauto!")
-					MostraErro()
-				EndIf
-			End Transaction
-		endif
+		// 		If lMsErroAuto
+		// 			ConOut("Erro Execauto!")
+		// 			MostraErro()
+		// 		EndIf
+		// 	End Transaction
+		// endif
 
 		// Ver se existe operacao firme (alteracao de recurso da OP)
 		ZA2->(DBSetOrder(3))
@@ -278,10 +278,6 @@ Static Function Calculo(oSay)
 
 	While ("ZA2")->(! EOF()) .and. ZA2->ZA2_TIPO == "1"
 
-		// if AllTrim(ZA2->ZA2_PROD) == '10536330'
-		// 	dDtIniP := NIL
-		// endif
-
 		nQtNec 	:= ZA2->ZA2_HSTOT
 		dDtIniP := NIL
 		dDtFimP := NIL
@@ -321,8 +317,15 @@ Static Function Calculo(oSay)
 		endif
 
 		RecLock("ZA2", .F.)
-		ZA2->ZA2_DTINIP	:= dDtIniP
-		ZA2->ZA2_DTFIMP	:= dDtIniP
+
+		if dDtIniP == nil .or. dDtFimP == nil
+			ZA2->ZA2_DTINIP	:= ZA2->ZA2_DATPRI
+			ZA2->ZA2_DTFIMP	:= ZA2->ZA2_DATPRF
+		else
+			ZA2->ZA2_DTINIP	:= dDtIniP
+			ZA2->ZA2_DTFIMP	:= dDtFimP
+		endif
+
 		ZA2->(MsUnLock())
 
 		ZA2->(DbSkip())

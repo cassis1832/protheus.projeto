@@ -78,15 +78,17 @@ User Function PL250()
 				cSql := "SELECT ZA2.* FROM " + RetSQLName("ZA2") + " ZA2 "
 
 				cSql += " INNER JOIN " + RetSQLName("SC2") + " SC2 "
-				cSql += "	 ON C2_NUM+C2_ITEM+C2_SEQUEN = ZA2_OP"
-				cSql += " 	AND C2_TPOP 	   	 = 'F'"		// Firme
-				cSql += "   AND C2_DATRF   		 = ''"		// Aberta
+				cSql += "	 ON C2_NUM			 = substring(ZA2_OP,1,6) "
+				cSql += "	AND C2_ITEM			 = substring(ZA2_OP,7,2) "
+				cSql += "	AND C2_SEQUEN 		 = substring(ZA2_OP,9,3) "
+				cSql += " 	AND C2_TPOP 	   	 = 'F'"		// Ordem firme
+				cSql += "   AND C2_DATRF   		 = ''"		// Ordem aberta
 				cSql += "   AND C2_FILIAL 	 	 = '" + xFilial("SC2") + "'"
 				cSql += "	AND SC2.D_E_L_E_T_ 	 = ' ' "
 
 				cSql += " WHERE ZA2_RECURS 		 = '" + SH1->H1_CODIGO 	+ "'"
 				cSql += "   AND ZA2_TIPO         = '1'"
-				cSql += "   AND ZA2_STAT         = 'L'"
+				cSql += "   AND ZA2_STAT         = 'C'"		// Operacao confirmada
 				cSql += "   AND ZA2_DTINIP      <= '" + dtos(dDia) 				+ "'"
 				cSql += "   AND ZA2_DTFIMP      >= '" + dtos(dDia) 				+ "'"
 				cSql += "   AND ZA2_FILIAL 		 = '" + xFilial("ZA2") 			+ "'"
