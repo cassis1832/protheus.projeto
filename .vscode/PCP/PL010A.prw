@@ -347,34 +347,38 @@ Static Function printOper()
 	oPrinter:Line(nLin+30, 15, nLin+30, 550)
 
 	nLin +=45
-	oPrinter:Say(nLin, 15, "Oper.",oFont09)
-	oPrinter:Say(nLin, 60, "Descricao",oFont09)
+	oPrinter:Say(nLin,  15, "Oper.",oFont09)
+	oPrinter:Say(nLin,  50, "Descricao",oFont09)
 	oPrinter:Say(nLin, 180, "Maquina",oFont09)
-	oPrinter:Say(nLin, 260, "Qtde/Hr",oFont09)
-	oPrinter:Say(nLin, 360, "Qtde Real.",oFont09)
+	oPrinter:Say(nLin, 250, "M.Obra",oFont09)
+	oPrinter:Say(nLin, 320, "Qtde/Hr",oFont09)
+	oPrinter:Say(nLin, 380, "Qtde Real.",oFont09)
 
-	oPrinter:Say(nLin, 435, "Ganho de Producao",oFont09)
+	oPrinter:Say(nLin, 440, "Ganho de Producao",oFont09)
 	oPrinter:Box(nLin-10, 535, nLin+5, 550)		   // Box(row, col, bottom, right)
 
 	if lOper
 		if (cAliasOper)->(EOF())
 			nLin +=16
+		else
+			nlin -= 7
 		endif
 
 		While (cAliasOper)->(!EOF())
-			nLin +=16
+			nLin +=25
 			oPrinter:Say(nLin, 15, (cAliasOper)->G2_OPERAC, oFont10)
 			oPrinter:Say(nLin, 50, (cAliasOper)->G2_DESCRI,oFont10)
 			oPrinter:Say(nLin, 180, (cAliasOper)->G2_RECURSO, oFont10)
+			oPrinter:Say(nLin, 250, TRANSFORM((cAliasOper)->G2_MAOOBRA, "@E 99"), oFont10)
 
 			if (cAliasOper)->G2_LOTEPAD - int((cAliasOper)->G2_LOTEPAD) == 0
-				oPrinter:Say(nLin, 260, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999"), oFont10)
+				oPrinter:Say(nLin, 320, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999"), oFont10)
 			else
-				oPrinter:Say(nLin, 260, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999.999"), oFont10)
+				oPrinter:Say(nLin, 320, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999.999"), oFont10)
 			endif
 
 			// Bar code operacao
-			oPrinter:Code128(nlin-10/*nRow*/ ,470/*nCol*/,(cAliasOper)->G2_OPERAC/*cCode*/,1/*nWidth*/,20/*nHeigth*/,.F./*lSay*/,,50)
+			oPrinter:Code128(nlin-10/*nRow*/ ,480/*nCol*/,(cAliasOper)->G2_OPERAC/*cCode*/,1/*nWidth*/,20/*nHeigth*/,.F./*lSay*/,,50)
 
 			OperAlternativa()
 
@@ -389,19 +393,20 @@ Static Function printOper()
 			(cAliasOper)->(DbSkip())
 		EndDo
 	else
-		nLin +=16
+		nLin +=25
 		oPrinter:Say(nLin, 15, (cAliasOper)->G2_OPERAC, oFont10)
 		oPrinter:Say(nLin, 50, (cAliasOper)->G2_DESCRI,oFont10)
 		oPrinter:Say(nLin, 180, (cAliasOper)->G2_RECURSO, oFont10)
+		oPrinter:Say(nLin, 250, TRANSFORM((cAliasOper)->G2_MAOOBRA, "@E 99"), oFont10)
 
 		if (cAliasOper)->G2_LOTEPAD - int((cAliasOper)->G2_LOTEPAD) == 0
-			oPrinter:Say(nLin, 260, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999"), oFont10)
+			oPrinter:Say(nLin, 320, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999"), oFont10)
 		else
-			oPrinter:Say(nLin, 260, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999.999"), oFont10)
+			oPrinter:Say(nLin, 320, TRANSFORM((cAliasOper)->G2_LOTEPAD, "@E 99,999.999"), oFont10)
 		endif
 
 		// Bar code operacao
-		oPrinter:Code128(nlin-10/*nRow*/ ,470/*nCol*/,(cAliasOper)->G2_OPERAC/*cCode*/,1/*nWidth*/,20/*nHeigth*/,.F./*lSay*/,,50)
+		oPrinter:Code128(nlin-10/*nRow*/ ,480/*nCol*/,(cAliasOper)->G2_OPERAC/*cCode*/,1/*nWidth*/,20/*nHeigth*/,.F./*lSay*/,,50)
 
 		OperAlternativa()
 
@@ -436,7 +441,7 @@ return
 Static Function printApont()
 	Local nLinIni	:= 0
 
-	nLin += 10
+	nLin += 15
 	nLinIni = nLin
 
 	oPrinter:Line(nLin, 15, nLin, 550)

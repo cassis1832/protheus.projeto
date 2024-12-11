@@ -26,6 +26,8 @@ User Function PL250()
 	Local aPergs	    := {}
 	Local aResps	    := {}
 
+	Local aLinhas		:= {}
+	Local cLinha		:= ""
 	Local cMaqIni   	:= ""
 	Local cMaqFim   	:= ""
 	Local dDtIni   		:= Date()
@@ -40,16 +42,36 @@ User Function PL250()
 	Private nLin 	    := 0
 	Private cDir        := "c:\temp\"  		// Local do relatorio
 
+	cSql := "SELECT DISTINCT H1_XLIN "
+	cSql += "  FROM " + RetSQLName("SH1") + " SH1 "
+	cSql += " WHERE H1_FILIAL         = '" + xFilial("SH1") + "' "
+	cSql += "   AND SH1.D_E_L_E_T_    <> '*' "
+	cSql += " ORDER BY H1_XLIN "
+	cAlias := MPSysOpenQuery(cSql)
+
+	Aadd(aLinhas, "")
+
+	While (cAlias)->(!EOF())
+		xInd++
+		Aadd(aLinhas, AllTrim((cAlias)->H1_XLIN))
+		(cAlias)->(DbSkip())
+	EndDo
+
+	(cAlias)->(DBCLOSEAREA())
+
 	AAdd(aPergs, {1, "Informe a data inicial "	, CriaVar("C2_DATPRI",.F.),"",".T.","",".T.", 70, .T.})
 	AAdd(aPergs, {1, "Informe a data final "	, CriaVar("C2_DATPRI",.F.),"",".T.","",".T.", 70, .T.})
+	AAdd(aPergs, {2, "Linha"					, cLinha, aLinhas, 70, ".T.", .F.})
 	AAdd(aPergs, {1, "Maquina inicial"			, CriaVar("H1_CODIGO",.F.),,,"SH1",, 60, .F.})
 	AAdd(aPergs, {1, "Maquina final"			, CriaVar("H1_CODIGO",.F.),,,"SH1",, 60, .T.})
+
 
 	If ParamBox(aPergs, "EMISSAO DO PLANO DE PRODUCAO", @aResps,,,,,,,, .T., .T.)
 		dDtIni  	:= aResps[1]
 		dDtFim  	:= aResps[2]
-		cMaqIni  	:= aResps[3]
-		cMaqFim  	:= aResps[4]
+		cLinha		:= aResps[3]
+		cMaqIni  	:= aResps[4]
+		cMaqFim  	:= aResps[5]
 	Else
 		return
 	endif
@@ -93,6 +115,11 @@ User Function PL250()
 				cSql += "   AND ZA2_DTFIMP      >= '" + dtos(dDia) 				+ "'"
 				cSql += "   AND ZA2_FILIAL 		 = '" + xFilial("ZA2") 			+ "'"
 				cSql += "	AND ZA2.D_E_L_E_T_ 	 = ' ' "
+
+				if AllTrim(cLinha) != ''
+					cSql += " AND ZA2_TIPLIN 	 = '" + cLinha + "'"
+				endif
+
 				cSql += " ORDER BY ZA2_DTINIP, ZA2_HRINIP, ZA2_DTFIMP, ZA2_HRFIMP "
 				cAlias := MPSysOpenQuery(cSql)
 

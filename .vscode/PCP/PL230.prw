@@ -10,7 +10,7 @@
 User Function PL230()
 	Local aArea 	:= FWGetArea()
 
-	Private oBrowse	:= Nil
+	Private oMark	:= Nil
 	Private cMarca 	:= GetMark()
 	Private cTitulo	:= "Plano de Producao - MR"
 	Private cFiltro	:= ""
@@ -28,21 +28,22 @@ User Function PL230()
 	endif
 
 	//Criando o browse da temporária
-	oBrowse := FWMarkBrowse():New()
-	oBrowse:SetAlias('ZA2')
-	oBrowse:SetDescription(cTitulo)
-	oBrowse:DisableDetails()
-	oBrowse:SetFieldMark( 'ZA2_OK' )
-	oBrowse:SetMark(cMarca, "ZA2", "ZA2_OK")
-	oBrowse:SetAllMark( { || oBrowse:AllMark() } )
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Confirmada"			, "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Confirmada sem saldo"	, "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'S'"	, "YELLOW"	, "Ordem Planejada"				, "1")
-	oBrowse:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'N'"	, "PINK"	, "Ordem Planejada sem saldo"	, "1")
+	oMark := FWMarkBrowse():New()
+	oMark:SetDescription(cTitulo)
+	oMark:SetAlias('ZA2')
+	oMark:DisableDetails()
+	oMark:SetFieldMark( 'ZA2_OK' )
+	oMark:SetMark(cMarca, "ZA2", "ZA2_OK")
+	oMark:SetAllMark( { || oMark:AllMark() } )
 
-	LerParametros()
+	oMark:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'S'"	, "GREEN"	, "Ordem Confirmada"			, "1")
+	oMark:AddLegend("ZA2->ZA2_STAT == 'C' .AND. ZA2->ZA2_SITSLD == 'N'"	, "RED"		, "Ordem Confirmada sem saldo"	, "1")
+	oMark:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'S'"	, "YELLOW"	, "Ordem Planejada"				, "1")
+	oMark:AddLegend("ZA2->ZA2_STAT == 'P' .AND. ZA2->ZA2_SITSLD == 'N'"	, "PINK"	, "Ordem Planejada sem saldo"	, "1")
 
-	oBrowse:Activate()
+//	LerParametros()
+
+	oMark:Activate()
 
 	FWRestArea(aArea)
 return
@@ -83,7 +84,7 @@ Static Function ModelDef()
 	oModel:=MPFormModel():New  ("PL230M", Nil, Nil, Nil, Nil)
 
 	oModel:AddFields("FORMZA2",/*cOwner*/,oStZA2)
-	oModel:SetPrimaryKey({'ZA2_FILIAL', 'ZA2_TIPO', 'ZA2_RECURS', 'ZA2_DTINIP', 'ZA2_PROD', 'ZA2_OPER'})
+	oModel:SetPrimaryKey({'ZA2_TIPO', 'ZA2_RECURS', 'ZA2_DTINIP', 'ZA2_PROD', 'ZA2_OPER'})
 	oModel:SetDescription("Dados da Ordem de Producao ")
 	oModel:GetModel("FORMZA2"):SetDescription("Ordem de Produção ")
 Return oModel
@@ -110,7 +111,7 @@ Return oView
  *---------------------------------------------------------------------*/
 User Function PL230Calculo()
 	u_PL230A("Calculo", dDtIni, dDtFim)
-	oBrowse:Refresh()
+	oMark:Refresh()
 return
 
 
@@ -139,12 +140,12 @@ return
  *---------------------------------------------------------------------*/
 User Function PL230Mark(cAcao)
 	Local aArea    	:= GetArea()
-	Local cMarca   	:= oBrowse:Mark()
+	Local cMarca   	:= oMark:Mark()
 
 	ZA2->(DbGoTop())
 
 	While !ZA2->(EoF())
-		If oBrowse:IsMark(cMarca)
+		If oMark:IsMark(cMarca)
 			RecLock('ZA2', .F.)
 			ZA2_OK := ''
 
@@ -232,7 +233,7 @@ Static Function LerParametros()
 		return
 	endif
 	
-	oBrowse:CleanFilter()
-	oBrowse:SetFilterDefault(cFiltro)
-	oBrowse:Refresh()
+	oMark:CleanFilter()
+	oMark:SetFilterDefault(cFiltro)
+	oMark:Refresh()
 return

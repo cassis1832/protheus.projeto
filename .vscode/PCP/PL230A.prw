@@ -63,8 +63,6 @@ Static Function CargaInicial(oSay)
 	Local nSetup		:= 0
 	Local nSeq			:= 0
 	Local dData			:= Date()
-	Local cTppr			:= ""
-	//Local aDados 		:= {}
 
 	Private lMsErroAuto := .F.
 
@@ -153,36 +151,6 @@ Static Function CargaInicial(oSay)
 		endif
 
 		nTotal 	:= nSetup + nQuant
-
-		if AllTrim((cAlias)->B1_XTPPR) == ''
-			cTppr := 'I'
-		else
-			cTppr := (cAlias)->B1_XTPPR
-		endif
-
-		// if (cAlias)->C2_TPPR  != cTppr
-
-		// 	SC2->(DbSetOrder(1))
-		// 	SC2->(DbSeek(xFilial("SC2")+(cAlias)->C2_NUM+(cAlias)->C2_ITEM+(cAlias)->C2_SEQUEN)) //FILIAL + NUM + ITEM + SEQUEN + ITEMGRD
-
-		// 	Begin Transaction
-		// 		aDados := { ;
-			// 			{'C2_FILIAL' 	,xFilial("SC2") 		,NIL},;
-			// 			{'C2_NUM' 		,(cAlias)->C2_NUM 		,NIL},;
-			// 			{'C2_ITEM' 		,(cAlias)->C2_ITEM 		,NIL},;
-			// 			{'C2_SEQUEN' 	,(cAlias)->C2_SEQUEN 	,NIL},;
-			// 			{'C2_PRODUTO'   ,(cAlias)->C2_PRODUTO	,NIL},;
-			// 			{'C2_TPPR' 		,cTppr 					,NIL};
-			// 			}
-
-		// 		MSExecAuto({|x,y| Mata650(x,y)},aDados,4)
-
-		// 		If lMsErroAuto
-		// 			ConOut("Erro Execauto!")
-		// 			MostraErro()
-		// 		EndIf
-		// 	End Transaction
-		// endif
 
 		// Ver se existe operacao firme (alteracao de recurso da OP)
 		ZA2->(DBSetOrder(3))
