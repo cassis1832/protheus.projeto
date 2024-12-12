@@ -165,14 +165,30 @@ return
 
 
 Static Function	CalculaSaldos()
-	Local nRow := 0
-	Local nCol := 0
-	Local nSaldo :=0
+	Local nRow 		:= 1
+	Local nCol 		:= 0
+	Local nSaldo 	:= 0
+	Local lTem		:= .F.
 
-	For nRow := 1 to Len(aPedidos) Step 1
+	While nRow <= Len(aPedidos)
+
+		if aPedidos[nRow] == Nil
+			aSize(aPedidos, nRow - 1)
+			exit
+		endif
+
+		lTem	:= .F.
+
 		nSaldo := val(aPedidos[nRow][3])
 
+		if nSaldo <> 0
+			lTem	:= .T.
+		endif
+
 		For nCol := 4 to Len(aPedidos[nRow])
+			if val(aPedidos[nRow][nCol]) <> 0
+				lTem	:= .T.
+			endif
 
 			nSaldo := nSaldo - val(aPedidos[nRow][nCol])
 
@@ -180,7 +196,13 @@ Static Function	CalculaSaldos()
 				aPedidos[nRow][nCol] := aPedidos[nRow][nCol] + " ( " + cValToChar(nSaldo) + " )"
 			endif
 		Next
-	Next
+
+		if lTem == .F.
+			aDel(aPedidos, nRow)
+		else
+			nRow++
+		endif
+	EndDo
 return
 
 
