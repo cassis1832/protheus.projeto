@@ -42,7 +42,7 @@ Static Function ObterDados()
 	Local nPosData:=0
 
 	// Carrega os itens e os saldos iniciais
-	cSql := "SELECT A7_PRODUTO, B1_LOCPAD, A7_CODCLI "
+	cSql := "SELECT DISTINCT A7_PRODUTO, B1_LOCPAD, A7_CODCLI "
 	cSql += "  FROM " + RetSQLName("SA7") + " SA7 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
@@ -233,7 +233,7 @@ Static Function fWBrowse1()
 
 	oFwBrowse:SetOwner(oPnl)
 	oFwBrowse:SetDoubleClick( {|| fDupClique() } )
-	oFwBrowse:SetDescription( "Planejamento por Cliente" )
+	oFwBrowse:SetDescription( "Planejamento Geral" )
 
 	oFwBrowse:Activate()
 	oDlg:Activate()
