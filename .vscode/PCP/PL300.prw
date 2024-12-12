@@ -152,8 +152,9 @@ Menu de opcoes na funcao PL300
 /*/
 Static Function MenuDef()
 	Local aRotina := {}
-	ADD OPTION aRotina TITLE "Visualizar" ACTION "VIEWDEF.PL300" 	OPERATION 2 ACCESS 0
-	ADD OPTION aRotina TITLE 'Legenda'    ACTION 'u_PL300Legenda' 	OPERATION 8 ACCESS 0
+	ADD OPTION aRotina TITLE "Visualizar" 		ACTION "VIEWDEF.PL300" 		OPERATION 2 ACCESS 0
+	ADD OPTION aRotina TITLE 'Imprimir Ordem'	ACTION 'u_PL300Imprimir'	OPERATION 7 ACCESS 0
+	ADD OPTION aRotina TITLE 'Legenda'    		ACTION 'u_PL300Legenda' 	OPERATION 8 ACCESS 0
 Return aRotina
 
 /*/{Protheus.doc} ModelDef
@@ -467,3 +468,23 @@ User Function PL300Legenda()
     AAdd(aLegenda,{"BR_PINK"		,"Ordem prevista - Sem saldo de componente ou MP"})
     BrwLegenda("Legenda", "Tipo", aLegenda)
 return
+
+
+
+/*---------------------------------------------------------------------*
+  Imprimir OP
+ *---------------------------------------------------------------------*/
+User Function PL300Imprimir()
+	Local aArea    	:= GetArea()
+
+	if TT_PRTOP == 'S'	// Ja foi impressa
+		u_PL010A(TT_NUM + TT_ITEM + TT_SEQUEN, .F., .T.)
+	else
+		u_PL010A(TT_NUM + TT_ITEM + TT_SEQUEN, .F., .F.)
+	endif
+		
+	Sleep(1000)
+
+	RestArea(aArea)
+Return NIL
+

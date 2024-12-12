@@ -237,8 +237,8 @@ return
 
 
 Static Function fMontaTela()
-	Local nLargBtn := 50
-	Local nX := 0
+	Local nX 		:= 0
+	Local cDados	:= ''
 
 	//Objetos e componentes
 	Private oDlg
@@ -248,31 +248,30 @@ Static Function fMontaTela()
 
 	//Tamanho da janela
 	Private aSize := MsAdvSize(.T.)
-	Private nJanLarg := aSize[5] * 0.35
+	Private nJanLarg := aSize[5] * 0.4
 	Private nJanAltu := aSize[6] * 0.8
 
 	//Fontes
 	Private cFontUti    := "Tahoma"
+	Private oFontCab    := TFont():New(cFontUti, , -18)
 	Private oFontSub    := TFont():New(cFontUti, , -16)
-	Private oFontBtn    := TFont():New(cFontUti, , -14)
 
 	//Cria a janela
-	DEFINE MSDIALOG oDlg TITLE "Planejamento por Item"  FROM 0, 0 TO  nJanAltu, nJanLarg PIXEL
+	DEFINE MSDIALOG oDlg TITLE "Planejamento do Item"  FROM 0, 0 TO  nJanAltu, nJanLarg PIXEL
 
 	oFwLayer := FwLayer():New()
 	oFwLayer:init(oDlg,.F.)
 
-	//Cabeçalho da tela
-	oFWLayer:addLine("TIT",  8, .F.)
-	oFWLayer:addLine("DAD", 10, .F.)
-	oFWLayer:addLine("GRD", 77, .F.)
+	// Linhas
+	oFWLayer:addLine("TIT",  7 /* % */, .F.)
+	oFWLayer:addLine("DAD",  7 /* % */, .F.)
+	oFWLayer:addLine("GRD", 82 /* % */, .F.)
 
-	oFWLayer:addCollumn("HEADERTEXT", 075, .T., "TIT")
-	oFWLayer:addCollumn("BTNSAIR"   , 025, .T., "TIT")
-	oFWLayer:addCollumn("DADOS"     , 90,  .T., "DAD")
+	// Colunas
+	oFWLayer:addCollumn("HEADERTEXT", 90 /* % */, .T., "TIT")
+	oFWLayer:addCollumn("DADOS"     , 90 /* % */, .T., "DAD")
 
 	oPanHeader := oFWLayer:GetColPanel("HEADERTEXT" , "TIT")
-	oPanSair   := oFWLayer:GetColPanel("BTNSAIR"    , "TIT")
 	oPanDados  := oFWLayer:GetColPanel("DADOS"      , "DAD")
 
 	oFWLayer:addCollumn("COLGRID1",  5, .T., "GRD")     // margem esquerda
@@ -281,19 +280,13 @@ Static Function fMontaTela()
 	oPanGrid   := oFWLayer:GetColPanel("COLGRID1", "GRD")
 	oPanGrid   := oFWLayer:GetColPanel("COLGRID2", "GRD")
 
-	oSayTitulo := TSay():New(004, 005, {|| "Planejamento por item"}, ;
-		oPanHeader, "", oFontSub,  , , , .T., RGB(031, 073, 125), , 200, 30, , , , , , .F., , )
+	oSayTitulo := TSay():New(004, 005, {|| "Planejamento do Item"}, ;
+		oPanHeader, "", oFontCab,  , , , .T., RGB(031, 073, 125), , 200, 30, , , , , , .F., , )
 
-	oSayDados  := TSay():New(004, 010, {|| "Codigo do Item: " + cItem}, ;
+	cDados := "Produto: " + cItem + "      Saldo Inicial: " + cValToChar(nSaldoIni)
+	oSayDados  := TSay():New(004, 010, {|| cDados}, ;
 		oPanDados, "", oFontSub,  , , , .T., RGB(031, 073, 125), , 200, 30, , , , , , .F., , )
 
-	oSayDados2 := TSay():New(020, 010, {|| "Saldo inicial:  " + cValToChar(nSaldoIni)}, ;
-		oPanDados, "", oFontSub,  , , , .T., RGB(031, 073, 125), , 200, 30, , , , , , .F., , )
-
-	//Criando os botões
-	oBtnSair := TButton():New(006, 001, "Fechar", oPanSair, {|| oDlg:End()}, nLargBtn, 018, , oFontBtn, , .T., , , , , , )
-
-	// GRID
 	oFwBrowse := FWBrowse():New()
 	oFwBrowse:SetDataArrayoBrowse()
 	oFwBrowse:SetArray(aLinhas)

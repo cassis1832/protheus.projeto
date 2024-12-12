@@ -3,7 +3,7 @@
 
 //-------------------------------------------------------------------
 /*/{Protheus.doc} PL290
-Consulta geral do planejamento
+	Consulta geral do planejamento
 @author  Carlos Assis
 @since   09/12/2024
 @version 1.0
@@ -205,12 +205,9 @@ Static Function fWBrowse1()
 	Local geraXml  := {|| GeraExcel()}
 
 	oDlg:= FwDialogModal():New()
+	oDlg:enableAllClient()
 	oDlg:SetEscClose(.T.)
-	oDlg:SetTitle('Plano Geral')
-
-	//Seta a largura e altura da janela em pixel
-	oDlg:SetPos(000, 000)
-	oDlg:SetSize(400, 700)
+	oDlg:SetTitle('Plano Geral de Entrega')
 
 	oDlg:CreateDialog()
 	oDlg:AddCloseButton(Nil, 'Fechar')
