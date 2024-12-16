@@ -66,7 +66,7 @@ Static Function CargaInicial(oSay)
 
 	Private lMsErroAuto := .F.
 
-	// Limpa as linhas planejadas e de ordens encerradas
+	// Limpa as linhas planejadas
 	cSql := "DELETE FROM "  + RetSQLName("ZA2")
 	cSql += " WHERE ZA2_FILIAL  = '" + xFilial("ZA2") + "' "
 	cSql += "	AND ZA2_STAT    = 'P'"
@@ -76,6 +76,25 @@ Static Function CargaInicial(oSay)
 		MsgInfo(TcSqlError(), "Atenção2")
 	endif
 
+	// Limpa ordens encerradas
+	cSql := "DELETE ZA2 "
+	cSql += "  FROM " + RetSQLName("ZA2") + " ZA2 "
+
+	cSql += " INNER JOIN " + RetSQLName("SC2") + " SC2 "
+	cSql += "    ON C2_FILIAL  = '" + xFilial("SC2") + "' "
+	cSql += "	AND C2_NUM     = substring(ZA2_OP, 1, 6) "
+	cSql += "	AND C2_ITEM    = substring(ZA2_OP, 7, 2) "
+	cSql += "	AND C2_SEQUEN  = substring(ZA2_OP, 9, 3) "
+	cSql += "   AND C2_DATRF  <> ''"
+
+	cSql += " WHERE ZA2_FILIAL  = '" + xFilial("ZA2") + "' "
+
+	if TCSqlExec(cSql) < 0
+		MsgInfo("Erro na delete2 do ZA2:", "Atenção")
+		MsgInfo(TcSqlError(), "Atenção2")
+	endif
+
+	// Limpa as ordens com quantidades diferentes
 	SC2->(dbSetOrder(1))	// OP
 	ZA2->(DBSetOrder(1))	// Tipo
 	ZA2->(DbSeek(xFilial("ZA2") + "1"))
@@ -88,7 +107,8 @@ Static Function CargaInicial(oSay)
 				AvKey(Substring(ZA2->ZA2_OP, 7, 2), "C2_ITEM") + ;
 				AvKey(Substring(ZA2->ZA2_OP, 9, 3), "C2_SEQUEN")))
 
-			if AllTrim(dtos(SC2->C2_DATRF)) <> ''
+			if ZA2->ZA2_QUANT != SC2->C2_QUANT .or. ;
+					ZA2->ZA2_PROD  != SC2->C2_PRODUTO
 				ZA2->(DbDelete())
 			endif
 		else
@@ -126,9 +146,7 @@ Static Function CargaInicial(oSay)
 	cSql += "   AND H1_FILIAL 	 	 = '" + xFilial("SH1") + "' "
 	cSql += "   AND SH1.D_E_L_E_T_ 	 = ''
 
-	cSql += " WHERE C2_DATPRF 	   	>= '" + dtos(dDtIni) + "'"
-	cSql += "   AND C2_DATPRF	   	<= '" + dtos(dDtFim) + "'"
-	cSql += "   AND C2_DATRF   		 = ''"
+	cSql += " WHERE C2_DATRF   		 = ''"
 	cSql += "   AND C2_TPOP	   	     = 'F'"		// Firme
 	cSql += "   AND C2_TPPR	   	     = 'I'"		// Interna
 	cSql += "   AND C2_FILIAL 	 	 = '" + xFilial("SC2") + "' "
@@ -184,7 +202,7 @@ Static Function CargaInicial(oSay)
 			ZA2_OPER	:= (cAlias)->G2_OPERAC
 			ZA2_PRIOR	:= (cAlias)->C2_PRIOR
 			ZA2_SITSLD	:= "S"
-			ZA2_STAT	:= "P"
+			ZA2_STAT	:= "C"
 			ZA2->(MsUnLock())
 			ConfirmSx8()
 		endif
@@ -236,8 +254,9 @@ return
 */
 Static Function Calculo(oSay)
 	Local nQtNec	:= 0
-	Local dDtIniP 	:= date()
-	Local dDtFimP 	:= date()
+	Local dDt	 	:= dDataBase
+	Local dDtIniP 	:= dDataBase
+	Local dDtFimP 	:= dDataBase
 
 	(cAliasTT)->(DBSetOrder(2))
 
@@ -250,12 +269,19 @@ Static Function Calculo(oSay)
 		dDtIniP := NIL
 		dDtFimP := NIL
 
+		if ZA2->ZA2_DATPRI > dDataBase
+			dDt := ZA2->ZA2_DATPRI
+		else
+			dDt := dDataBase
+		endif
+
 		(cAliasTT)->(DbGoTop())
-		(cAliasTT)->(DbSeek(ZA2->ZA2_RECURS + dtos(ZA2->ZA2_DATPRI),.T.))
+		(cAliasTT)->(DbSeek(ZA2->ZA2_RECURS + dtos(dDt),.T.))
 
 		if ! (cAliasTT)->(EOF())
 			While nQtNec > 0
-				if (cAliasTT)->TT_RECURS == ZA2->ZA2_RECURS  .and. (cAliasTT)->TT_DATA <= dtos(ZA2->ZA2_DATPRF)
+				if (cAliasTT)->TT_RECURS == ZA2->ZA2_RECURS  .and. ;
+						(cAliasTT)->TT_DATA <= dtos(ZA2->ZA2_DATPRF)
 					if (cAliasTT)->TT_DISP > (cAliasTT)->TT_USADA					// Tem horas disponiveis no dia
 
 						if dDtIniP == NIL
@@ -289,6 +315,7 @@ Static Function Calculo(oSay)
 		if dDtIniP == nil .or. dDtFimP == nil
 			ZA2->ZA2_DTINIP	:= ZA2->ZA2_DATPRI
 			ZA2->ZA2_DTFIMP	:= ZA2->ZA2_DATPRF
+			ZA2_STAT		:= "P"
 		else
 			ZA2->ZA2_DTINIP	:= dDtIniP
 			ZA2->ZA2_DTFIMP	:= dDtFimP

@@ -42,7 +42,7 @@ Static Function ObterDados()
 	Local nPosData:=0
 
 	// Carrega os itens e os saldos iniciais
-	cSql := "SELECT DISTINCT A7_PRODUTO, B1_LOCPAD, A7_CODCLI "
+	cSql := "SELECT DISTINCT A7_PRODUTO, B1_LOCPAD, A7_CODCLI, B1_XCLIENT "
 	cSql += "  FROM " + RetSQLName("SA7") + " SA7 "
 
 	cSql += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
@@ -68,7 +68,7 @@ Static Function ObterDados()
 			nSaldo := 0
 		EndIf
 
-		Aadd(aPedidos,{(cAliasSA7)->A7_PRODUTO, (cAliasSA7)->A7_CODCLI, cValToChar(nSaldo), "0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0"})
+		Aadd(aPedidos,{(cAliasSA7)->B1_XCLIENT, (cAliasSA7)->A7_PRODUTO, (cAliasSA7)->A7_CODCLI, cValToChar(nSaldo), "0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0","0"})
 
 		(cAliasSA7)->(DbSkip())
 	EndDo
@@ -121,7 +121,7 @@ Static Function ObterDados()
 	While (cAliasZA0)->(!EOF())
 
 		// Localiza o item e a data
-		nPosItem := aScan(aPedidos, {|x| AllTrim(x[1]) == AllTrim((cAliasZA0)->ZA0_PRODUT)})
+		nPosItem := aScan(aPedidos, {|x| AllTrim(x[2]) == AllTrim((cAliasZA0)->ZA0_PRODUT)})
 
 		if (cAliasZA0)->ZA0_DTENTR < dToS(ddatabase)
 			nPosData := 1
@@ -131,8 +131,8 @@ Static Function ObterDados()
 
 		// Soma a quantidade do pedido
 		if nPosItem <> 0 .and. nPosData <> 0
-			nQtde := val(aPedidos[nPosItem][nPosData+3]) + (cAliasZA0)->ZA0_SALDO
-			aPedidos[nPosItem][nPosData+3] := cValToChar(nQtde)
+			nQtde := val(aPedidos[nPosItem][nPosData+4]) + (cAliasZA0)->ZA0_SALDO
+			aPedidos[nPosItem][nPosData+4] := cValToChar(nQtde)
 		endif
 
 		(cAliasZA0)->(DbSkip())
@@ -143,7 +143,7 @@ Static Function ObterDados()
 	While (cAliasSC6)->(!EOF())
 
 		// Localiza o item e a data
-		nPosItem := aScan(aPedidos, {|x| AllTrim(x[1]) == AllTrim((cAliasSC6)->B1_COD)})
+		nPosItem := aScan(aPedidos, {|x| AllTrim(x[2]) == AllTrim((cAliasSC6)->B1_COD)})
 
 		if (cAliasSC6)->C6_ENTREG < dToS(ddatabase)
 			nPosData := 1
@@ -153,8 +153,8 @@ Static Function ObterDados()
 
 		// Soma a quantidade do pedido
 		if nPosItem <> 0 .And. nPosData <> 0
-			nQtde := val(aPedidos[nPosItem][nPosData+3]) + (cAliasSC6)->C6_SALDO
-			aPedidos[nPosItem][nPosData+3] := cValToChar(nQtde)
+			nQtde := val(aPedidos[nPosItem][nPosData+4]) + (cAliasSC6)->C6_SALDO
+			aPedidos[nPosItem][nPosData+4] := cValToChar(nQtde)
 		endif
 
 		(cAliasSC6)->(DbSkip())
@@ -185,7 +185,7 @@ Static Function	CalculaSaldos()
 			lTem	:= .T.
 		endif
 
-		For nCol := 4 to Len(aPedidos[nRow])
+		For nCol := 5 to Len(aPedidos[nRow])
 			if val(aPedidos[nRow][nCol]) <> 0
 				lTem	:= .T.
 			endif
@@ -240,7 +240,6 @@ Static Function fWBrowse1()
 	oFwBrowse := FWBrowse():New()
 	oFWBrowse:DisableReport()
 	oFwBrowse:SetDataArrayoBrowse()  //Define utilização de array
-	oFwBrowse:AddStatusColumns( { || BrwStatus() }, { || BrwLegend() } )
 	oFwBrowse:SetArray(aPedidos)
 
 	aColumns := RetColumns()
@@ -266,50 +265,31 @@ Static Function RetColumns()
 		return aColumns
 	endif
 
-	aAdd(aCols, {"Item",  			{|oBrw| aPedidos[oBrw:At(), 1] }, "C", "@!", 1, 10, 0, .F.})
-	aAdd(aCols, {"Item do cliente", {|oBrw| aPedidos[oBrw:At(), 2] }, "C", "@!", 1, 10, 0, .F.})
-	aAdd(aCols, {"Saldo Atual", 	{|oBrw| aPedidos[oBrw:At(), 3] }, "C", "@!", 0,  6, 2, .F.})
+	aAdd(aCols, {"Cliente",			{|oBrw| aPedidos[oBrw:At(), 1] }, "C", "@!", 1, 20, 0, .F.})
+	aAdd(aCols, {"Item",  			{|oBrw| aPedidos[oBrw:At(), 2] }, "C", "@!", 1, 10, 0, .F.})
+	aAdd(aCols, {"Item do cliente", {|oBrw| aPedidos[oBrw:At(), 3] }, "C", "@!", 1, 10, 0, .F.})
+	aAdd(aCols, {"Saldo Atual", 	{|oBrw| aPedidos[oBrw:At(), 4] }, "C", "@!", 0,  6, 2, .F.})
 
 	if len(aDatas) == 0
 		FWAlertWarning("NAO EXISTEM DADOS PARA MOSTRAR! ", "PLANO GERAL")
 	else
-		iif (len(aDatas) >  0, aAdd(aCols, {"Em Atraso", 	 {|oBrw| aPedidos[oBrw:At(),  4] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  1, aAdd(aCols, {DtoC(aDatas[2]), {|oBrw| aPedidos[oBrw:At(),  5] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  2, aAdd(aCols, {DtoC(aDatas[3]), {|oBrw| aPedidos[oBrw:At(),  6] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  3, aAdd(aCols, {DtoC(aDatas[4]), {|oBrw| aPedidos[oBrw:At(),  7] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  4, aAdd(aCols, {DtoC(aDatas[5]), {|oBrw| aPedidos[oBrw:At(),  8] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  5, aAdd(aCols, {DtoC(aDatas[6]), {|oBrw| aPedidos[oBrw:At(),  9] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  6, aAdd(aCols, {DtoC(aDatas[7]), {|oBrw| aPedidos[oBrw:At(), 10] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  7, aAdd(aCols, {DtoC(aDatas[8]), {|oBrw| aPedidos[oBrw:At(), 11] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  8, aAdd(aCols, {DtoC(aDatas[9]), {|oBrw| aPedidos[oBrw:At(), 12] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) >  9, aAdd(aCols, {DtoC(aDatas[10]),{|oBrw| aPedidos[oBrw:At(), 13] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) > 10, aAdd(aCols, {DtoC(aDatas[11]),{|oBrw| aPedidos[oBrw:At(), 14] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) > 11, aAdd(aCols, {DtoC(aDatas[12]),{|oBrw| aPedidos[oBrw:At(), 15] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) > 12, aAdd(aCols, {DtoC(aDatas[13]),{|oBrw| aPedidos[oBrw:At(), 16] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) > 13, aAdd(aCols, {DtoC(aDatas[14]),{|oBrw| aPedidos[oBrw:At(), 17] }, "C", "@!",	0, 6, 2, .F.}),0)
-		iif (len(aDatas) > 14, aAdd(aCols, {DtoC(aDatas[15]),{|oBrw| aPedidos[oBrw:At(), 18] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  0, aAdd(aCols, {"Em Atraso", 	 {|oBrw| aPedidos[oBrw:At(),  5] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  1, aAdd(aCols, {DtoC(aDatas[2]), {|oBrw| aPedidos[oBrw:At(),  6] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  2, aAdd(aCols, {DtoC(aDatas[3]), {|oBrw| aPedidos[oBrw:At(),  7] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  3, aAdd(aCols, {DtoC(aDatas[4]), {|oBrw| aPedidos[oBrw:At(),  8] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  4, aAdd(aCols, {DtoC(aDatas[5]), {|oBrw| aPedidos[oBrw:At(),  9] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  5, aAdd(aCols, {DtoC(aDatas[6]), {|oBrw| aPedidos[oBrw:At(), 10] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  6, aAdd(aCols, {DtoC(aDatas[7]), {|oBrw| aPedidos[oBrw:At(), 11] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  7, aAdd(aCols, {DtoC(aDatas[8]), {|oBrw| aPedidos[oBrw:At(), 12] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  8, aAdd(aCols, {DtoC(aDatas[9]), {|oBrw| aPedidos[oBrw:At(), 13] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) >  9, aAdd(aCols, {DtoC(aDatas[10]),{|oBrw| aPedidos[oBrw:At(), 14] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) > 10, aAdd(aCols, {DtoC(aDatas[11]),{|oBrw| aPedidos[oBrw:At(), 15] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) > 11, aAdd(aCols, {DtoC(aDatas[12]),{|oBrw| aPedidos[oBrw:At(), 16] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) > 12, aAdd(aCols, {DtoC(aDatas[13]),{|oBrw| aPedidos[oBrw:At(), 17] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) > 13, aAdd(aCols, {DtoC(aDatas[14]),{|oBrw| aPedidos[oBrw:At(), 18] }, "C", "@!",	0, 6, 2, .F.}),0)
+		iif (len(aDatas) > 14, aAdd(aCols, {DtoC(aDatas[15]),{|oBrw| aPedidos[oBrw:At(), 19] }, "C", "@!",	0, 6, 2, .F.}),0)
 	EndIf
 Return aCols
-
-
-Static Function BrwStatus()
-Return Iif(ValidMark(),"BR_VERDE","BR_VERMELHO")
-
-
-Static Function ValidMark()
-	Local lRet := .T.
-Return lRet
-
-
-Static Function BrwLegend()
-	Local oLegend := FWLegend():New()
-
-	oLegend:Add("","BR_VERDE" , "VERDE" )
-	oLegend:Add("","BR_VERMELHO", "VERMELHO" )
-	oLegend:Activate()
-	oLegend:View()
-	oLegend:DeActivate()
-Return
 
 
 Static Function fDupClique()
@@ -317,7 +297,7 @@ Static Function fDupClique()
 
 	nLinha := oFwBrowse:At()
 	nColuna := oFwBrowse:ColPos()
-	cItem := aPedidos[nLinha][1]
+	cItem := aPedidos[nLinha][2]
 
 	u_PL060A(cItem)
 
@@ -350,8 +330,8 @@ Static Function GeraExcel()
 	oFWMsExcel:AddColumn(cAba,"Dados","Saldo Atual",1)
 	oFWMsExcel:AddColumn(cAba,"Dados","Em Atraso",1)
 
-	if Len(aPedidos[1]) > 19
-		nCols := 19
+	if Len(aPedidos[1]) > 20
+		nCols := 20
 	else
 		nCols := Len(aPedidos[1])
 	endif
