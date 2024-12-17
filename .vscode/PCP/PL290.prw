@@ -179,7 +179,7 @@ Static Function	CalculaSaldos()
 
 		lTem	:= .F.
 
-		nSaldo := val(aPedidos[nRow][3])
+		nSaldo := val(aPedidos[nRow][4])
 
 		if nSaldo <> 0
 			lTem	:= .T.
@@ -265,10 +265,10 @@ Static Function RetColumns()
 		return aColumns
 	endif
 
-	aAdd(aCols, {"Cliente",			{|oBrw| aPedidos[oBrw:At(), 1] }, "C", "@!", 1, 20, 0, .F.})
-	aAdd(aCols, {"Item",  			{|oBrw| aPedidos[oBrw:At(), 2] }, "C", "@!", 1, 10, 0, .F.})
-	aAdd(aCols, {"Item do cliente", {|oBrw| aPedidos[oBrw:At(), 3] }, "C", "@!", 1, 10, 0, .F.})
-	aAdd(aCols, {"Saldo Atual", 	{|oBrw| aPedidos[oBrw:At(), 4] }, "C", "@!", 0,  6, 2, .F.})
+	aAdd(aCols, {"Cliente",			{|oBrw| aPedidos[oBrw:At(), 1] }, "C", "@!", 1, 10, 0, .F.})
+	aAdd(aCols, {"Item",  			{|oBrw| aPedidos[oBrw:At(), 2] }, "C", "@!", 1, 08, 0, .F.})
+	aAdd(aCols, {"Item Cliente", 	{|oBrw| aPedidos[oBrw:At(), 3] }, "C", "@!", 1, 08, 0, .F.})
+	aAdd(aCols, {"Saldo", 			{|oBrw| aPedidos[oBrw:At(), 4] }, "C", "@!", 0, 04, 2, .F.})
 
 	if len(aDatas) == 0
 		FWAlertWarning("NAO EXISTEM DADOS PARA MOSTRAR! ", "PLANO GERAL")
